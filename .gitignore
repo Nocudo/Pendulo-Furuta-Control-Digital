@@ -1,0 +1,40 @@
+# FreeCAD backups, locks y archivos temporales
+*.FCBak
+*.FCStd1
+*.FCStd#*
+
+# Conflictos de sincronización en la nube (Google Drive / OneDrive) y archivos temporales de Office/OS
+*.conflict*
+~$*
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tmp
+*.bak
+
+# Python y entornos virtuales
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Editores / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Mallas STL de ensamblajes electrónicos pesados (>250 MB, exceden el límite de 100 MB de GitHub).
+# Se pueden regenerar localmente con el flag `--with-huge-stl` en los scripts de construcción.
+*_Completa_Assembly.stl
+Driver_L298N_Real.stl
+Placa_ESP32_Expansion_Real.stl
+
+# Paquetes comprimidos locales
+*.zip
+*.rar
+*.7z
