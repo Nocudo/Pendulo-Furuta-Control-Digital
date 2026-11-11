@@ -38,3 +38,7 @@ Placa_ESP32_Expansion_Real.stl
 *.zip
 *.rar
 *.7z
+
+# Engram memory local
+.engram/
+
