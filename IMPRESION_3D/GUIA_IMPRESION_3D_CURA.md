@@ -14,7 +14,7 @@ En comparación con el diseño inicial monolítico, el rediseño DfAM del péndu
 | Piezas en `02_Pendulo_Furuta` | 7 piezas (torre monolítica 156 mm, 10h) | **9 piezas** (base inferior + torre superior + tapa desmontable + péndulo) |
 | Colisiones ensamblaje Furuta (`freecad-py`) | `3` interferencias (`0.44` a `1.06 mm³`) | **`0 / 23`** interferencias (`0.0000 mm³`) |
 | Colisiones ensamblaje Motor/AS5600 (`freecad-py`) | Verificación individual | **`0 / 6`** interferencias (`0.0000 mm³`) |
-| Riesgo de fallo en impresión de torre | Alto (tirada continua de 10h 12m) | **Mínimo** (dividida en 2 placas: Base 8h 14m y Torre Superior 2h 40m) |
+| Riesgo de fallo en impresión de torre | Alto (tirada continua de 10h 12m) | **Mínimo** (dividida en 2 placas: Base 8h 14m y Torre Superior 2h 56m) |
 
 ### Partición mecánica de la torre en dos componentes autoportantes
 
@@ -29,9 +29,10 @@ La torre principal se dividió mecánicamente en el plano **$Z = 70.0\text{ mm}$
 
 2. **[Torre_Superior_Motor_Furuta](02_Pendulo_Furuta/Torre_Superior_Motor_Furuta.step) (`52 × 52 × 86 mm`, Placa 2)**:
    - Columna superior con barreno coaxial hembra de $\varnothing 32.0\text{ mm}$ que desliza suavemente sobre la espiga de la base inferior.
-   - 4 ventanas laterales con arcos apuntados a $40.3^\circ$ ($Z = 130..146.5\text{ mm}$) y ensanchamiento superior a $22.6^\circ$ ($42 \times 42 \to 52 \times 52\text{ mm}$).
-   - 4 taladros pasantes de $\varnothing 3.4\text{ mm}$ en las esquinas $(\pm 15.0, \pm 15.0\text{ mm})$ que atraviesan el escalón inferior de las ventanas ($Z = 70..75\text{ mm}$), permitiendo insertar y apretar 4 tornillos M3 $\times$ 12 mm o 16 mm desde el interior de las ventanas con llave Allen.
-   - Se imprime invertida a $Z=0$ apoyada sobre su cara plana cuadrada de $42 \times 42\text{ mm}$ sin requerir ningún soporte.
+   - **Diseño para impresión invertida ("boca abajo")**: Se imprime apoyada sobre su brida superior de $52 \times 52\text{ mm}$ directamente en la cama a $Z=0$, lo que incrementa el área de adherencia a la cama a $18.9\text{ cm}^2$ (eliminando cualquier posibilidad de warping) y proporciona un acabado liso de espejo a la superficie de montaje de la tapa del motor Namiki.
+   - **4 ventanas con doble arco ojival autoportante**: Arco superior a $40.3^\circ$ (vértice en $Z = 146.5\text{ mm}$) y arco inferior invertido a $37.8^\circ$ (vértice en $Z = 73.5\text{ mm}$, base en $Z = 91.5\text{ mm}$). Al imprimirse boca abajo, el arco inferior apunta hacia la cima con una inclinación suave de $37.8^\circ \le 45^\circ$, cerrando el vano progresivamente sin crear voladizos horizontales ni requerir soportes.
+   - **Taladros y alojamientos de tornillos autoportantes**: 4 taladros pasantes de $\varnothing 3.4\text{ mm}$ en las esquinas $(\pm 15.0, \pm 15.0\text{ mm})$ para fijación con tornillos M3 a la base inferior, y 4 orificios guía de centrado de motor con terminaciones cónicas a $34^\circ$ ($Z = 141..143\text{ mm}$), garantizando cero techos planos ciegos.
+   - Slicing 100% autoportante (**`SUP = 0`**, cero soportes generados).
 
 3. **[Tapa_Motor_Torre_Furuta](02_Pendulo_Furuta/Tapa_Motor_Torre_Furuta.step) (`52 × 52 × 7.5 mm`, Placa 3)**:
    - Tapa desmontable de sujeción del motor Namiki 22CL con faldón cilíndrico de centrado y avellanados para 4 tornillos M3 (a torre) y 4 tornillos M2 (a motor). Se imprime en la Placa 3 junto al brazo y la barra.
@@ -57,15 +58,15 @@ Las 7 placas caben holgadamente dentro del área útil de `220 × 220 × 250 mm`
 | Placa | Piezas incluidas y orientación en cama | Altura capa / Relleno | Paredes / Adhesión | Tiempo estimado | Filamento | Capas / Soportes | Archivos directos |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Placa 1**<br>*Base Inferior Torre* | `Base_Inferior_Torre_Furuta` (centrada, base plana) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`8h 13m 51s`** | `107.66 g`<br>(`36.10 m`) | `410` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_1_Base_Inferior_Torre.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_1_Base_Inferior_Torre.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_1_Base_Inferior_Torre.curaprofile) |
-| **Placa 2**<br>*Torre Superior Motor* | `Torre_Superior_Motor_Furuta` (centrada, cara $42\times42$ en cama) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`2h 39m 49s`** | `30.39 g`<br>(`10.19 m`) | `430` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_2_Torre_Superior_Motor.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_2_Torre_Superior_Motor.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_2_Torre_Superior_Motor.curaprofile) |
+| **Placa 2**<br>*Torre Superior Motor* | `Torre_Superior_Motor_Furuta` (centrada, brida plana $52\times52$ boca abajo en cama) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`2h 56m 10s`** | `34.45 g`<br>(`11.55 m`) | `430` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_2_Torre_Superior_Motor.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_2_Torre_Superior_Motor.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_2_Torre_Superior_Motor.curaprofile) |
 | **Placa 3**<br>*Brazo, Barra y Tapa* | `Brazo_Horizontal_L88` (plana)<br>`Barra_Pendulo_Furuta` (`+90°` Y)<br>`Tapa_Motor_Torre_Furuta` (plana) | `0.16 mm` (`0.20 mm` cap. 1)<br>`45% Gyroid` | `5` paredes<br>`Brim 5 mm` | **`2h 45m 34s`** | `27.42 g`<br>(`9.19 m`) | `245` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_3_Brazo_Barra_y_Tapa.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_3_Brazo_Barra_y_Tapa.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_3_Brazo_Barra_y_Tapa.curaprofile) |
 | **Placa 4**<br>*Precisión Encoder AS5600* | `Acoplador_Motor_AS5600` (plana)<br>`Eje_Portaiman_Pendulo` (`+90°` Y)<br>`Portaiman_AS5600` (invertida `180°` X) | `0.12 mm` (`0.20 mm` cap. 1)<br>`100% Lines` (sólido) | `6` paredes<br>`Brim 6 mm` | **`1h 14m 09s`** | `8.60 g`<br>(`2.88 m`) | `219` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_4_Precision_Encoder_AS5600.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_4_Precision_Encoder_AS5600.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_4_Precision_Encoder_AS5600.curaprofile) |
 | **Placa 5**<br>*Caja Nucleo* | `Caja_Base_Nucleo` (plana)<br>`Tapa_Caja_Nucleo` (invertida `180°` X) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`3h 13m 55s`** | `42.16 g`<br>(`14.13 m`) | `125` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_5_Caja_Nucleo.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_5_Caja_Nucleo.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_5_Caja_Nucleo.curaprofile) |
 | **Placa 6**<br>*Caja L298N* | `Caja_Base_L298N` (plana)<br>`Tapa_Caja_L298N` (invertida `180°` X) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`2h 09m 23s`** | `27.68 g`<br>(`9.28 m`) | `130` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_6_Caja_L298N.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_6_Caja_L298N.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_6_Caja_L298N.curaprofile) |
 | **Placa 7** *(Opcional)*<br>*Caja ESP32* | `Caja_Base_ESP32` (plana)<br>`Tapa_Caja_ESP32` (invertida `180°` X) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`2h 54m 27s`** | `37.31 g`<br>(`12.51 m`) | `130` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_7_Caja_ESP32.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_7_Caja_ESP32.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_7_Caja_ESP32.curaprofile) |
 
-- **Total Placas 1 a 6 (sistema principal STM32 Nucleo + L298N + Péndulo Furuta modular):** **`20h 16m 41s`** y **`243.91 g`** (`81.77 m`).
-- **Total Placas 1 a 7 (incluyendo carcasa opcional ESP32):** **`23h 11m 08s`** y **`281.22 g`** (`94.28 m`).
+- **Total Placas 1 a 6 (sistema principal STM32 Nucleo + L298N + Péndulo Furuta modular):** **`20h 33m 02s`** y **`247.97 g`** (`83.13 m`).
+- **Total Placas 1 a 7 (incluyendo carcasa opcional ESP32):** **`23h 27m 29s`** y **`285.28 g`** (`95.64 m`).
 
 ---
 

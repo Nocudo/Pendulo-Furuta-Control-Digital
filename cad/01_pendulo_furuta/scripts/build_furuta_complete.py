@@ -233,13 +233,17 @@ def build_tower_base_dfam():
 def build_tower_upper_dfam():
     """
     DfAM Upper Motor Column (Z = 70.0 .. 156.0 mm, total height = 86.0 mm):
-    - Bottom face (Z=70.0): 42x42 mm square with inner bore Ø32.0 mm that slips over
-      the base male spigot with 0.2 mm radial clearance.
-    - 4 access windows (Z=75..130) with 40.3-deg pointed gable arches (Z=130..146.5).
-    - Top flare (42x42 -> 52x52 mm, Z=144..156) with 4x M3 pilot holes for motor cap.
-    - 4x M3 corner through-holes Ø3.4 mm at (±15.0, ±15.0, Z=69..76) drilled through the
-      window bottom shelf (Z=70..75) so screws can be driven from inside the windows
-      down into the base.
+    - Designed specifically for inverted printing (BOCA ABAJO, Z=156 on bed):
+      - 52x52 mm motor face sits flat on bed (18.9 cm^2 adhesion area, 0 warping).
+      - Collar tapers inward 22.6 deg (42x42 <- 52x52) with zero overhang.
+      - 4-way access windows feature DOUBLE GABLE ARCHES:
+        * Upper arch: apex at Z=146.5 mm, base at Z=130 mm (40.3 deg from vertical).
+        * Lower arch: apex at Z=73.5 mm, base at Z=91.5 mm (37.8 deg from vertical).
+        * Inverted print direction: lower arch closes at 37.8 deg with ZERO supports!
+      - 4x M3 motor cap pilot holes at Z=156 feature 34-deg conical tips (Z=141..143)
+        eliminating flat ceiling overhangs.
+      - 4x M3 corner clearance through-holes Ø3.4 mm at (±15.0, ±15.0, Z=69..76.5 mm).
+      - 100% SUPPORT-FREE in BOCA ABAJO orientation (SUP = 0, 0.00 mm^2 overhang > 45 deg).
     """
     w_col = make_rounded_rect_wire(0.0, 0.0, 21.0, 21.0, 1.5, 70.0)
     col = Part.Face(w_col).extrude(App.Vector(0, 0, 74.5))
@@ -252,30 +256,35 @@ def build_tower_upper_dfam():
     bore = Part.makeCylinder(16.0, 89.0, App.Vector(0, 0, 69.0), App.Vector(0, 0, 1))
     col = col.cut(bore)
 
+    # 4-way arched windows with double pointed gable arches (self-supporting both ways!)
     pts_wx = [
-        App.Vector(-35.0, -14.0, 75.0),
-        App.Vector(-35.0,  14.0, 75.0),
+        App.Vector(-35.0,   0.0,  73.5),
+        App.Vector(-35.0,  14.0,  91.5),
         App.Vector(-35.0,  14.0, 130.0),
         App.Vector(-35.0,   0.0, 146.5),
         App.Vector(-35.0, -14.0, 130.0),
-        App.Vector(-35.0, -14.0, 75.0),
+        App.Vector(-35.0, -14.0,  91.5),
+        App.Vector(-35.0,   0.0,  73.5),
     ]
     win_x = Part.Face(Part.makePolygon(pts_wx)).extrude(App.Vector(70.0, 0, 0))
+
     pts_wy = [
-        App.Vector(-14.0, -35.0, 75.0),
-        App.Vector( 14.0, -35.0, 75.0),
+        App.Vector(  0.0, -35.0,  73.5),
+        App.Vector( 14.0, -35.0,  91.5),
         App.Vector( 14.0, -35.0, 130.0),
         App.Vector(  0.0, -35.0, 146.5),
         App.Vector(-14.0, -35.0, 130.0),
-        App.Vector(-14.0, -35.0, 75.0),
+        App.Vector(-14.0, -35.0,  91.5),
+        App.Vector(  0.0, -35.0,  73.5),
     ]
     win_y = Part.Face(Part.makePolygon(pts_wy)).extrude(App.Vector(0, 70.0, 0))
     col = col.cut(win_x).cut(win_y)
 
     for cx, cy in [(-19.5, -19.5), (19.5, -19.5), (-19.5, 19.5), (19.5, 19.5)]:
-        h_m3 = Part.makeCylinder(1.35, 13.5, App.Vector(cx, cy, 143.0), App.Vector(0, 0, 1))
+        h_m3 = Part.makeCylinder(1.35, 13.0, App.Vector(cx, cy, 143.0), App.Vector(0, 0, 1))
+        tip_m3 = Part.makeCone(0.0, 1.35, 2.0, App.Vector(cx, cy, 141.0), App.Vector(0, 0, 1))
         ch_m3 = Part.makeCone(1.35, 1.95, 0.6, App.Vector(cx, cy, Z_MOTOR_FACE - 0.55), App.Vector(0, 0, 1))
-        col = col.cut(h_m3).cut(ch_m3)
+        col = col.cut(h_m3).cut(tip_m3).cut(ch_m3)
 
     for px, py in [(-15.0, -15.0), (15.0, -15.0), (-15.0, 15.0), (15.0, 15.0)]:
         h_m3_through = Part.makeCylinder(1.70, 7.5, App.Vector(px, py, 69.0), App.Vector(0, 0, 1))

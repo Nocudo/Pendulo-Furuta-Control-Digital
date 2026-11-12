@@ -66,7 +66,7 @@ Todos los archivos se encuentran disponibles en `cad/01_pendulo_furuta/` y sincr
 | `Pendulo_Furuta_Assembly.step` | STEP AP214 | Ensamble master interoperable para SolidWorks, Inventor, Fusion 360, Onshape |
 | `Pendulo_Furuta_Assembly.stl` | STL Mesh | Malla 3D del conjunto completo para visualización o simulación física |
 | `Base_Inferior_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 1)**: Base inferior pedestal ($Z=0..82\text{ mm}$) con espiga macho coaxial $\varnothing 31.6\text{ mm}$, base $120 \times 120\text{ mm}$ y barreno de cables $\varnothing 24\text{ mm}$ |
-| `Torre_Superior_Motor_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 2)**: Torre superior motor ($Z=70..156\text{ mm}$) con 4 ventanas góticas, barreno hembra $\varnothing 32\text{ mm}$ y 4 taladros M3 de unión |
+| `Torre_Superior_Motor_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 2)**: Torre superior motor ($Z=70..156\text{ mm}$) con 4 ventanas de doble arco ojival a $37.8^\circ$, barreno hembra $\varnothing 32\text{ mm}$ y brida superior $52 \times 52\text{ mm}$ optimizada para impresión boca abajo sin soportes |
 | `Base_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Opcional)**: Torre monolítica en una sola pieza ($156\text{ mm}$) con arcos autoportantes y base $120 \times 120\text{ mm}$ |
 | `Tapa_Motor_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 3)**: Tapa desmontable del motor ($52 \times 52 \times 7.5\text{ mm}$) con avellanados M3/M2 |
 | `Brazo_Horizontal_L88.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 3)**: Brazo plano DfAM sin soportes, sosteniendo la caja inferior del encoder |
@@ -100,7 +100,7 @@ $$\tau_1 = \ddot{q}_0 (m_1 L_0 l_1 \cos q_1) + \ddot{q}_1 (J_1 + m_1 l_1^2) - \f
 | Pieza | Material | Altura de Capa | Perímetros | Relleno (Infill) | Orientación en Cama |
 |---|---|---|---|---|---|
 | **Base Inferior Pedestal (Placa 1)** | PLA+ / PETG | 0.20 mm | 4 paredes | 25% Giroide | Base plana de 120x120 mm sobre cama (Z=0). Espiga coaxial vertical hacia arriba. 0 soportes. |
-| **Torre Superior Motor (Placa 2)** | PLA+ / PETG | 0.20 mm | 4 paredes | 25% Giroide | Cara plana cuadrada 42x42 mm sobre cama (Z=0). Ventanas apuntadas a 40.3°. 0 soportes. |
+| **Torre Superior Motor (Placa 2)** | PLA+ / PETG | 0.20 mm | 4 paredes | 25% Giroide | Brida plana superior de 52x52 mm asentada boca abajo sobre cama (Z=0). Ventanas de doble arco ojival a 37.8°/40.3°. 0 soportes. |
 | **Torre Monolítica (Alternativa)** | PLA+ / PETG | 0.20 mm | 4 paredes | 25% Giroide | Base plana sobre la cama (Z=0 hacia abajo). Sin soportes en columnas (puentes de 28mm). |
 | **Brazo Horizontal Monolítico (Placa 3)** | PETG / ABS | 0.16 mm | 5 paredes | 45% Giroide | Base plana inferior del brazo sobre la cama. Sin soportes. |
 | **Tapa Motor Desmontable (Placa 3)** | PLA+ / PETG | 0.16 mm | 5 paredes | 45% Giroide | Cara superior plana sobre la cama. Sin soportes. |
