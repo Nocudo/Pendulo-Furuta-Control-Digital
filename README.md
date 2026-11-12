@@ -76,12 +76,13 @@ Si tienes una **Anycubic Kobra 2**, puedes imprimir directamente con los G-code 
 
 ```
 IMPRESION_3D/Placas_Cura_Listas/GCode/
-├── Placa_1_Torre_Motor.gcode
-├── Placa_2_Brazo_Barra_y_Tapa.gcode
-├── Placa_3_Precision_Encoder_AS5600.gcode
-├── Placa_4_Caja_Nucleo.gcode
-├── Placa_5_Caja_L298N.gcode
-└── Placa_6_Caja_ESP32.gcode
+├── Placa_1_Base_Inferior_Torre.gcode
+├── Placa_2_Torre_Superior_Motor.gcode
+├── Placa_3_Brazo_Barra_y_Tapa.gcode
+├── Placa_4_Precision_Encoder_AS5600.gcode
+├── Placa_5_Caja_Nucleo.gcode
+├── Placa_6_Caja_L298N.gcode
+└── Placa_7_Caja_ESP32.gcode
 ```
 
 ### Impresión personalizada

@@ -65,11 +65,13 @@ Todos los archivos se encuentran disponibles en `cad/01_pendulo_furuta/` y sincr
 | `Pendulo_Furuta_Completo.FCStd` | FreeCAD 1.1 | Ensamble paramétrico completo editable en FreeCAD con árbol de operaciones y materiales |
 | `Pendulo_Furuta_Assembly.step` | STEP AP214 | Ensamble master interoperable para SolidWorks, Inventor, Fusion 360, Onshape |
 | `Pendulo_Furuta_Assembly.stl` | STL Mesh | Malla 3D del conjunto completo para visualización o simulación física |
-| `Base_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D**: Torre de 4 columnas abiertas ($156\text{ mm}$) con arcos autoportantes y base $120 \times 120\text{ mm}$ |
-| `Tapa_Motor_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D**: Tapa desmontable del motor ($52 \times 52 \times 7.5\text{ mm}$) con avellanados M3/M2 |
-| `Brazo_Horizontal_L88.stl` / `.step` | STL & STEP | **Pieza 3D**: Brazo plano DfAM sin soportes, sosteniendo la caja inferior del encoder |
-| `Eje_Portaiman_Pendulo.stl` / `.step` | STL & STEP | **Pieza 3D**: Eje para rodamiento 608 ($\varnothing 8\text{ mm}$), copa para imán y espiga D con cono a $32.7°$ |
-| `Barra_Pendulo_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D**: Barra oscilante coplanar con cubo hembra D, corredera de $50\text{ mm}$ y despeje de $30\text{ mm}$ |
+| `Base_Inferior_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 1)**: Base inferior pedestal ($Z=0..82\text{ mm}$) con espiga macho coaxial $\varnothing 31.6\text{ mm}$, base $120 \times 120\text{ mm}$ y barreno de cables $\varnothing 24\text{ mm}$ |
+| `Torre_Superior_Motor_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 2)**: Torre superior motor ($Z=70..156\text{ mm}$) con 4 ventanas góticas, barreno hembra $\varnothing 32\text{ mm}$ y 4 taladros M3 de unión |
+| `Base_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Opcional)**: Torre monolítica en una sola pieza ($156\text{ mm}$) con arcos autoportantes y base $120 \times 120\text{ mm}$ |
+| `Tapa_Motor_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 3)**: Tapa desmontable del motor ($52 \times 52 \times 7.5\text{ mm}$) con avellanados M3/M2 |
+| `Brazo_Horizontal_L88.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 3)**: Brazo plano DfAM sin soportes, sosteniendo la caja inferior del encoder |
+| `Eje_Portaiman_Pendulo.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 4)**: Eje para rodamiento 608 ($\varnothing 8\text{ mm}$), copa para imán y espiga D con cono a $32.7°$ |
+| `Barra_Pendulo_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 3)**: Barra oscilante coplanar con cubo hembra D, corredera de $50\text{ mm}$ y despeje de $30\text{ mm}$ |
 | `Masa_Ajustable_Pendulo.stl` / `.step` | STL & STEP | **Pieza 3D**: Contrapeso cilíndrico de $\varnothing 18\text{ mm}$ en dos mitades con tornillo M3 |
 
 ---
@@ -97,8 +99,11 @@ $$\tau_1 = \ddot{q}_0 (m_1 L_0 l_1 \cos q_1) + \ddot{q}_1 (J_1 + m_1 l_1^2) - \f
 
 | Pieza | Material | Altura de Capa | Perímetros | Relleno (Infill) | Orientación en Cama |
 |---|---|---|---|---|---|
-| **Base Torre (Columnas Abiertas)** | PLA+ / PETG | 0.20 mm | 4 paredes | 30% Giroide | Base plana sobre la cama (Z=0 hacia abajo). Sin soportes en columnas (puentes de 28mm). |
-| **Brazo Horizontal Monolítico** | PETG / ABS | 0.16 mm | 5 paredes | 50% Giroide | Base plana inferior del brazo sobre la cama. Sin soportes. |
-| **Barra Péndulo** | PETG / PLA+ | 0.12 - 0.16 mm | 4 paredes | 40% Rectilíneo | Cara lateral plana sobre la cama. |
-| **Eje Portaimán** | PETG / Resina | 0.12 mm | 6 paredes o 100% | 100% Sólido | Eje vertical con la brida sobre la cama. |
+| **Base Inferior Pedestal (Placa 1)** | PLA+ / PETG | 0.20 mm | 4 paredes | 25% Giroide | Base plana de 120x120 mm sobre cama (Z=0). Espiga coaxial vertical hacia arriba. 0 soportes. |
+| **Torre Superior Motor (Placa 2)** | PLA+ / PETG | 0.20 mm | 4 paredes | 25% Giroide | Cara plana cuadrada 42x42 mm sobre cama (Z=0). Ventanas apuntadas a 40.3°. 0 soportes. |
+| **Torre Monolítica (Alternativa)** | PLA+ / PETG | 0.20 mm | 4 paredes | 25% Giroide | Base plana sobre la cama (Z=0 hacia abajo). Sin soportes en columnas (puentes de 28mm). |
+| **Brazo Horizontal Monolítico (Placa 3)** | PETG / ABS | 0.16 mm | 5 paredes | 45% Giroide | Base plana inferior del brazo sobre la cama. Sin soportes. |
+| **Tapa Motor Desmontable (Placa 3)** | PLA+ / PETG | 0.16 mm | 5 paredes | 45% Giroide | Cara superior plana sobre la cama. Sin soportes. |
+| **Barra Péndulo (Placa 3)** | PETG / PLA+ | 0.16 mm | 5 paredes | 45% Giroide | Cara lateral plana sobre la cama (+90° Y). |
+| **Eje Portaimán (Placa 4)** | PETG / PLA+ | 0.12 mm | 6 paredes o 100% | 100% Sólido | Eje vertical con la brida sobre la cama. |
 | **Masa Ajustable** | PLA+ / PETG | 0.16 mm | 4 paredes | 100% Sólido | Cara circular sobre la cama. |

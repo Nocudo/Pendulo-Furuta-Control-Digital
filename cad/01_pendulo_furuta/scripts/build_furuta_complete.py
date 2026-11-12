@@ -169,6 +169,121 @@ def build_tower_dfam():
     return tower.removeSplitter()
 
 
+def build_tower_base_dfam():
+    """
+    DfAM Lower Base Pedestal (Z = 0 .. 70.0 mm + male spigot to Z = 82.0 mm):
+    - Massive 120x120 mm baseplate (Z=0..8) with 4x M5 mounting holes.
+    - Central column (42x42 mm, rounded r=1.5) Z=8..70 mm.
+    - 4 triangular stiffening ribs along X+, X-, Y+, Y- (Z=8..68 mm).
+    - Male coaxial alignment spigot: Ø31.6 mm OD (R=15.8) x 12 mm tall (Z=70..82 mm)
+      with 45-degree lead-in chamfer (Z=80.5..82.0 mm, R=14.3 at tip).
+    - Inner bore: Ø24.0 mm through-bore (R=12.0, Z=-1..83 mm) for motor and sensor wiring.
+    - 4x M3 self-tapping pilot holes Ø2.6 mm at (±15.0, ±15.0, Z=55..71 mm) depth 15 mm
+      for clamping the upper column.
+    """
+    w_base = make_rounded_rect_wire(0.0, 0.0, 60.0, 60.0, 6.0, 0.0)
+    base_plate = Part.Face(w_base).extrude(App.Vector(0, 0, 8.0))
+
+    w_col = make_rounded_rect_wire(0.0, 0.0, 21.0, 21.0, 1.5, 8.0)
+    col = Part.Face(w_col).extrude(App.Vector(0, 0, 62.0))
+
+    base = base_plate.fuse(col)
+
+    for axis in ("x+", "x-", "y+", "y-"):
+        if axis in ("x+", "x-"):
+            s = 1.0 if axis == "x+" else -1.0
+            poly = [
+                App.Vector(s * 20.5, -3.0, 8.0),
+                App.Vector(s * 55.0, -3.0, 8.0),
+                App.Vector(s * 20.5, -3.0, 68.0),
+                App.Vector(s * 20.5, -3.0, 8.0),
+            ]
+            rib = Part.Face(Part.makePolygon(poly)).extrude(App.Vector(0, 6.0, 0))
+        else:
+            s = 1.0 if axis == "y+" else -1.0
+            poly = [
+                App.Vector(-3.0, s * 20.5, 8.0),
+                App.Vector(-3.0, s * 55.0, 8.0),
+                App.Vector(-3.0, s * 20.5, 68.0),
+                App.Vector(-3.0, s * 20.5, 8.0),
+            ]
+            rib = Part.Face(Part.makePolygon(poly)).extrude(App.Vector(6.0, 0, 0))
+        base = base.fuse(rib)
+
+    spigot_cyl = Part.makeCylinder(15.8, 10.5, App.Vector(0, 0, 70.0), App.Vector(0, 0, 1))
+    spigot_cone = Part.makeCone(15.8, 14.3, 1.5, App.Vector(0, 0, 80.5), App.Vector(0, 0, 1))
+    spigot = spigot_cyl.fuse(spigot_cone)
+    base = base.fuse(spigot)
+
+    bore = Part.makeCylinder(12.0, 85.0, App.Vector(0, 0, -1.0), App.Vector(0, 0, 1))
+    base = base.cut(bore)
+
+    for bx, by in [(-48.0, -48.0), (48.0, -48.0), (-48.0, 48.0), (48.0, 48.0)]:
+        h_m5 = Part.makeCylinder(2.70, 12.0, App.Vector(bx, by, -1.0), App.Vector(0, 0, 1))
+        base = base.cut(h_m5)
+
+    for px, py in [(-15.0, -15.0), (15.0, -15.0), (-15.0, 15.0), (15.0, 15.0)]:
+        h_m3_pilot = Part.makeCylinder(1.30, 16.0, App.Vector(px, py, 55.0), App.Vector(0, 0, 1))
+        cs_m3 = Part.makeCone(1.30, 1.80, 0.8, App.Vector(px, py, 69.3), App.Vector(0, 0, 1))
+        base = base.cut(h_m3_pilot).cut(cs_m3)
+
+    return base.removeSplitter()
+
+
+def build_tower_upper_dfam():
+    """
+    DfAM Upper Motor Column (Z = 70.0 .. 156.0 mm, total height = 86.0 mm):
+    - Bottom face (Z=70.0): 42x42 mm square with inner bore Ø32.0 mm that slips over
+      the base male spigot with 0.2 mm radial clearance.
+    - 4 access windows (Z=75..130) with 40.3-deg pointed gable arches (Z=130..146.5).
+    - Top flare (42x42 -> 52x52 mm, Z=144..156) with 4x M3 pilot holes for motor cap.
+    - 4x M3 corner through-holes Ø3.4 mm at (±15.0, ±15.0, Z=69..76) drilled through the
+      window bottom shelf (Z=70..75) so screws can be driven from inside the windows
+      down into the base.
+    """
+    w_col = make_rounded_rect_wire(0.0, 0.0, 21.0, 21.0, 1.5, 70.0)
+    col = Part.Face(w_col).extrude(App.Vector(0, 0, 74.5))
+
+    w_fl_bot = make_rounded_rect_wire(0.0, 0.0, 21.0, 21.0, 1.5, 144.0)
+    w_fl_top = make_rounded_rect_wire(0.0, 0.0, 26.0, 26.0, 3.0, Z_MOTOR_FACE)
+    flare = Part.makeLoft([w_fl_bot, w_fl_top], True, False, False)
+    col = col.fuse(flare)
+
+    bore = Part.makeCylinder(16.0, 89.0, App.Vector(0, 0, 69.0), App.Vector(0, 0, 1))
+    col = col.cut(bore)
+
+    pts_wx = [
+        App.Vector(-35.0, -14.0, 75.0),
+        App.Vector(-35.0,  14.0, 75.0),
+        App.Vector(-35.0,  14.0, 130.0),
+        App.Vector(-35.0,   0.0, 146.5),
+        App.Vector(-35.0, -14.0, 130.0),
+        App.Vector(-35.0, -14.0, 75.0),
+    ]
+    win_x = Part.Face(Part.makePolygon(pts_wx)).extrude(App.Vector(70.0, 0, 0))
+    pts_wy = [
+        App.Vector(-14.0, -35.0, 75.0),
+        App.Vector( 14.0, -35.0, 75.0),
+        App.Vector( 14.0, -35.0, 130.0),
+        App.Vector(  0.0, -35.0, 146.5),
+        App.Vector(-14.0, -35.0, 130.0),
+        App.Vector(-14.0, -35.0, 75.0),
+    ]
+    win_y = Part.Face(Part.makePolygon(pts_wy)).extrude(App.Vector(0, 70.0, 0))
+    col = col.cut(win_x).cut(win_y)
+
+    for cx, cy in [(-19.5, -19.5), (19.5, -19.5), (-19.5, 19.5), (19.5, 19.5)]:
+        h_m3 = Part.makeCylinder(1.35, 13.5, App.Vector(cx, cy, 143.0), App.Vector(0, 0, 1))
+        ch_m3 = Part.makeCone(1.35, 1.95, 0.6, App.Vector(cx, cy, Z_MOTOR_FACE - 0.55), App.Vector(0, 0, 1))
+        col = col.cut(h_m3).cut(ch_m3)
+
+    for px, py in [(-15.0, -15.0), (15.0, -15.0), (-15.0, 15.0), (15.0, 15.0)]:
+        h_m3_through = Part.makeCylinder(1.70, 7.5, App.Vector(px, py, 69.0), App.Vector(0, 0, 1))
+        col = col.cut(h_m3_through)
+
+    return col.removeSplitter()
+
+
 def build_tower_cap_dfam():
     """
     DfAM Removable Motor Cap Plate (52 x 52 mm, Z = 152.5 .. 160.0 mm):
@@ -338,6 +453,8 @@ def build_tip_mass_dfam():
 
 def main():
     tower_shape = build_tower_dfam()
+    tower_base_shape = build_tower_base_dfam()
+    tower_upper_shape = build_tower_upper_dfam()
     cap_shape = build_tower_cap_dfam()
     arm_shape = build_horizontal_arm_dfam()
     axle_shape = build_pivot_axle_dfam()
@@ -346,6 +463,8 @@ def main():
 
     for pname, shp in [
         ("Base_Torre_Furuta", tower_shape),
+        ("Base_Inferior_Torre_Furuta", tower_base_shape),
+        ("Torre_Superior_Motor_Furuta", tower_upper_shape),
         ("Tapa_Motor_Torre_Furuta", cap_shape),
         ("Brazo_Horizontal_L88", arm_shape),
         ("Eje_Portaiman_Pendulo", axle_shape),
@@ -411,8 +530,24 @@ def main():
         pen_pcb_screws.append(head.fuse(shank))
     pen_pcb_screws_shape = Part.Compound(pen_pcb_screws)
 
+    # 4x M3x12 screws joining upper motor tower to lower base pedestal
+    m3_joint_screws = []
+    for px, py in [(-15.0, -15.0), (15.0, -15.0), (-15.0, 15.0), (15.0, 15.0)]:
+        head = Part.makeCylinder(2.75, 3.0, App.Vector(px, py, 75.0), App.Vector(0, 0, 1))
+        shank = Part.makeCylinder(1.50, 12.0, App.Vector(px, py, 63.0), App.Vector(0, 0, 1))
+        m3_joint_screws.append(head.fuse(shank))
+    m3_joint_screws_shape = Part.Compound(m3_joint_screws)
+
     # Full assembly collision verification
     clash_pairs = [
+        ("Tower_Base vs Tower_Upper", tower_base_shape, tower_upper_shape),
+        ("Tower_Upper vs Tapa", tower_upper_shape, cap_shape),
+        ("Tower_Upper vs Motor_Gearbox", tower_upper_shape, motor_shapes["Gearbox_3501PG"]),
+        ("Tower_Upper vs Motor_Housing", tower_upper_shape, motor_shapes["Motor_22CL_Housing"]),
+        ("Tower_Upper vs Acoplador", tower_upper_shape, motor_shapes["Acoplador_Motor_AS5600"]),
+        ("Tower_Upper vs Encoder_Motor", tower_upper_shape, motor_shapes["Encoder_AS5600"]),
+        ("Tower_Base vs Motor_Housing", tower_base_shape, motor_shapes["Motor_22CL_Housing"]),
+        ("Tower_Base vs Encoder_Motor", tower_base_shape, motor_shapes["Encoder_AS5600"]),
         ("Tower vs Tapa", tower_shape, cap_shape),
         ("Tower vs Motor_Gearbox", tower_shape, motor_shapes["Gearbox_3501PG"]),
         ("Tower vs Motor_Housing", tower_shape, motor_shapes["Motor_22CL_Housing"]),
@@ -432,7 +567,7 @@ def main():
     print("=== Furuta DfAM Full Assembly Clash Verification ===")
     for cname, s1, s2 in clash_pairs:
         vol = s1.common(s2).Volume
-        print(f"  {cname:26s}: {vol:.4f} mm^3")
+        print(f"  {cname:30s}: {vol:.4f} mm^3")
         if vol > 1e-3:
             raise RuntimeError(f"Kinematic clash detected in {cname}: {vol:.4f} mm^3")
 
@@ -447,7 +582,9 @@ def main():
         objs.append(o)
         return o
 
-    add_part("Base_Torre_Furuta", "Base Torre Abierta DfAM (Sin Soportes, 156mm)", tower_shape)
+    add_part("Base_Inferior_Torre_Furuta", "Base Inferior Pedestal DfAM (0 Soportes, Z=0..82)", tower_base_shape)
+    add_part("Torre_Superior_Motor_Furuta", "Torre Superior Motor DfAM (0 Soportes, Z=70..156)", tower_upper_shape)
+    add_part("Base_Torre_Furuta", "Base Torre Monolitica DfAM (Alternativa 156mm)", tower_shape)
     add_part("Tapa_Motor_Torre_Furuta", "Tapa Desmontable Motor DfAM (Sin Soportes, Z=152.5..160)", cap_shape)
     add_part("Brazo_Horizontal_L88", "Brazo Horizontal Plano DfAM (Sin Soportes, 41 deg teardrops)", arm_shape)
     add_part("Eje_Portaiman_Pendulo", "Eje Portaiman Pendulo DfAM (Cono 41.2 deg Sin Soportes)", axle_shape)
@@ -462,6 +599,7 @@ def main():
 
     add_part("Tornillos_Motor_M2_Avellanados", "4x Tornillos M2 Avellanados DIN 965", m2_screws_shape)
     add_part("Tornillos_Tapa_M3_Avellanados", "4x Tornillos M3x10 Avellanados DIN 7991", m3_cap_screws_shape)
+    add_part("Tornillos_Union_Torre_M3", "4x Tornillos M3x12 Union Base-Torre", m3_joint_screws_shape)
     add_part("Tornillo_Masa_M3", "Tornillo M3x12 Bloqueo Masa Ajustable", mass_screw_shape)
     add_part("Tornillos_PCB_Pendulo_M3", "4x Tornillos M3x8 Sujecion PCB Pendulo", pen_pcb_screws_shape)
 
@@ -484,6 +622,8 @@ def main():
 
     # Export printable individual parts across cad/01_pendulo_furuta and IMPRESION_3D/02_Pendulo_Furuta
     printable_parts = [
+        ("Base_Inferior_Torre_Furuta", tower_base_shape),
+        ("Torre_Superior_Motor_Furuta", tower_upper_shape),
         ("Base_Torre_Furuta", tower_shape),
         ("Tapa_Motor_Torre_Furuta", cap_shape),
         ("Brazo_Horizontal_L88", arm_shape),

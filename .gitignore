@@ -33,6 +33,7 @@ env/
 *_Completa_Assembly.stl
 Driver_L298N_Real.stl
 Placa_ESP32_Expansion_Real.stl
+impresion.gcode
 
 # Paquetes comprimidos locales
 *.zip
