@@ -12,7 +12,7 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 ├── cad/                              # Modelos CAD paramétricos (FreeCAD 1.1)
 │   ├── 01_pendulo_furuta/            # Ensamblaje completo del péndulo
 │   │   ├── Pendulo_Furuta_Completo.FCStd
-│   │   ├── *.step / *.stl           # Piezas exportadas (6 partes imprimibles)
+│   │   ├── *.step / *.stl           # Piezas exportadas (8 partes imprimibles DfAM)
 │   │   ├── scripts/                  # Scripts de construcción y renderizado
 │   │   └── renders/                  # Vistas renderizadas
 │   ├── 02_motor_namiki_as5600/       # Motor Namiki 22CL + encoder AS5600
@@ -37,10 +37,10 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 │
 ├── IMPRESION_3D/                     # Todo lo necesario para imprimir
 │   ├── 01_Caja_STM32_Nucleo/        # STL/STEP listos para Caja Nucleo
-│   ├── 02_Pendulo_Furuta/            # STL/STEP listos para el péndulo (6 piezas)
+│   ├── 02_Pendulo_Furuta/            # STL/STEP listos para el péndulo (8 piezas)
 │   ├── 03_Caja_L298N/               # STL/STEP listos para Caja L298N
 │   ├── 04_Caja_ESP32/               # STL/STEP listos para Caja ESP32
-│   ├── Placas_Cura_Listas/          # Placas de impresión preconfiguradas
+│   ├── Placas_Cura_Listas/          # Placas de impresión preconfiguradas (7 placas)
 │   │   ├── Proyectos_3MF/           # Proyectos Cura (.3mf) con piezas posicionadas
 │   │   ├── GCode/                   # G-code listo para Anycubic Kobra 2
 │   │   └── Perfiles_Cura/           # Perfiles de impresión (.curaprofile)
@@ -68,11 +68,26 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 
 ## 🖨️ Impresión 3D
 
-Todas las piezas fueron diseñadas con principios **DfAM** (Design for Additive Manufacturing) para minimizar o eliminar soportes.
+Todas las piezas fueron diseñadas bajo estrictos principios **DfAM** (Design for Additive Manufacturing) para garantizar **cero estructuras de soporte (`SUP = 0`)** y cero interferencias cinemáticas ($0.0000\text{ mm}^3$ en 23 pares de ensamble).
+
+### Resumen de Placas de Impresión (Anycubic Kobra 2 — `220 × 220 × 250 mm`)
+
+| Placa | Componentes Incluidos | Tiempo Estimado | Filamento | Soportes | Orientación Clave |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Placa 1** | `Base_Inferior_Torre_Furuta` | `8h 13m 51s` | `107.66 g` | **`SUP = 0`** | Base $120 \times 120\text{ mm}$ plana en cama, espiga coaxial cónica vertical |
+| **Placa 2** | `Torre_Superior_Motor_Furuta` | **`2h 56m 10s`** | **`34.45 g`** | **`SUP = 0`** | **Boca abajo**: brida $52 \times 52\text{ mm}$ en cama, arcos ojivales a $37.8^\circ$ |
+| **Placa 3** | `Brazo_Horizontal_L88`, `Barra_Pendulo`, `Tapa_Motor` | `2h 45m 34s` | `27.42 g` | **`SUP = 0`** | Caras planas continuas apoyadas sobre cama ($0.16\text{ mm}$) |
+| **Placa 4** | `Acoplador_Motor_AS5600`, `Eje_Portaiman`, `Portaiman` | `1h 14m 09s` | `8.60 g` | **`SUP = 0`** | Orientación vertical concéntrica de alta precisión ($0.12\text{ mm}$, 100% infill) |
+| **Placa 5** | `Caja_Base_Nucleo` + `Tapa_Caja_Nucleo` | `3h 13m 55s` | `42.16 g` | **`SUP = 0`** | Tapas invertidas en cama sin soportes |
+| **Placa 6** | `Caja_Base_L298N` + `Tapa_Caja_L298N` | `2h 09m 23s` | `27.68 g` | **`SUP = 0`** | Base plana y tapa invertida |
+| **Placa 7** *(Opcional)* | `Caja_Base_ESP32` + `Tapa_Caja_ESP32` | `2h 54m 27s` | `37.31 g` | **`SUP = 0`** | Carcasa de expansión Wi-Fi / IoT |
+
+- **Total Placas 1 a 6 (Sistema Principal Furuta + Nucleo + L298N):** **`20h 33m 02s`** · **`247.97 g`** (`83.13 m`).
+- **Total Placas 1 a 7 (Incluyendo carcasa opcional ESP32):** **`23h 27m 29s`** · **`285.28 g`** (`95.64 m`).
 
 ### Impresión rápida (G-code listo)
 
-Si tienes una **Anycubic Kobra 2**, puedes imprimir directamente con los G-code precompilados:
+Si tienes una **Anycubic Kobra 2**, puedes copiar directamente los archivos `.gcode` a tu tarjeta microSD desde:
 
 ```
 IMPRESION_3D/Placas_Cura_Listas/GCode/
@@ -87,10 +102,9 @@ IMPRESION_3D/Placas_Cura_Listas/GCode/
 
 ### Impresión personalizada
 
-1. Abre los archivos `.3mf` de `IMPRESION_3D/Placas_Cura_Listas/Proyectos_3MF/` en **UltiMaker Cura 5.x**.
+1. Abre los archivos `.3mf` de `IMPRESION_3D/Placas_Cura_Listas/Proyectos_3MF/` en **UltiMaker Cura 5.x**. Ya vienen pre-centrados con $Z = 0.00\text{ mm}$ (sin elevación ni partes flotantes).
 2. Importa el perfil correspondiente de `Perfiles_Cura/`.
-3. Ajusta parámetros según tu impresora y material.
-4. Consulta la guía completa: [`IMPRESION_3D/GUIA_IMPRESION_3D_CURA.md`](IMPRESION_3D/GUIA_IMPRESION_3D_CURA.md).
+3. Consulta la guía completa: [`IMPRESION_3D/GUIA_IMPRESION_3D_CURA.md`](IMPRESION_3D/GUIA_IMPRESION_3D_CURA.md).
 
 ---
 
@@ -106,7 +120,7 @@ Los modelos se pueden reconstruir desde los archivos `.FCStd` con FreeCAD 1.1 y 
 ### Ejecutar scripts de construcción
 
 ```powershell
-# Péndulo completo (6 piezas imprimibles)
+# Péndulo completo (piezas imprimibles DfAM)
 & "C:\...\FreeCAD 1.1\bin\python.exe" cad/01_pendulo_furuta/scripts/build_furuta_complete.py
 
 # Motor + Encoder

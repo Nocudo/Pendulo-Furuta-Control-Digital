@@ -64,9 +64,16 @@ El montaje mecánico se organiza en 4 módulos integrados desarrollados en FreeC
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
-│ MODULO 1: BASTIDOR MAESTRO (Base_Torre_Furuta)                               │
-│ - Base cuadrada de 120 x 120 x 8 mm con 4 agujeros para pernos M5.           │
-│ - 4 Columnas abiertas (ventanas de 28 x 81 mm) para acceso 360° al cableado. │
+│ MODULO 1: BASTIDOR MAESTRO Y PARTICIÓN MODULAR DfAM                          │
+│ - Opción Monolítica: Base_Torre_Furuta (H = 156.0 mm, base 120 x 120 x 8 mm).│
+│ - Opción Modular DfAM (Recomendada Anycubic Kobra 2, Cero Soportes):         │
+│   • Base_Inferior_Torre_Furuta (Placa 1, Z = 0..82 mm): pedestal macizo con  │
+│     espiga macho coaxial cónica (D31.6 mm x 12 mm, chaflán a 45°) y paso     │
+│     interno de cables D24 mm.                                                │
+│   • Torre_Superior_Motor_Furuta (Placa 2, Z = 70..156 mm): columna superior  │
+│     con barreno hembra D32 mm, 4 ventanas de doble arco ojival a 37.8° y     │
+│     brida de 52 x 52 mm pre-orientada para impresión boca abajo sin soportes.│
+│   • Unión rígida con 4 tornillos M3 accesibles desde las ventanas laterales. │
 │ - 4 Aletas triangulares macizas de refuerzo torsional (R = 55 mm, H = 60 mm).│
 │ - Placa superior de montaje a Z = 156.0 - 160.0 mm con cajera de cuello D10.2│
 └──────────────────────────────────────┬───────────────────────────────────────┘
