@@ -295,42 +295,47 @@ def build_tower_upper_dfam():
 
 def build_tower_cap_dfam():
     """
-    DfAM Removable Motor Cap Plate (52 x 52 mm, Z = 152.0 .. 161.0 mm):
+    DfAM Removable Motor Cap Plate (52 x 52 mm, Z = 151.0 .. 161.0 mm, Total H = 10.0 mm):
     - 5.0 mm plate thickness (Z = 156.0 .. 161.0 mm) requested by user (0.5 cm).
+    - Skirt height = 5.0 mm (Z = 151.0 .. 156.0 mm) with seamless 45° lead-in chamfer.
+    - Motor socket bore: Ø24.8 mm x 5.0 mm deep (leaves floor exactly at Z = 156.0, half the total height).
+    - Internal centering boss pocket: Ø11.5 mm (R=5.75 mm) x 2.5 mm deep (Z = 156.0 .. 158.5 mm, half the plate thickness).
+    - Shaft through-hole: Ø6.0 mm (R=3.0 mm) through to Z = 161.5 mm.
     - 4x M2 DIN 965 countersunk motor holes rotated 45° to cardinal axes:
       (0.0, 8.50), (8.50, 0.0), (0.0, -8.50), (-8.50, 0.0) at R = 8.50 mm.
       This aligns the motor wiring terminals directly with the tower's 28 mm side windows.
-    - Deepened & enlarged inner centering boss pocket: Ø11.5 mm (R=5.75 mm), 3.6 mm deep (Z = 155.9 .. 159.5 mm)
-      leaving 1.5 mm solid ceiling to Z = 161.0, preventing binding from FDM shrinkage or bearing snouts.
-    - Inner skirt clearance expanded to Ø24.8 mm (R=12.4 mm) x 4.0 mm depth (Z = 152.0 .. 156.0 mm) with 45° chamfer.
-    - Printed inverted (Z=161.0 on bed): 0 supports needed.
+    - 4x M3 DIN 7991 countersunk tower clamping holes at (±19.5, ±19.5 mm).
+    - 100% support-free when printed inverted on bed (Z=161.0 on bed):
+      Zero horizontal downward roofs, zero overhangs steeper than 45° (Cura support warning = 0).
     """
     w_cap = make_rounded_rect_wire(0.0, 0.0, 26.0, 26.0, 3.0, Z_MOTOR_FACE)
-    cap = Part.Face(w_cap).extrude(App.Vector(0, 0, Z_CAP_TOP - Z_MOTOR_FACE))
+    plate = Part.Face(w_cap).extrude(App.Vector(0, 0, Z_CAP_TOP - Z_MOTOR_FACE))
 
-    # Downward cylindrical locating rabbet skirt (drops coaxially into Ø32.0 tower bore)
-    skirt_out = Part.makeCylinder(15.75, 4.0, App.Vector(0, 0, 152.0), App.Vector(0, 0, 1))
-    # Lead-in bevel on bottom tip of rabbet skirt (45 deg)
-    bevel_cut = Part.makeCone(14.75, 16.0, 1.25, App.Vector(0, 0, 151.99), App.Vector(0, 0, 1))
-    skirt_chamf = skirt_out.common(bevel_cut.fuse(Part.makeCylinder(16.0, 3.0, App.Vector(0, 0, 153.25), App.Vector(0, 0, 1))))
-    skirt_in = Part.makeCylinder(12.40, 4.5, App.Vector(0, 0, 151.8), App.Vector(0, 0, 1))
-    cap = cap.fuse(skirt_chamf.cut(skirt_in))
+    # Skirt outer: R=15.75 mm (Ø31.5 mm) with seamless 45° lead-in chamfer (1.0 mm) at tip
+    Z_SKIRT_BOT = 151.0
+    skirt_cone = Part.makeCone(14.75, 15.75, 1.0, App.Vector(0, 0, Z_SKIRT_BOT), App.Vector(0, 0, 1))
+    skirt_cyl = Part.makeCylinder(15.75, Z_MOTOR_FACE - (Z_SKIRT_BOT + 1.0), App.Vector(0, 0, Z_SKIRT_BOT + 1.0), App.Vector(0, 0, 1))
+    skirt_solid = skirt_cone.fuse(skirt_cyl)
+    cap = plate.fuse(skirt_solid)
 
-    # Motor centering boss pocket & shaft clearance bore
-    boss_pocket = Part.makeCylinder(5.75, 3.6, App.Vector(0, 0, Z_MOTOR_FACE - 0.1), App.Vector(0, 0, 1))
+    # Motor socket bore: Ø24.8 mm x 5.0 mm depth (half total height = 5.0 mm)
+    motor_bore = Part.makeCylinder(12.40, 5.05, App.Vector(0, 0, Z_SKIRT_BOT - 0.02), App.Vector(0, 0, 1))
+    # Centering boss pocket: Ø11.5 mm x 2.5 mm depth (half plate thickness = 2.5 mm)
+    boss_pocket = Part.makeCylinder(5.75, 2.55, App.Vector(0, 0, Z_MOTOR_FACE - 0.02), App.Vector(0, 0, 1))
+    # Shaft clearance bore through to the top
     shaft_hole = Part.makeCylinder(3.00, 6.0, App.Vector(0, 0, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
-    cap = cap.cut(boss_pocket).cut(shaft_hole)
+    cap = cap.cut(motor_bore).cut(boss_pocket).cut(shaft_hole)
 
     # 4x M2 DIN 965 countersunk motor holes (flush at Z=161.0, rotated 45 deg to principal axes)
     for mx, my in [(0.0, 8.50), (8.50, 0.0), (0.0, -8.50), (-8.50, 0.0)]:
         h_m2 = Part.makeCylinder(1.20, 6.0, App.Vector(mx, my, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
-        cs_m2 = Part.makeCone(1.20, 2.35, 1.35, App.Vector(mx, my, Z_CAP_TOP - 1.35), App.Vector(0, 0, 1))
+        cs_m2 = Part.makeCone(1.20, 2.25, 1.21, App.Vector(mx, my, Z_CAP_TOP - 1.20), App.Vector(0, 0, 1))
         cap = cap.cut(h_m2).cut(cs_m2)
 
     # 4x M3 DIN 7991 countersunk tower clamping holes (flush at Z=161.0)
     for cx, cy in [(-19.5, -19.5), (19.5, -19.5), (-19.5, 19.5), (19.5, 19.5)]:
         h_m3 = Part.makeCylinder(1.65, 6.0, App.Vector(cx, cy, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
-        cs_m3 = Part.makeCone(1.65, 3.45, 2.00, App.Vector(cx, cy, Z_CAP_TOP - 1.98), App.Vector(0, 0, 1))
+        cs_m3 = Part.makeCone(1.65, 3.35, 1.71, App.Vector(cx, cy, Z_CAP_TOP - 1.70), App.Vector(0, 0, 1))
         cap = cap.cut(h_m3).cut(cs_m3)
 
     return cap.removeSplitter()
