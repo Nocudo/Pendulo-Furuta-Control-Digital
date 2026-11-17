@@ -644,7 +644,6 @@ def main():
     printable_parts = [
         ("Base_Inferior_Torre_Furuta", tower_base_shape),
         ("Torre_Superior_Motor_Furuta", tower_upper_shape),
-        ("Base_Torre_Furuta", tower_shape),
         ("Tapa_Motor_Torre_Furuta", cap_shape),
         ("Brazo_Horizontal_L88", arm_shape),
         ("Eje_Portaiman_Pendulo", axle_shape),
