@@ -295,11 +295,12 @@ def build_tower_upper_dfam():
 
 def build_tower_cap_dfam():
     """
-    DfAM Removable Motor Cap Plate (52 x 52 mm, Z = 151.0 .. 161.0 mm, Total H = 10.0 mm):
+    DfAM Removable Motor Cap Plate (52 x 52 mm, Z = 152.5 .. 161.0 mm, Total H = 8.5 mm):
     - 5.0 mm plate thickness (Z = 156.0 .. 161.0 mm) requested by user (0.5 cm).
-    - Skirt height = 5.0 mm (Z = 151.0 .. 156.0 mm) with seamless 45° lead-in chamfer.
-    - Motor socket bore: Ø24.8 mm x 5.0 mm deep (leaves floor exactly at Z = 156.0, half the total height).
-    - Internal centering boss pocket: Ø11.5 mm (R=5.75 mm) x 2.5 mm deep (Z = 156.0 .. 158.5 mm, half the plate thickness).
+    - Skirt height = 3.5 mm (Z = 152.5 .. 156.0 mm) left as before to minimize print time.
+    - Blue circle motor socket: Ø24.8 mm lowered halfway through the 5 mm plate to Z = 158.5 mm
+      (leaving 2.5 mm solid ceiling to Z=161.0 on bed, half the plate height).
+    - Centering boss pocket: Ø11.5 mm (R=5.75 mm) x 1.7 mm deep (Z = 158.5 .. 160.2 mm).
     - Shaft through-hole: Ø6.0 mm (R=3.0 mm) through to Z = 161.5 mm.
     - 4x M2 DIN 965 countersunk motor holes rotated 45° to cardinal axes:
       (0.0, 8.50), (8.50, 0.0), (0.0, -8.50), (-8.50, 0.0) at R = 8.50 mm.
@@ -311,25 +312,26 @@ def build_tower_cap_dfam():
     w_cap = make_rounded_rect_wire(0.0, 0.0, 26.0, 26.0, 3.0, Z_MOTOR_FACE)
     plate = Part.Face(w_cap).extrude(App.Vector(0, 0, Z_CAP_TOP - Z_MOTOR_FACE))
 
-    # Skirt outer: R=15.75 mm (Ø31.5 mm) with seamless 45° lead-in chamfer (1.0 mm) at tip
-    Z_SKIRT_BOT = 151.0
-    skirt_cone = Part.makeCone(14.75, 15.75, 1.0, App.Vector(0, 0, Z_SKIRT_BOT), App.Vector(0, 0, 1))
-    skirt_cyl = Part.makeCylinder(15.75, Z_MOTOR_FACE - (Z_SKIRT_BOT + 1.0), App.Vector(0, 0, Z_SKIRT_BOT + 1.0), App.Vector(0, 0, 1))
+    # Skirt outer: R=15.75 mm (Ø31.5 mm) with seamless 45° lead-in chamfer (0.75 mm) at tip
+    Z_SKIRT_BOT = 152.5
+    Z_POCKET_FLOOR = 158.5
+    skirt_cone = Part.makeCone(15.00, 15.75, 0.75, App.Vector(0, 0, Z_SKIRT_BOT), App.Vector(0, 0, 1))
+    skirt_cyl = Part.makeCylinder(15.75, Z_MOTOR_FACE - (Z_SKIRT_BOT + 0.75), App.Vector(0, 0, Z_SKIRT_BOT + 0.75), App.Vector(0, 0, 1))
     skirt_solid = skirt_cone.fuse(skirt_cyl)
     cap = plate.fuse(skirt_solid)
 
-    # Motor socket bore: Ø24.8 mm x 5.0 mm depth (half total height = 5.0 mm)
-    motor_bore = Part.makeCylinder(12.40, 5.05, App.Vector(0, 0, Z_SKIRT_BOT - 0.02), App.Vector(0, 0, 1))
-    # Centering boss pocket: Ø11.5 mm x 2.5 mm depth (half plate thickness = 2.5 mm)
-    boss_pocket = Part.makeCylinder(5.75, 2.55, App.Vector(0, 0, Z_MOTOR_FACE - 0.02), App.Vector(0, 0, 1))
+    # Blue circle motor socket bore: Ø24.8 mm lowered halfway through plate (to Z=158.5 mm)
+    motor_bore = Part.makeCylinder(12.40, Z_POCKET_FLOOR - Z_SKIRT_BOT + 0.02, App.Vector(0, 0, Z_SKIRT_BOT - 0.01), App.Vector(0, 0, 1))
+    # Centering boss pocket: Ø11.5 mm x 1.7 mm depth (Z = 158.5 .. 160.2 mm)
+    boss_pocket = Part.makeCylinder(5.75, 1.72, App.Vector(0, 0, Z_POCKET_FLOOR - 0.01), App.Vector(0, 0, 1))
     # Shaft clearance bore through to the top
-    shaft_hole = Part.makeCylinder(3.00, 6.0, App.Vector(0, 0, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
+    shaft_hole = Part.makeCylinder(3.00, 6.0, App.Vector(0, 0, Z_POCKET_FLOOR - 0.1), App.Vector(0, 0, 1))
     cap = cap.cut(motor_bore).cut(boss_pocket).cut(shaft_hole)
 
     # 4x M2 DIN 965 countersunk motor holes (flush at Z=161.0, rotated 45 deg to principal axes)
     for mx, my in [(0.0, 8.50), (8.50, 0.0), (0.0, -8.50), (-8.50, 0.0)]:
-        h_m2 = Part.makeCylinder(1.20, 6.0, App.Vector(mx, my, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
-        cs_m2 = Part.makeCone(1.20, 2.25, 1.21, App.Vector(mx, my, Z_CAP_TOP - 1.20), App.Vector(0, 0, 1))
+        h_m2 = Part.makeCylinder(1.20, 6.0, App.Vector(mx, my, Z_POCKET_FLOOR - 0.5), App.Vector(0, 0, 1))
+        cs_m2 = Part.makeCone(1.20, 2.25, 1.20, App.Vector(mx, my, Z_CAP_TOP - 1.20), App.Vector(0, 0, 1))
         cap = cap.cut(h_m2).cut(cs_m2)
 
     # 4x M3 DIN 7991 countersunk tower clamping holes (flush at Z=161.0)
