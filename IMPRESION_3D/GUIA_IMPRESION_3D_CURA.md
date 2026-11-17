@@ -34,8 +34,8 @@ La torre principal se dividió mecánicamente en el plano **$Z = 70.0\text{ mm}$
    - **Taladros y alojamientos de tornillos autoportantes**: 4 taladros pasantes de $\varnothing 3.4\text{ mm}$ en las esquinas $(\pm 15.0, \pm 15.0\text{ mm})$ para fijación con tornillos M3 a la base inferior, y 4 orificios guía de centrado de motor con terminaciones cónicas a $34^\circ$ ($Z = 141..143\text{ mm}$), garantizando cero techos planos ciegos.
    - Slicing 100% autoportante (**`SUP = 0`**, cero soportes generados).
 
-3. **[Tapa_Motor_Torre_Furuta](02_Pendulo_Furuta/Tapa_Motor_Torre_Furuta.step) (`52 × 52 × 7.5 mm`, Placa 3)**:
-   - Tapa desmontable de sujeción del motor Namiki 22CL con faldón cilíndrico de centrado y avellanados para 4 tornillos M3 (a torre) y 4 tornillos M2 (a motor). Se imprime en la Placa 3 junto al brazo y la barra.
+3. **[Tapa_Motor_Torre_Furuta](02_Pendulo_Furuta/Tapa_Motor_Torre_Furuta.step) (`52 × 52 × 9.0 mm`, placa de 5.0 mm, Placa 3)**:
+   - Tapa desmontable de sujeción del motor Namiki 22CL con placa de $5.0\text{ mm}$ de espesor ($0.5\text{ cm}$), faldón cilíndrico de centrado de $4.0\text{ mm}$ ($\varnothing 31.5/\varnothing 24.8\text{ mm}$ con chaflán autoportante a $45^\circ$), 4 orificios avellanados M2 para el motor rotados $45^\circ$ hacia los ejes principales $(0, \pm 8.5)$ y $(\pm 8.5, 0)$ para direccionar el cableado directamente hacia las ventanas laterales de la torre, y cajera cilíndrica central ensanchada y profundizada ($\varnothing 11.5\text{ mm} \times 3.5\text{ mm}$ de profundidad) para eliminar holguras o bloqueos por contracción FDM contra el cuello del reductor. Se imprime boca abajo sobre su cara plana en la Placa 3 (**`SUP = 0`**, 0 soportes).
 
 4. **[Brazo_Horizontal_L88](02_Pendulo_Furuta/Brazo_Horizontal_L88.step) (`87.5 × 28.0 × 39.3 mm`, Placa 3)**:
    - Base inferior totalmente plana apoyada sobre la cama, chaflanes progresivos y transiciones con pendiente autoportante (`≤ 44.5°`).
@@ -105,9 +105,9 @@ Debido al diseño modular DfAM sin soportes, el ensamble de la torre requiere la
    - **`4×` tornillos M3 $\times$ 12 mm o M3 $\times$ 16 mm** (cabeza cilíndrica DIN 912 o botón ISO 7380).
    - Se introducen a través de las 4 ventanas laterales abiertas de la torre superior y se atornillan verticalmente hacia abajo con llave Allen en los orificios guía de $\varnothing 2.6\text{ mm}$ del pedestal base.
 2. **Fijación Tapa Motor ↔ Torre Superior (Placas 2 y 3):**
-   - **`4×` tornillos avellanados M3 $\times$ 10 mm (DIN 7991)** en los alojamientos cónicos a $90^\circ$ de la tapa (quedan al ras debajo de $Z = 160.0\text{ mm}$).
+   - **`4×` tornillos avellanados M3 $\times$ 10 mm (DIN 7991)** en los alojamientos cónicos a $90^\circ$ de la tapa (quedan al ras debajo de $Z = 161.0\text{ mm}$).
 3. **Fijación Motor Namiki ↔ Tapa Motor:**
-   - **`4×` tornillos avellanados M2 (DIN 965)** para garantizar que ninguna cabeza sobresalga por encima de $Z = 160.0\text{ mm}$ y mantener intacta la luz libre de $2.5\text{ mm}$ respecto a `Brazo_Horizontal_L88`.
+   - **`4×` (o `2×`) tornillos avellanados M2 (DIN 965)** en los orificios rotados $45^\circ$ hacia los ejes cardinales $(0, \pm 8.5)$ y $(\pm 8.5, 0)$, garantizando que ninguna cabeza sobresalga por encima de $Z = 161.0\text{ mm}$ y manteniendo una luz libre de $1.50\text{ mm}$ respecto a la cara inferior plana de `Brazo_Horizontal_L88` ($Z = 162.5\text{ mm}$) con cero fricción.
 4. **Fijación Base Pedestal ↔ Banco de Trabajo:**
    - **`4×` tornillos M5** pasantes por los 4 taladros de las esquinas $(\pm 48.0, \pm 48.0\text{ mm})$.
 

@@ -12,7 +12,7 @@ IMPRESION_FURUTA_DIR = os.path.join(ROOT_DIR, "IMPRESION_3D", "02_Pendulo_Furuta
 
 # Core kinematic datum heights (preserve Z_MOTOR_FACE=156.0 & Z_PIVOT=182.8)
 Z_MOTOR_FACE = 156.0
-Z_CAP_TOP = 160.0
+Z_CAP_TOP = 161.0
 Z_ARM_BOT = 162.5
 Z_ARM_TOP = 171.5
 Z_PIVOT = 182.8
@@ -295,35 +295,41 @@ def build_tower_upper_dfam():
 
 def build_tower_cap_dfam():
     """
-    DfAM Removable Motor Cap Plate (52 x 52 mm, Z = 152.5 .. 160.0 mm):
-    - Printed inverted (Z=160.0 on bed): locating skirt (Ø31.5 OD / Ø24.0 ID) points UP,
-      countersunk conical walls taper inward 40-42 deg upward => 0 supports.
+    DfAM Removable Motor Cap Plate (52 x 52 mm, Z = 152.0 .. 161.0 mm):
+    - 5.0 mm plate thickness (Z = 156.0 .. 161.0 mm) requested by user (0.5 cm).
+    - 4x M2 DIN 965 countersunk motor holes rotated 45° to cardinal axes:
+      (0.0, 8.50), (8.50, 0.0), (0.0, -8.50), (-8.50, 0.0) at R = 8.50 mm.
+      This aligns the motor wiring terminals directly with the tower's 28 mm side windows.
+    - Deepened & enlarged inner centering boss pocket: Ø11.5 mm (R=5.75 mm), 3.6 mm deep (Z = 155.9 .. 159.5 mm)
+      leaving 1.5 mm solid ceiling to Z = 161.0, preventing binding from FDM shrinkage or bearing snouts.
+    - Inner skirt clearance expanded to Ø24.8 mm (R=12.4 mm) x 4.0 mm depth (Z = 152.0 .. 156.0 mm) with 45° chamfer.
+    - Printed inverted (Z=161.0 on bed): 0 supports needed.
     """
     w_cap = make_rounded_rect_wire(0.0, 0.0, 26.0, 26.0, 3.0, Z_MOTOR_FACE)
     cap = Part.Face(w_cap).extrude(App.Vector(0, 0, Z_CAP_TOP - Z_MOTOR_FACE))
 
     # Downward cylindrical locating rabbet skirt (drops coaxially into Ø32.0 tower bore)
-    skirt_out = Part.makeCylinder(15.75, 3.6, App.Vector(0, 0, 152.5), App.Vector(0, 0, 1))
+    skirt_out = Part.makeCylinder(15.75, 4.0, App.Vector(0, 0, 152.0), App.Vector(0, 0, 1))
     # Lead-in bevel on bottom tip of rabbet skirt (45 deg)
-    bevel_cut = Part.makeCone(14.95, 16.0, 1.05, App.Vector(0, 0, 152.49), App.Vector(0, 0, 1))
-    skirt_chamf = skirt_out.common(bevel_cut.fuse(Part.makeCylinder(16.0, 3.0, App.Vector(0, 0, 153.5), App.Vector(0, 0, 1))))
-    skirt_in = Part.makeCylinder(12.00, 4.0, App.Vector(0, 0, 152.3), App.Vector(0, 0, 1))
+    bevel_cut = Part.makeCone(14.75, 16.0, 1.25, App.Vector(0, 0, 151.99), App.Vector(0, 0, 1))
+    skirt_chamf = skirt_out.common(bevel_cut.fuse(Part.makeCylinder(16.0, 3.0, App.Vector(0, 0, 153.25), App.Vector(0, 0, 1))))
+    skirt_in = Part.makeCylinder(12.40, 4.5, App.Vector(0, 0, 151.8), App.Vector(0, 0, 1))
     cap = cap.fuse(skirt_chamf.cut(skirt_in))
 
     # Motor centering boss pocket & shaft clearance bore
-    boss_pocket = Part.makeCylinder(5.15, 2.0, App.Vector(0, 0, Z_MOTOR_FACE - 0.1), App.Vector(0, 0, 1))
-    shaft_hole = Part.makeCylinder(3.00, 5.0, App.Vector(0, 0, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
+    boss_pocket = Part.makeCylinder(5.75, 3.6, App.Vector(0, 0, Z_MOTOR_FACE - 0.1), App.Vector(0, 0, 1))
+    shaft_hole = Part.makeCylinder(3.00, 6.0, App.Vector(0, 0, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
     cap = cap.cut(boss_pocket).cut(shaft_hole)
 
-    # 4x M2 DIN 965 countersunk motor holes (flush below Z=160.0)
-    for mx, my in [(-6.01, -6.01), (6.01, -6.01), (-6.01, 6.01), (6.01, 6.01)]:
-        h_m2 = Part.makeCylinder(1.15, 5.0, App.Vector(mx, my, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
-        cs_m2 = Part.makeCone(1.15, 2.35, 1.40, App.Vector(mx, my, Z_CAP_TOP - 1.38), App.Vector(0, 0, 1))
+    # 4x M2 DIN 965 countersunk motor holes (flush at Z=161.0, rotated 45 deg to principal axes)
+    for mx, my in [(0.0, 8.50), (8.50, 0.0), (0.0, -8.50), (-8.50, 0.0)]:
+        h_m2 = Part.makeCylinder(1.20, 6.0, App.Vector(mx, my, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
+        cs_m2 = Part.makeCone(1.20, 2.35, 1.35, App.Vector(mx, my, Z_CAP_TOP - 1.35), App.Vector(0, 0, 1))
         cap = cap.cut(h_m2).cut(cs_m2)
 
-    # 4x M3 DIN 7991 countersunk tower clamping holes (flush below Z=160.0)
+    # 4x M3 DIN 7991 countersunk tower clamping holes (flush at Z=161.0)
     for cx, cy in [(-19.5, -19.5), (19.5, -19.5), (-19.5, 19.5), (19.5, 19.5)]:
-        h_m3 = Part.makeCylinder(1.65, 5.0, App.Vector(cx, cy, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
+        h_m3 = Part.makeCylinder(1.65, 6.0, App.Vector(cx, cy, Z_MOTOR_FACE - 0.5), App.Vector(0, 0, 1))
         cs_m3 = Part.makeCone(1.65, 3.45, 2.00, App.Vector(cx, cy, Z_CAP_TOP - 1.98), App.Vector(0, 0, 1))
         cap = cap.cut(h_m3).cut(cs_m3)
 
@@ -515,7 +521,7 @@ def main():
 
     # Fasteners
     m2_screws = []
-    for hx, hy in [(-6.01, -6.01), (6.01, -6.01), (-6.01, 6.01), (6.01, 6.01)]:
+    for hx, hy in [(0.0, 8.50), (8.50, 0.0), (0.0, -8.50), (-8.50, 0.0)]:
         head = Part.makeCone(1.1, 1.9, 1.2, App.Vector(hx, hy, Z_CAP_TOP - 1.2), App.Vector(0, 0, 1))
         shank = Part.makeCylinder(1.0, 6.0, App.Vector(hx, hy, Z_CAP_TOP - 1.2), App.Vector(0, 0, -1))
         m2_screws.append(head.fuse(shank))
@@ -594,7 +600,7 @@ def main():
     add_part("Base_Inferior_Torre_Furuta", "Base Inferior Pedestal DfAM (0 Soportes, Z=0..82)", tower_base_shape)
     add_part("Torre_Superior_Motor_Furuta", "Torre Superior Motor DfAM (0 Soportes, Z=70..156)", tower_upper_shape)
     add_part("Base_Torre_Furuta", "Base Torre Monolitica DfAM (Alternativa 156mm)", tower_shape)
-    add_part("Tapa_Motor_Torre_Furuta", "Tapa Desmontable Motor DfAM (Sin Soportes, Z=152.5..160)", cap_shape)
+    add_part("Tapa_Motor_Torre_Furuta", "Tapa Desmontable Motor DfAM (Sin Soportes, Z=152.0..161, 5mm)", cap_shape)
     add_part("Brazo_Horizontal_L88", "Brazo Horizontal Plano DfAM (Sin Soportes, 41 deg teardrops)", arm_shape)
     add_part("Eje_Portaiman_Pendulo", "Eje Portaiman Pendulo DfAM (Cono 41.2 deg Sin Soportes)", axle_shape)
     add_part("Barra_Pendulo_Furuta", "Barra del Pendulo Plana DfAM (Sin Soportes)", pendulum_shape)
@@ -657,5 +663,4 @@ def main():
     print("=== ALL FURUTA DFAM CAD MODELS GENERATED, CLASH-TESTED & SYNCED ===")
 
 
-if __name__ == "__main__":
-    main()
+main()
