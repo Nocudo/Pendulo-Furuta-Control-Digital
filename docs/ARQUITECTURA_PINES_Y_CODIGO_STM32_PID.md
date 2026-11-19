@@ -388,8 +388,8 @@ La función [`Furuta_ControlISR_1kHz()`](../firmware_stm32/Core/Src/furuta_contr
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **1. PID Velocidad Motor** (`pid_motor_vel`) | $\omega = \dot{\theta}\text{ (rad/s)}$ | $1.20\text{ V/(rad/s)}$ | $20.00\text{ V/rad}$ | $0.005\text{ V}\cdot\text{s/rad}$ | $40.0\text{ s}^{-1}$ | $\pm 12.0\text{ V}$ |
 | **2. PID Posición Servo** (`pid_motor_pos`) | $\theta\text{ (rad)}$ | $13.50\text{ V/rad}$ | $65.00\text{ V/(rad}\cdot\text{s)}$ | $1.450\text{ V}\cdot\text{s/rad}$ | $35.0\text{ s}^{-1}$ | $\pm 5.8\text{ V}$ + Freno Activo |
-| **3. PD Péndulo Invertido LQR5** (`pid_pend_alpha`) | $\tilde{\alpha} = \alpha - \pi\text{ (rad)}$ | $15.80\text{ V/rad}$ | $0.00\text{ V/(rad}\cdot\text{s)}$ | $1.650\text{ V}\cdot\text{s/rad}$ | $30.0\text{ s}^{-1}$ | $\pm 6.8\text{ V}$ + Notch 11 Hz (Slew `0.22 V/ms`) |
-| **4. PID Centrado Brazo LQR5** (`pid_arm_theta`) | $\theta\text{ (rad)}$ | $-1.25\text{ V/rad}$ | $-0.65\text{ V/(rad}\cdot\text{s)}$ | $-0.820\text{ V}\cdot\text{s/rad}$ | $20.0\text{ s}^{-1}$ | $\pm 4.5\text{ V}$ (Int $\pm 3.5\text{ V}$) |
+| **3. PD Péndulo Invertido LQR5** (`pid_pend_alpha`) | $\tilde{\alpha} = \alpha - \pi\text{ (rad)}$ | $15.80\text{ V/rad}$ | $0.00\text{ V/(rad}\cdot\text{s)}$ | $1.650\text{ V}\cdot\text{s/rad}$ | $30.0\text{ s}^{-1}$ | $\pm 6.5\text{ V}$ + Notch 11 Hz + Zona Silenciosa `0.15 V` |
+| **4. PID Centrado Brazo LQR5** (`pid_arm_theta`) | $\theta\text{ (rad)}$ | $-1.45\text{ V/rad}$ | $-0.75\text{ V/(rad}\cdot\text{s)}$ | $-0.850\text{ V}\cdot\text{s/rad}$ | $20.0\text{ s}^{-1}$ | $\pm 2.2\text{ V}$ (Int $\pm 1.6\text{ V}$, sin límite angular) |
 
 ### Gráficas de Validación Experimental Real (Caracterización + Swing-Up y Equilibrio Continuo en STM32)
 

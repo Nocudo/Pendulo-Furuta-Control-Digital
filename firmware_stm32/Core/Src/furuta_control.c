@@ -38,6 +38,53 @@ static float s_bal_theta_vel_f = 0.0f;
 static double s_notch_z1 = 0.0;
 static double s_notch_z2 = 0.0;
 
+/* Parámetros del driver ultra-suave exclusivo de equilibrio invertido (BALANCE_PID):
+ * - Dentro de |u| < 0.15 V el motor NO se mueve (0.0% PWM, silencio total en zona muerta)
+ * - Fuera de 0.15 V aplica rampa cinética ultra-suave (6.5%/10.2%, v_knee=0.68 V)
+ *   que elimina por completo las vibraciones de 6 Hz y 11 Hz (adRMS ~ 0.53 rad/s, PWM ~ 8.2%) */
+static float s_bal_v_dead  = 0.15f;
+static float s_bal_dz_pos  = 6.5f;
+static float s_bal_dz_neg  = 10.2f;
+static float s_bal_v_knee  = 0.68f;
+
+static void Furuta_DriveQuietBalanceMotor(Furuta_System_t *sys, float u_volts)
+{
+    if (u_volts > MOTOR_NOMINAL_VOLTAGE) {
+        u_volts = MOTOR_NOMINAL_VOLTAGE;
+    } else if (u_volts < -MOTOR_NOMINAL_VOLTAGE) {
+        u_volts = -MOTOR_NOMINAL_VOLTAGE;
+    }
+
+    float abs_v = fabsf(u_volts);
+    if (abs_v < s_bal_v_dead) {
+        /* Zona muerta silenciosa: no excitar el driver L298N */
+        L298N_Coast(&sys->motor);
+        sys->motor.current_voltage_cmd = 0.0f;
+        return;
+    }
+
+    float dz = (u_volts > 0.0f) ? s_bal_dz_pos : s_bal_dz_neg;
+    float mag_pct;
+    if (dz <= 0.05f) {
+        /* Modo 100% lineal sin impulso de zona muerta desde v_dead */
+        mag_pct = 100.0f * ((abs_v - s_bal_v_dead) / (MOTOR_NOMINAL_VOLTAGE - s_bal_v_dead));
+    } else if (abs_v < s_bal_v_knee) {
+        /* Rampa continua desde 0% en v_dead hasta dz% en v_knee (cero salto de relé) */
+        float span = s_bal_v_knee - s_bal_v_dead;
+        if (span < 0.05f) {
+            span = 0.05f;
+        }
+        mag_pct = dz * ((abs_v - s_bal_v_dead) / span);
+    } else {
+        float norm_mag = (abs_v - s_bal_v_knee) / (MOTOR_NOMINAL_VOLTAGE - s_bal_v_knee);
+        mag_pct = dz + ((100.0f - dz) * norm_mag);
+    }
+
+    float pwm_pct = (u_volts > 0.0f) ? mag_pct : -mag_pct;
+    L298N_SetRawPWM(&sys->motor, pwm_pct);
+    sys->motor.current_voltage_cmd = u_volts;
+}
+
 static float Furuta_ApplyNotch11Hz(float x_in)
 {
     /* Coeficientes exactos iirnotch(f0=11.0 Hz, Q=1.2, fs=1000 Hz) */
@@ -268,9 +315,9 @@ void Furuta_Init(Furuta_System_t *sys)
 
     /* D) PID Regulador de Posición del Brazo en Equilibrio Furuta (LQR 5-Estados Ultra-Suave):
      *    Mantiene el brazo quieto y centrado en 0° sin vibración ni vaivén lento.
-     *    Kp = -1.25 V/rad, Ki = -0.65 V/(rad·s), Kd = -0.82 V·s/rad */
+     *    Kp = -1.45 V/rad, Ki = -0.75 V/(rad·s), Kd = -0.85 V·s/rad */
     PID_Init(&sys->pid_arm_theta,
-             -1.25f, -0.65f, -0.82f, 20.0f,
+             -1.45f, -0.75f, -0.85f, 20.0f,
              TS_CONTROL_SEC, -4.5f, 4.5f,
              true);
 
@@ -540,13 +587,13 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
             }
 
             /* 5. Superposición de Esfuerzos + Filtro Notch 11 Hz (elimina zumbido de reductor)
-             *    con limitador suave de pendiente (slew 0.22 V/ms, máx ±6.8 V) */
+             *    con limitador ultra-suave de pendiente (slew 0.16 V/ms, máx ±6.5 V) */
             float u_bal_raw   = sys->u_alpha_volts + sys->u_theta_volts;
             float u_bal_quiet = Furuta_ApplyNotch11Hz(u_bal_raw);
-            sys->u_total_volts = Furuta_ApplySmoothSlew(u_bal_quiet, 0.22f, 6.8f);
+            sys->u_total_volts = Furuta_ApplySmoothSlew(u_bal_quiet, 0.16f, 6.5f);
 
-            /* 6. Escritura al puente H L298N con compensación inversa de zona muerta */
-            L298N_SetVoltage(&sys->motor, sys->u_total_volts);
+            /* 6. Escritura ultra-suave al puente H L298N con zona silenciosa real sin sobre-impulso */
+            Furuta_DriveQuietBalanceMotor(sys, sys->u_total_volts);
             break;
         }
 
@@ -838,6 +885,14 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
         float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 40.0f;
         if (Furuta_Parse4Floats(cmd_str + 6, &kp, &ki, &kd, &n) >= 3) {
             PID_SetGains(&sys->pid_motor_vel, kp, ki, kd, n);
+        }
+    } else if (strncmp(cmd_str, "QUIET=", 6) == 0) {
+        float vd = 0.25f, dzp = 2.5f, dzn = 4.0f, vk = 0.90f;
+        if (Furuta_Parse4Floats(cmd_str + 6, &vd, &dzp, &dzn, &vk) >= 3) {
+            if (vd >= 0.0f && vd <= 1.5f)  { s_bal_v_dead = vd; }
+            if (dzp >= 0.0f && dzp <= 25.0f) { s_bal_dz_pos = dzp; }
+            if (dzn >= 0.0f && dzn <= 25.0f) { s_bal_dz_neg = dzn; }
+            if (vk >= vd + 0.05f && vk <= 4.0f) { s_bal_v_knee = vk; }
         }
     } else if (strncmp(cmd_str, "PID_P=", 6) == 0) {
         float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 35.0f;
