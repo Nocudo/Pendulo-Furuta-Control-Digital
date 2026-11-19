@@ -1,99 +1,99 @@
 {
   "hardware_measured": "STM32 Nucleo-F446RE (COM13) + Driver L298N + Motor Namiki 22CL-3501PG + 2x AS5600",
   "deadzone_experimental": {
-    "pwm_deadzone_pos_detected_pct": 17.0,
-    "pwm_deadzone_neg_detected_pct": 20.0,
-    "pwm_deadzone_dynamic_fit_pct": 4.45,
-    "v_deadzone_dynamic_fit_V": 0.534
+    "pwm_deadzone_pos_detected_pct": 7.0,
+    "pwm_deadzone_neg_detected_pct": 18.0,
+    "pwm_deadzone_dynamic_fit_pct": 12.59,
+    "v_deadzone_dynamic_fit_V": 1.511
   },
   "identified_motor_model": {
     "gearbox_ratio": 80.0,
     "encoder_mounting": "Eje trasero del rotor (antes del reductor 80:1), polaridad direction = -1",
-    "Km_rotor_eff_rad_s_per_V": 296.082,
-    "Km_rotor_nominal_rad_s_per_V": 213.018,
-    "Km_arm_eff_rad_s_per_V": 3.701,
-    "Km_arm_nominal_rad_s_per_V": 2.6627,
-    "tau_m_accel_ms": 125.91,
-    "tau_m_coast_ms": 112.71,
-    "tau_m_mean_sec": 0.1193,
-    "Gv_rotor_s": "296.08 / (0.1193 s + 1)",
-    "Gv_brazo_s": "3.7010 / (0.1193 s + 1)",
-    "Gp_brazo_s": "3.7010 / (s * (0.1193 s + 1))",
-    "r2_coefficient_of_determination": 0.9834,
-    "nrmse_fit_pct": 87.11
+    "Km_rotor_eff_rad_s_per_V": 493.55,
+    "Km_rotor_nominal_rad_s_per_V": 227.924,
+    "Km_arm_eff_rad_s_per_V": 6.1694,
+    "Km_arm_nominal_rad_s_per_V": 2.849,
+    "tau_m_accel_ms": 165.82,
+    "tau_m_coast_ms": 110.43,
+    "tau_m_mean_sec": 0.1381,
+    "Gv_rotor_s": "493.55 / (0.1381 s + 1)",
+    "Gv_brazo_s": "6.1694 / (0.1381 s + 1)",
+    "Gp_brazo_s": "6.1694 / (s * (0.1381 s + 1))",
+    "r2_coefficient_of_determination": 0.9284,
+    "nrmse_fit_pct": 73.24
   },
   "step_by_step_measurements": [
     {
       "pwm_pct": 20.0,
       "u_volts": 2.4,
       "duration_ms": 170.0,
-      "omega_rotor_peak_rad_s": 391.58,
-      "omega_rotor_ss_fit_rad_s": 497.32,
-      "omega_arm_ss_fit_rad_s": 6.2165,
-      "tau_m_ms": 110.75
+      "omega_rotor_peak_rad_s": 452.88,
+      "omega_rotor_ss_fit_rad_s": 666.88,
+      "omega_arm_ss_fit_rad_s": 8.336,
+      "tau_m_ms": 144.14
     },
     {
       "pwm_pct": -20.0,
       "u_volts": -2.4,
       "duration_ms": 170.0,
-      "omega_rotor_peak_rad_s": -419.48,
-      "omega_rotor_ss_fit_rad_s": -571.93,
-      "omega_arm_ss_fit_rad_s": -7.1491,
-      "tau_m_ms": 125.88
+      "omega_rotor_peak_rad_s": -0.22,
+      "omega_rotor_ss_fit_rad_s": -446.08,
+      "omega_arm_ss_fit_rad_s": -5.5761,
+      "tau_m_ms": 1115780.14
     },
     {
       "pwm_pct": 25.0,
       "u_volts": 3.0,
       "duration_ms": 160.0,
-      "omega_rotor_peak_rad_s": 505.59,
-      "omega_rotor_ss_fit_rad_s": 644.24,
-      "omega_arm_ss_fit_rad_s": 8.053,
-      "tau_m_ms": 98.45
+      "omega_rotor_peak_rad_s": 518.54,
+      "omega_rotor_ss_fit_rad_s": 831.51,
+      "omega_arm_ss_fit_rad_s": 10.3938,
+      "tau_m_ms": 155.69
     },
     {
       "pwm_pct": -25.0,
       "u_volts": -3.0,
       "duration_ms": 160.0,
-      "omega_rotor_peak_rad_s": -517.27,
-      "omega_rotor_ss_fit_rad_s": -672.78,
-      "omega_arm_ss_fit_rad_s": -8.4098,
-      "tau_m_ms": 105.25
+      "omega_rotor_peak_rad_s": -484.52,
+      "omega_rotor_ss_fit_rad_s": -647.8,
+      "omega_arm_ss_fit_rad_s": -8.0975,
+      "tau_m_ms": 112.92
     },
     {
       "pwm_pct": 30.0,
       "u_volts": 3.6,
       "duration_ms": 150.0,
-      "omega_rotor_peak_rad_s": 597.54,
-      "omega_rotor_ss_fit_rad_s": 770.84,
-      "omega_arm_ss_fit_rad_s": 9.6355,
-      "tau_m_ms": 95.73
+      "omega_rotor_peak_rad_s": 581.15,
+      "omega_rotor_ss_fit_rad_s": 897.49,
+      "omega_arm_ss_fit_rad_s": 11.2186,
+      "tau_m_ms": 136.78
     },
     {
       "pwm_pct": -30.0,
       "u_volts": -3.6,
       "duration_ms": 150.0,
-      "omega_rotor_peak_rad_s": -599.08,
-      "omega_rotor_ss_fit_rad_s": -767.41,
-      "omega_arm_ss_fit_rad_s": -9.5927,
-      "tau_m_ms": 93.46
+      "omega_rotor_peak_rad_s": -592.7,
+      "omega_rotor_ss_fit_rad_s": -785.79,
+      "omega_arm_ss_fit_rad_s": -9.8224,
+      "tau_m_ms": 100.01
     },
     {
       "pwm_pct": 35.0,
       "u_volts": 4.2,
       "duration_ms": 140.0,
-      "omega_rotor_peak_rad_s": 654.31,
-      "omega_rotor_ss_fit_rad_s": 842.69,
-      "omega_arm_ss_fit_rad_s": 10.5336,
-      "tau_m_ms": 87.32
+      "omega_rotor_peak_rad_s": 657.57,
+      "omega_rotor_ss_fit_rad_s": 853.43,
+      "omega_arm_ss_fit_rad_s": 10.6679,
+      "tau_m_ms": 89.28
     },
     {
       "pwm_pct": -35.0,
       "u_volts": -4.2,
       "duration_ms": 140.0,
-      "omega_rotor_peak_rad_s": -657.86,
-      "omega_rotor_ss_fit_rad_s": -805.07,
-      "omega_arm_ss_fit_rad_s": -10.0633,
-      "tau_m_ms": 79.31
+      "omega_rotor_peak_rad_s": -634.86,
+      "omega_rotor_ss_fit_rad_s": -822.27,
+      "omega_arm_ss_fit_rad_s": -10.2784,
+      "tau_m_ms": 90.31
     }
   ]
 }

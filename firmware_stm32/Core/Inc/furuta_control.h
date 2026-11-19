@@ -26,15 +26,15 @@ extern "C" {
 #include "caracterizacion.h"
 
 /* Umbrales Físicos de Conmutación y Seguridad Suave -------------------------*/
-#define FURUTA_CAPTURE_ANGLE_RAD    (19.0f * DEG_TO_RAD)    /* Conmutación suave a PID: ±19° */
-#define FURUTA_CAPTURE_VEL_RAD_S    4.2f                    /* Velocidad máx suave de captura */
-#define FURUTA_WATCHDOG_ANGLE_RAD   (26.0f * DEG_TO_RAD)    /* Corte de seguridad péndulo: ±26° */
-#define FURUTA_MAX_ARM_ANGLE_RAD    (85.0f * DEG_TO_RAD)    /* Límite estricto de giro brazo: ±85° */
+#define FURUTA_CAPTURE_ANGLE_RAD    (20.0f * DEG_TO_RAD)    /* Conmutación suave a PID: ±20° */
+#define FURUTA_CAPTURE_VEL_RAD_S    4.8f                    /* Velocidad máx suave de captura */
+#define FURUTA_WATCHDOG_ANGLE_RAD   (28.0f * DEG_TO_RAD)    /* Corte de seguridad péndulo: ±28° */
+#define FURUTA_MAX_ARM_ANGLE_RAD    (135.0f * DEG_TO_RAD)   /* Límite seguro de giro brazo: ±135° */
 
 /* Parámetros Físicos Identificados del Péndulo para el Bombeo (Swing-Up) ----*/
 #define FURUTA_M1_KG                0.024f                  /* Masa efectiva péndulo (kg) */
 #define FURUTA_L1_M                 0.068f                  /* Distancia al CM l1 (m) */
-#define FURUTA_J1_PIVOT             0.0002609f              /* Inercia en pivote medida (kg·m^2) */
+#define FURUTA_J1_PIVOT             0.0002104f              /* Inercia en pivote medida con nuevo peso (kg·m^2) */
 #define FURUTA_GRAVITY              9.80665f                /* Gravedad (m/s^2) */
 #define FURUTA_SWINGUP_KE           240.0f                  /* Ganancia bombeo Lyapunov */
 #define FURUTA_SWINGUP_KV_ARM       1.10f                   /* Amortiguamiento centrado brazo */

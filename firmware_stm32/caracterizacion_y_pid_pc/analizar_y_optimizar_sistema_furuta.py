@@ -44,7 +44,7 @@ def identify_pendulum_and_coupling(sys_csv_path, mot_json_path):
     u_volts = data[:, 3]
     theta_arm = data[:, 4]
     omega_arm = data[:, 5]
-    alpha_pend = data[:, 6]
+    alpha_pend = data[:, 6] - float(np.mean(data[-40:, 6]))
     alpha_dot = data[:, 8]
 
     # Cargar parámetros previamente identificados del motor (CHAR1 + CHAR2)

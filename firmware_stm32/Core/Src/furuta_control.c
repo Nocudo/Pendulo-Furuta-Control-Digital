@@ -57,7 +57,7 @@ static float Furuta_ApplySmoothSlew(float u_target, float max_dv_per_ms, float m
  */
 static float Furuta_ComputePendulumEnergy(const AS5600_Handle_t *enc_pend)
 {
-    const float wn_id = 9.7778f; /* Frecuencia natural experimental medida sin contrapeso (rad/s) */
+    const float wn_id = 8.722f; /* Frecuencia natural experimental medida con nuevo peso (rad/s) */
     float alpha_up = enc_pend->angle_inverted_err_rad;
     float d_alpha  = enc_pend->velocity_rad_s;
 
@@ -68,9 +68,11 @@ static float Furuta_ComputePendulumEnergy(const AS5600_Handle_t *enc_pend)
 }
 
 /**
- * @brief Secuencia Suave de Levantamiento Resonante Acotado (Sin Contrapeso, wn = 9.78 rad/s):
- *        - Limita la excursión del brazo a ±50° (reduciéndola a ±22° y ±8° al acercarse
- *          a la cima) y la tensión máxima a ±6.0 V (~53% PWM) con rampa Slew-Rate Limiter.
+ * @brief Secuencia Suave de Levantamiento Resonante en Cuadratura de Fase (wn = 8.72 rad/s):
+ *        Dispara la carrera al entrar en |alpha_down| < 48° para que el brazo acelere
+ *        en el hemisferio inferior (|alpha| < 90°, cos(alpha) > 0) y desacelere en el
+ *        hemisferio superior (|alpha| > 90°, cos(alpha) < 0), sumando energía tanto al
+ *        acelerar como al frenar sin superar jamás ±50° de giro en el brazo.
  */
 static float Furuta_ComputeSwingUpVoltage(Furuta_System_t *sys)
 {
@@ -82,44 +84,45 @@ static float Furuta_ComputeSwingUpVoltage(Furuta_System_t *sys)
     sys->pendulum_energy_j = Furuta_ComputePendulumEnergy(&sys->enc_pend);
     s_swing_elapsed_ms++;
 
-    /* Modular carrera y tensión máxima según la energía actual del péndulo ligero: */
+    /* Modular carrera y tensión máxima según la energía actual del péndulo: */
     float e_norm = sys->pendulum_energy_j; /* [-2.0 abajo .. 0.0 arriba] */
     float stroke_deg = 50.0f;
-    float v_cap      = 6.0f;
-    if (e_norm > -0.18f) {
-        stroke_deg = 16.0f;  /* Cerca de la cima (155°..165°): impulso suave final para entrar a ±19° */
-        v_cap      = 4.6f;
-    } else if (e_norm > -0.55f) {
-        stroke_deg = 28.0f;  /* Más de 115° de altura: impulso moderado de llegada */
+    float v_cap      = 6.8f;
+    if (e_norm > -0.10f) {
+        stroke_deg = 22.0f;  /* Muy cerca de 180°: carrera corta para captura suave */
         v_cap      = 5.2f;
+    } else if (e_norm > -0.32f) {
+        stroke_deg = 36.0f;  /* Más de 140° de altura: impulso final para llegar a 180° */
+        v_cap      = 6.0f;
     }
 
-    /* Fase 1 (0..260 ms): Primer desplazamiento suave a +38° (semiperiodo Td/2 = 323 ms) */
-    if (s_swing_elapsed_ms < 260U) {
-        s_swing_arm_target_rad = sys->theta_setpoint_rad + (38.0f * DEG_TO_RAD);
+    /* Fase 1 (0..280 ms): Primer desplazamiento suave a +40° para iniciar la oscilación */
+    if (s_swing_elapsed_ms < 280U) {
+        s_swing_arm_target_rad = sys->theta_setpoint_rad + (40.0f * DEG_TO_RAD);
     } else {
-        /* Fase 2: Conmutación resonante al cruzar por el fondo (|alpha_down| < 28°) */
-        if (fabsf(alpha_down) < (28.0f * DEG_TO_RAD)) {
-            if (d_alpha < -0.50f) {
+        /* Fase 2: Conmutación anticipada en |alpha_down| < 48° para alinear aceleración con
+         * hemisferio inferior y frenado con hemisferio superior */
+        if (fabsf(alpha_down) < (48.0f * DEG_TO_RAD)) {
+            if (d_alpha < -0.55f) {
                 s_swing_arm_target_rad = sys->theta_setpoint_rad - (stroke_deg * DEG_TO_RAD);
-            } else if (d_alpha > 0.50f) {
+            } else if (d_alpha > 0.55f) {
                 s_swing_arm_target_rad = sys->theta_setpoint_rad + (stroke_deg * DEG_TO_RAD);
             }
         }
 
-        if (s_swing_elapsed_ms > 1300U &&
+        if (s_swing_elapsed_ms > 1400U &&
             fabsf(alpha_down) < (5.0f * DEG_TO_RAD) &&
             fabsf(d_alpha) < 0.40f) {
             s_swing_elapsed_ms = 0U;
-            s_swing_arm_target_rad = sys->theta_setpoint_rad + (38.0f * DEG_TO_RAD);
+            s_swing_arm_target_rad = sys->theta_setpoint_rad + (40.0f * DEG_TO_RAD);
         }
     }
 
-    /* Controlador PD suave siguiendo s_swing_arm_target_rad con rampa Slew-Rate */
+    /* Controlador PD siguiendo s_swing_arm_target_rad con rampa Slew-Rate sin retardo excesivo */
     float pos_err = s_swing_arm_target_rad - theta;
-    float u_raw   = (11.50f * pos_err) - (1.20f * d_theta);
+    float u_raw   = (13.50f * pos_err) - (1.20f * d_theta);
 
-    return Furuta_ApplySmoothSlew(u_raw, 0.045f, v_cap);
+    return Furuta_ApplySmoothSlew(u_raw, 0.12f, v_cap);
 }
 
 /**
@@ -140,44 +143,47 @@ void Furuta_Init(Furuta_System_t *sys)
     sys->pendulum_energy_j    = 0.0f;
 
     /* 1. Inicializar Etapa de Potencia L298N (TIM1_CH1 @ 20 kHz, PB4, PB5, PA9, PA10)
-     *    Zona muerta con rampa suave pre-umbral: +11.5% PWM (antihorario), -13.5% PWM (horario) */
+     *    Zona muerta asimétrica calibrada con el nuevo peso: +8.0% PWM (antihorario), -13.5% PWM (horario)
+     *    Elimina el sesgo de deriva hacia la derecha durante la estabilización invertida. */
     L298N_Init(&sys->motor, &htim1, TIM_CHANNEL_1);
-    L298N_SetDeadzone(&sys->motor, 11.5f, 13.5f, true);
+    L298N_SetDeadzone(&sys->motor, 8.0f, 13.5f, true);
 
     /* 2. Inicializar Encoders Magnéticos AS5600 (I2C1 Brazo con direction=-1 y gear=80:1, I2C2 Péndulo) */
     (void)AS5600_Init(&sys->enc_arm,  &hi2c1, TS_CONTROL_SEC, 0.006f, -1);
-    (void)AS5600_Init(&sys->enc_pend, &hi2c2, TS_CONTROL_SEC, 0.005f,  1);
+    (void)AS5600_Init(&sys->enc_pend, &hi2c2, TS_CONTROL_SEC, 0.006f,  1);
 
-    /* 3. Inicializar los 4 Controladores PID Discretos Críticamente Amortiguados (Ts = 1.0 ms)
-     *    Ajustados experimentalmente en hardware para CERO oscilaciones parásitas:
+    /* 3. Inicializar los 4 Controladores PID Discretos (Ts = 1.0 ms)
+     *    Con el nuevo peso (wn = 8.722 rad/s, zeta = 0.0572, K_acople = 0.881):
      * ----------------------------------------------------------------------
-     * A) PID de Velocidad del Motor/Brazo:
-     *    Kp = 1.40 V/(rad/s), Ki = 22.00 V/rad, Kd = 0.005 V·s/rad, N = 40 */
+     * A) PID de Velocidad del Motor/Brazo: */
     PID_Init(&sys->pid_motor_vel,
-             1.40f, 22.00f, 0.005f, 40.0f,
+             1.20f, 20.00f, 0.005f, 40.0f,
              TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
              true);
 
-    /* B) PID de Posición del Motor/Brazo Solo (Suave, críticamente amortiguado, máx ±5.8 V):
-     *    Kp = 13.50 V/rad, Ki = 65.00 V/(rad·s), Kd = 1.45 V·s/rad, N = 35
-     *    Velocidad moderada sin sacudir el péndulo y error estacionario 0.00° */
+    /* B) PID de Posición del Motor/Brazo Solo (Suave, críticamente amortiguado, máx ±5.8 V): */
     PID_Init(&sys->pid_motor_pos,
              13.50f, 65.00f, 1.45f, 35.0f,
              TS_CONTROL_SEC, -5.8f, 5.8f,
              true);
 
-    /* C) PID Estabilizador del Péndulo Invertido sin Contrapeso (wn = 9.78 rad/s, K_acople = 1.136):
-     *    Kp = 25.50 V/rad, Ki = 8.50 V/(rad·s), Kd = 2.15 V·s/rad, N = 30 */
+    /* C) PID Estabilizador del Péndulo Invertido (PD Puro: Ki_alpha = 0.0 obligatorio
+     *    para permitir que el péndulo encuentre su vertical gravitacional exacta sin
+     *    pelear contra el integrador del brazo ni inducir deriva angular):
+     *    Óptimo experimental validado en hardware (equilibrio indefinido, Arm RMS ~11°):
+     *    Kp = 28.00 V/rad, Ki = 0.00, Kd = 2.45 V·s/rad */
     PID_Init(&sys->pid_pend_alpha,
-             25.50f, 8.50f, 2.15f, 30.0f,
-             TS_CONTROL_SEC, -6.2f, 6.2f,
+             28.00f, 0.00f, 2.45f, 30.0f,
+             TS_CONTROL_SEC, -7.8f, 7.8f,
              false);
 
-    /* D) PID Regulador de Posición del Brazo en Equilibrio Furuta (Lazo Lento theta):
-     *    Kp = -0.95 V/rad, Ki = -0.22 V/(rad·s), Kd = -0.75 V·s/rad, N = 20 */
+    /* D) PID Regulador de Posición del Brazo en Equilibrio Furuta (Lazo de Centrado):
+     *    El integrador Ki_theta absorbe automáticamente cualquier desnivel de mesa o sesgo
+     *    del motor, manteniendo el brazo centrado alrededor de 0° indefinidamente.
+     *    Kp = -2.80 V/rad, Ki = -2.40 V/(rad·s), Kd = -2.10 V·s/rad */
     PID_Init(&sys->pid_arm_theta,
-             -0.95f, -0.22f, -0.75f, 20.0f,
-             TS_CONTROL_SEC, -2.8f, 2.8f,
+             -2.80f, -2.40f, -2.10f, 20.0f,
+             TS_CONTROL_SEC, -5.5f, 5.5f,
              true);
 
     /* 4. Inicializar Gestor de Caracterización Experimental */
@@ -329,21 +335,22 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
         }
 
         case FURUTA_STATE_SWING_UP: {
-            /* Corte inmediato de seguridad si falla I2C2 o si el brazo supera ±85° */
+            /* Corte inmediato de seguridad si falla I2C2 o si el brazo supera ±135° */
             if (s_i2c_pend_fail_streak > 6U ||
                 fabsf(theta_pos - sys->theta_setpoint_rad) > FURUTA_MAX_ARM_ANGLE_RAD ||
-                fabsf(theta_pos) > (100.0f * DEG_TO_RAD)) {
+                fabsf(theta_pos) > (145.0f * DEG_TO_RAD)) {
                 L298N_Coast(&sys->motor);
                 s_u_slewed_volts = 0.0f;
                 sys->state = FURUTA_STATE_FAULT_STOP;
                 break;
             }
 
-            /* Verificar condición de entrada suave al cono de atracción lineal (±16°, |vel| < 3.5 rad/s) */
+            /* Verificar condición de entrada suave al cono de atracción lineal (±20°, |vel| < 4.8 rad/s) */
             if (fabsf(alpha_err) < FURUTA_CAPTURE_ANGLE_RAD &&
                 fabsf(alpha_vel) < FURUTA_CAPTURE_VEL_RAD_S) {
                 PID_Reset(&sys->pid_pend_alpha);
                 PID_Reset(&sys->pid_arm_theta);
+                s_u_slewed_volts = 0.0f; /* Captura sin retardo por tensión residual de Swing-Up */
                 sys->state = FURUTA_STATE_BALANCE_PID;
                 break;
             }
@@ -355,12 +362,12 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
 
         case FURUTA_STATE_BALANCE_PID: {
             /* 1. Watchdog de Seguridad Angular:
-             *    Corta inmediatamente si el péndulo cae más de ±24°, si el brazo gira más de ±85°,
+             *    Corta inmediatamente si el péndulo cae más de ±28°, si el brazo gira más de ±135°,
              *    o si el sensor I2C2 pierde lectura por más de 6 ms */
             if (s_i2c_pend_fail_streak > 6U ||
                 fabsf(alpha_err) > FURUTA_WATCHDOG_ANGLE_RAD ||
                 fabsf(theta_pos - sys->theta_setpoint_rad) > FURUTA_MAX_ARM_ANGLE_RAD ||
-                fabsf(theta_pos) > (100.0f * DEG_TO_RAD)) {
+                fabsf(theta_pos) > (145.0f * DEG_TO_RAD)) {
                 L298N_Coast(&sys->motor);
                 PID_Reset(&sys->pid_pend_alpha);
                 PID_Reset(&sys->pid_arm_theta);
@@ -372,17 +379,20 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
                 break;
             }
 
-            /* 2. Cálculo del Lazo Principal: PID del Ángulo del Péndulo (alpha_err -> 0 rad arriba)
-             *    Usando directamente la velocidad angular filtrada IIR (alpha_vel) para evitar
-             *    el ruido de cuantización de diferencias finitas a 1 kHz, más Reinicio de Clegg: */
-            if ((alpha_err * sys->pid_pend_alpha.prev_error) < 0.0f) {
+            /* 2. Lazo Principal: Control PD del Péndulo Invertido (alpha_err -> vertical gravitacional)
+             *    Nota: Ki_alpha = 0 por defecto para no pelear contra el integrador del brazo. */
+            if (fabsf(sys->pid_pend_alpha.Ki) > 1e-4f) {
+                if ((alpha_err * sys->pid_pend_alpha.prev_error) < 0.0f) {
+                    sys->pid_pend_alpha.i_term = 0.0f;
+                }
+                sys->pid_pend_alpha.i_term += sys->pid_pend_alpha.Ki * TS_CONTROL_SEC * alpha_err;
+                if (sys->pid_pend_alpha.i_term > 2.5f) {
+                    sys->pid_pend_alpha.i_term = 2.5f;
+                } else if (sys->pid_pend_alpha.i_term < -2.5f) {
+                    sys->pid_pend_alpha.i_term = -2.5f;
+                }
+            } else {
                 sys->pid_pend_alpha.i_term = 0.0f;
-            }
-            sys->pid_pend_alpha.i_term += sys->pid_pend_alpha.Ki * TS_CONTROL_SEC * alpha_err;
-            if (sys->pid_pend_alpha.i_term > 3.5f) {
-                sys->pid_pend_alpha.i_term = 3.5f;
-            } else if (sys->pid_pend_alpha.i_term < -3.5f) {
-                sys->pid_pend_alpha.i_term = -3.5f;
             }
             sys->pid_pend_alpha.p_term = sys->pid_pend_alpha.Kp * alpha_err;
             sys->pid_pend_alpha.d_term = sys->pid_pend_alpha.Kd * alpha_vel;
@@ -391,14 +401,15 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
                                + sys->pid_pend_alpha.i_term
                                + sys->pid_pend_alpha.d_term;
 
-            /* 3. Cálculo del Lazo Secundario: PID de Regulación del Brazo (theta -> theta_ref)
-             *    Usando directamente la velocidad filtrada IIR del brazo (theta_vel): */
+            /* 3. Lazo Secundario: PID Regulador de Posición del Brazo (theta -> theta_setpoint_rad = 0°)
+             *    Con autoridad suficiente (±5.5 V, integrador ±4.5 V) para absorber cualquier desnivel
+             *    de mesa o sesgo del puente H y mantener el brazo centrado indefinidamente: */
             float arm_bal_err = sys->theta_setpoint_rad - theta_pos;
             sys->pid_arm_theta.i_term += sys->pid_arm_theta.Ki * TS_CONTROL_SEC * arm_bal_err;
-            if (sys->pid_arm_theta.i_term > 2.5f) {
-                sys->pid_arm_theta.i_term = 2.5f;
-            } else if (sys->pid_arm_theta.i_term < -2.5f) {
-                sys->pid_arm_theta.i_term = -2.5f;
+            if (sys->pid_arm_theta.i_term > 4.5f) {
+                sys->pid_arm_theta.i_term = 4.5f;
+            } else if (sys->pid_arm_theta.i_term < -4.5f) {
+                sys->pid_arm_theta.i_term = -4.5f;
             }
             sys->pid_arm_theta.p_term = sys->pid_arm_theta.Kp * arm_bal_err;
             sys->pid_arm_theta.d_term = -sys->pid_arm_theta.Kd * theta_vel;
@@ -406,10 +417,15 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
             sys->u_theta_volts = sys->pid_arm_theta.p_term
                                + sys->pid_arm_theta.i_term
                                + sys->pid_arm_theta.d_term;
+            if (sys->u_theta_volts > 5.5f) {
+                sys->u_theta_volts = 5.5f;
+            } else if (sys->u_theta_volts < -5.5f) {
+                sys->u_theta_volts = -5.5f;
+            }
 
-            /* 4. Superposición de Esfuerzos de Control con Limitador Suave sin retardo de fase (±6.2 V máx) */
+            /* 4. Superposición de Esfuerzos de Control con límite seguro (±7.8 V máx = ~68% PWM) */
             float u_bal_raw = sys->u_alpha_volts + sys->u_theta_volts;
-            sys->u_total_volts = Furuta_ApplySmoothSlew(u_bal_raw, 0.22f, 6.2f);
+            sys->u_total_volts = Furuta_ApplySmoothSlew(u_bal_raw, 0.35f, 7.8f);
 
             /* 5. Escritura al puente H L298N con compensación inversa de zona muerta */
             L298N_SetVoltage(&sys->motor, sys->u_total_volts);
@@ -444,6 +460,30 @@ void Furuta_SendTelemetry_UART(Furuta_System_t *sys)
     if (len > 0) {
         (void)HAL_UART_Transmit(&huart2, (uint8_t *)tx_buf, (uint16_t)len, 25U);
     }
+}
+
+static int Furuta_Parse4Floats(const char *s, float *v0, float *v1, float *v2, float *v3)
+{
+    char *endp = NULL;
+    int count = 0;
+    float *out[4] = { v0, v1, v2, v3 };
+
+    for (int i = 0; i < 4; i++) {
+        while (*s == ' ' || *s == '\t' || *s == ',') {
+            s++;
+        }
+        if (*s == '\0') {
+            break;
+        }
+        float val = strtof(s, &endp);
+        if (endp == s) {
+            break;
+        }
+        *out[i] = val;
+        count++;
+        s = endp;
+    }
+    return count;
 }
 
 /**
@@ -558,23 +598,23 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
             sys->state = FURUTA_STATE_MOTOR_PID_POS;
         }
     } else if (strncmp(cmd_str, "PID_A=", 6) == 0) {
-        float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 25.0f;
-        if (sscanf(cmd_str + 6, "%f,%f,%f,%f", &kp, &ki, &kd, &n) >= 3) {
+        float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 30.0f;
+        if (Furuta_Parse4Floats(cmd_str + 6, &kp, &ki, &kd, &n) >= 3) {
             PID_SetGains(&sys->pid_pend_alpha, kp, ki, kd, n);
         }
     } else if (strncmp(cmd_str, "PID_T=", 6) == 0) {
         float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 20.0f;
-        if (sscanf(cmd_str + 6, "%f,%f,%f,%f", &kp, &ki, &kd, &n) >= 3) {
+        if (Furuta_Parse4Floats(cmd_str + 6, &kp, &ki, &kd, &n) >= 3) {
             PID_SetGains(&sys->pid_arm_theta, kp, ki, kd, n);
         }
     } else if (strncmp(cmd_str, "PID_V=", 6) == 0) {
         float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 40.0f;
-        if (sscanf(cmd_str + 6, "%f,%f,%f,%f", &kp, &ki, &kd, &n) >= 3) {
+        if (Furuta_Parse4Floats(cmd_str + 6, &kp, &ki, &kd, &n) >= 3) {
             PID_SetGains(&sys->pid_motor_vel, kp, ki, kd, n);
         }
     } else if (strncmp(cmd_str, "PID_P=", 6) == 0) {
         float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 35.0f;
-        if (sscanf(cmd_str + 6, "%f,%f,%f,%f", &kp, &ki, &kd, &n) >= 3) {
+        if (Furuta_Parse4Floats(cmd_str + 6, &kp, &ki, &kd, &n) >= 3) {
             PID_SetGains(&sys->pid_motor_pos, kp, ki, kd, n);
         }
     }

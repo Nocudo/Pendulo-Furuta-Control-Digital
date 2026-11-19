@@ -26,7 +26,7 @@ function app_telemetria_sistema_furuta_matlab()
 %         - PID Velocidad Motor (PID_V)
 %    5. Cinco (5) Gráficas Científicas en Tiempo Real:
 %       - Dial Polar 2D del Brazo Horizontal theta (°) con marcas cada 15°
-%       - Cinemática Vertical del Péndulo alpha (°) + Cono de Captura ±18°
+%       - Cinemática Vertical del Péndulo alpha (°) + Cono de Captura ±20°
 %       - Serie Temporal: Posición del Brazo theta(t) vs Referencia (°)
 %       - Serie Temporal: Ángulo del Péndulo alpha(t) (°) y Velocidad (rad/s)
 %       - Serie Temporal: Esfuerzo de Control u(t) [V] y PWM (%) en L298N
@@ -67,14 +67,14 @@ function app_telemetria_sistema_furuta_matlab()
     S.u_volts         = 0.0;
     S.pwm_pct         = 0.0;
 
-    % Ganancias PID Óptimas Críticamente Amortiguadas (Sin Contrapeso, Cero Oscilaciones, Ts = 1.0 ms)
-    %   Planta Motor/Brazo: Gv(s) = 3.7010 / (0.1193 s + 1) (R^2 = 0.9834)
-    %   Planta Péndulo:     wn = 9.778 rad/s, zeta = 0.1107, K_acople = 1.1357
+    % Ganancias PID Óptimas Verificadas en Hardware (Peso Intermedio, Swing-Up 1-2 s + Equilibrio Continuo, Ts = 1.0 ms)
+    %   Planta Motor/Brazo: Gv(s) = 6.1694 / (0.1381 s + 1) (R^2 = 0.9284)
+    %   Planta Péndulo:     wn = 8.722 rad/s, zeta = 0.0572, K_acople = 0.8808
     S.pid_opt = struct( ...
-        'alpha', [25.50, 8.50,  2.15, 30.0], ... % PID Péndulo Invertido Suave (PID_A)
-        'theta', [-0.95, -0.22, -0.75, 20.0], ... % PID Brazo Equilibrio Suave (PID_T)
-        'pos',   [13.50, 65.00, 1.45, 35.0], ... % PID Servo Posición Suave (PID_P)
-        'vel',   [1.32,  25.27, 0.005, 40.0] ... % PID Velocidad Motor (PID_V)
+        'alpha', [28.00,  0.00,  2.45, 30.0], ... % PD Péndulo Invertido (PID_A) — Ki=0 evita deriva del brazo
+        'theta', [-2.80, -2.40, -2.10, 20.0], ... % PID Centrado del Brazo (PID_T) — Equilibrio continuo
+        'pos',   [13.50, 65.00,  1.45, 35.0], ... % PID Servo Posición Error 0.00° (PID_P)
+        'vel',   [ 1.20, 20.00, 0.005, 40.0] ...  % PID Velocidad Motor (PID_V)
     );
     S.pid_curr = S.pid_opt;
 
@@ -334,7 +334,7 @@ function app_telemetria_sistema_furuta_matlab()
                                'Units', 'normalized', 'Position', [0.04, 0.18, 0.92, 0.15]);
 
     S.lbl_pwm_val = uicontrol('Parent', pnl_telemetry, 'Style', 'text', ...
-                              'String', 'Control L298N: u = +0.00 V (+0.0% PWM) | Planta: ωn=9.78 rad/s, ζ=0.1107', ...
+                              'String', 'Control L298N: u = +0.00 V (+0.0% PWM) | Planta: ωn=8.72 rad/s, ζ=0.0572', ...
                               'FontSize', 8.5, ...
                               'HorizontalAlignment', 'left', 'BackgroundColor', [0.99 0.99 1.00], ...
                               'Units', 'normalized', 'Position', [0.04, 0.02, 0.92, 0.15]);
@@ -396,10 +396,10 @@ function app_telemetria_sistema_furuta_matlab()
     grid(S.ax_dial_pend, 'on');
     title(S.ax_dial_pend, '2. Péndulo Vertical \alpha (°) [I2C2]', 'FontSize', 10, 'FontWeight', 'bold');
     plot(S.ax_dial_pend, cos(th_circ), sin(th_circ), 'k-', 'LineWidth', 1.4);
-    % Sombrear cono verde de captura PID en la cima (±18° alrededor de vertical superior)
-    cone_ang = linspace(pi/2 - deg2rad(18), pi/2 + deg2rad(18), 40);
+    % Sombrear cono verde de captura PID en la cima (±20° alrededor de vertical superior)
+    cone_ang = linspace(pi/2 - deg2rad(20), pi/2 + deg2rad(20), 40);
     patch(S.ax_dial_pend, [0, cos(cone_ang), 0], [0, sin(cone_ang), 0], [0.75 0.95 0.78], ...
-          'EdgeColor', [0.2 0.65 0.3], 'FaceAlpha', 0.45, 'DisplayName', 'Cono PID ±18°');
+          'EdgeColor', [0.2 0.65 0.3], 'FaceAlpha', 0.45, 'DisplayName', 'Cono PID ±20°');
     text(S.ax_dial_pend, 0,  1.15, '180° (Arriba)', 'HorizontalAlignment', 'center', 'FontSize', 8, 'FontWeight', 'bold', 'Color', [0.1 0.5 0.2]);
     text(S.ax_dial_pend, 0, -1.15, '0° (Abajo)',    'HorizontalAlignment', 'center', 'FontSize', 8);
     S.h_pend_bar = plot(S.ax_dial_pend, [0, 0], [0, -1], '-', 'Color', [0.85 0.38 0.05], ...
@@ -718,7 +718,7 @@ function app_telemetria_sistema_furuta_matlab()
                     set(S.lbl_pend_val, 'String', sprintf('Péndulo α (I2C2):         %+7.2f °  |  dα/dt: %+6.2f rad/s', ...
                                                           S.alpha_deg, S.alpha_dot_rad_s));
                     set(S.lbl_pend_err, 'String', sprintf('Error Equilibrio Arriba:  %+7.2f °', S.alpha_err_deg));
-                    set(S.lbl_pwm_val,  'String', sprintf('Control L298N: u = %+5.2f V (%+5.1f%% PWM) | ωn=9.78 rad/s, ζ=0.1107', ...
+                    set(S.lbl_pwm_val,  'String', sprintf('Control L298N: u = %+5.2f V (%+5.1f%% PWM) | ωn=8.72 rad/s, ζ=0.0572', ...
                                                           S.u_volts, S.pwm_pct));
 
                     % 4. Actualizar Dial del Brazo y Dial del Péndulo
