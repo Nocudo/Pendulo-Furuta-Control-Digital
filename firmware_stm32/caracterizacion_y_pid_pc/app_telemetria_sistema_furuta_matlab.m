@@ -67,12 +67,12 @@ function app_telemetria_sistema_furuta_matlab()
     S.u_volts         = 0.0;
     S.pwm_pct         = 0.0;
 
-    % Ganancias PID Óptimas Verificadas en Hardware (Peso Intermedio, Swing-Up 1-2 s + Equilibrio Continuo, Ts = 1.0 ms)
+    % Ganancias PID Óptimas Ultra-Suaves Verificadas en Hardware (LQR 5-Estados + Notch 11 Hz, Ts = 1.0 ms)
     %   Planta Motor/Brazo: Gv(s) = 6.1694 / (0.1381 s + 1) (R^2 = 0.9284)
     %   Planta Péndulo:     wn = 8.722 rad/s, zeta = 0.0572, K_acople = 0.8808
     S.pid_opt = struct( ...
-        'alpha', [28.00,  0.00,  2.45, 30.0], ... % PD Péndulo Invertido (PID_A) — Ki=0 evita deriva del brazo
-        'theta', [-2.80, -2.40, -2.10, 20.0], ... % PID Centrado del Brazo (PID_T) — Equilibrio continuo
+        'alpha', [15.80,  0.00,  1.65, 30.0], ... % PD Péndulo Invertido LQR5 Ultra-Suave (PID_A)
+        'theta', [-1.25, -0.65, -0.82, 20.0], ... % PID Centrado del Brazo LQR5 (PID_T)
         'pos',   [13.50, 65.00,  1.45, 35.0], ... % PID Servo Posición Error 0.00° (PID_P)
         'vel',   [ 1.20, 20.00, 0.005, 40.0] ...  % PID Velocidad Motor (PID_V)
     );

@@ -380,7 +380,7 @@ La función [`Furuta_ControlISR_1kHz()`](../firmware_stm32/Core/Src/furuta_contr
 
 ## 5. Resumen de Parámetros Caracterizados y Ganancias PID Sintonizadas (Validados en Hardware Real `COM13`)
 
-* **Subplanta Motor/Brazo (`CHAR1` + `CHAR2`):** $G_v(s) = \dfrac{6.1694}{0.1381 s + 1}$ ($R^2 = 0.9284$), zona muerta compensada suavemente en firmware ($+8.0\% / -13.5\%\text{ PWM}$ con rampa continua `0.08..0.14 V`).
+* **Subplanta Motor/Brazo (`CHAR1` + `CHAR2`):** $G_v(s) = \dfrac{6.1694}{0.1381 s + 1}$ ($R^2 = 0.9284$), zona muerta cinética compensada suavemente en firmware ($+7.0\% / -11.5\%\text{ PWM}$ con rampa continua `0.06..0.55 V`).
 * **Subplanta Péndulo + Acoplamiento (`CHAR4`, peso intermedio):** $\omega_n = 8.7220\text{ rad/s}$ ($f_n = 1.3881\text{ Hz}$, $T_d = 0.7216\text{ s}$), $\zeta = 0.05721$, $K_{\text{acople}} = 0.8808$, $J_{1,\text{piv}} = 2.104 \times 10^{-4}\text{ kg}\cdot\text{m}^2$, $b_1 = 2.099 \times 10^{-4}\text{ N}\cdot\text{m}\cdot\text{s/rad}$, $l_{1,\text{eff}} = 0.1289\text{ m}$:
   $$G_{\alpha/\ddot{\theta}}^{\text{up}}(s) = \frac{0.8808}{s^2 + 0.9980\,s - 76.0733}$$
 
@@ -388,8 +388,8 @@ La función [`Furuta_ControlISR_1kHz()`](../firmware_stm32/Core/Src/furuta_contr
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | **1. PID Velocidad Motor** (`pid_motor_vel`) | $\omega = \dot{\theta}\text{ (rad/s)}$ | $1.20\text{ V/(rad/s)}$ | $20.00\text{ V/rad}$ | $0.005\text{ V}\cdot\text{s/rad}$ | $40.0\text{ s}^{-1}$ | $\pm 12.0\text{ V}$ |
 | **2. PID Posición Servo** (`pid_motor_pos`) | $\theta\text{ (rad)}$ | $13.50\text{ V/rad}$ | $65.00\text{ V/(rad}\cdot\text{s)}$ | $1.450\text{ V}\cdot\text{s/rad}$ | $35.0\text{ s}^{-1}$ | $\pm 5.8\text{ V}$ + Freno Activo |
-| **3. PD Péndulo Invertido** (`pid_pend_alpha`) | $\tilde{\alpha} = \alpha - \pi\text{ (rad)}$ | $28.00\text{ V/rad}$ | $0.00\text{ V/(rad}\cdot\text{s)}$ | $2.450\text{ V}\cdot\text{s/rad}$ | $30.0\text{ s}^{-1}$ | $\pm 7.8\text{ V}$ (Slew `0.35 V/ms`) |
-| **4. PID Centrado Brazo** (`pid_arm_theta`) | $\theta\text{ (rad)}$ | $-2.80\text{ V/rad}$ | $-2.40\text{ V/(rad}\cdot\text{s)}$ | $-2.100\text{ V}\cdot\text{s/rad}$ | $20.0\text{ s}^{-1}$ | $\pm 5.5\text{ V}$ (Int $\pm 4.5\text{ V}$) |
+| **3. PD Péndulo Invertido LQR5** (`pid_pend_alpha`) | $\tilde{\alpha} = \alpha - \pi\text{ (rad)}$ | $15.80\text{ V/rad}$ | $0.00\text{ V/(rad}\cdot\text{s)}$ | $1.650\text{ V}\cdot\text{s/rad}$ | $30.0\text{ s}^{-1}$ | $\pm 6.8\text{ V}$ + Notch 11 Hz (Slew `0.22 V/ms`) |
+| **4. PID Centrado Brazo LQR5** (`pid_arm_theta`) | $\theta\text{ (rad)}$ | $-1.25\text{ V/rad}$ | $-0.65\text{ V/(rad}\cdot\text{s)}$ | $-0.820\text{ V}\cdot\text{s/rad}$ | $20.0\text{ s}^{-1}$ | $\pm 4.5\text{ V}$ (Int $\pm 3.5\text{ V}$) |
 
 ### Gráficas de Validación Experimental Real (Caracterización + Swing-Up y Equilibrio Continuo en STM32)
 
