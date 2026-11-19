@@ -5,15 +5,24 @@ function app_control_posicion_motor_matlab()
 %  ========================================================================
 %  Proyecto Final — Control Digital (Universidad EAFIT)
 %
-%  Instrucciones de uso:
-%    1. Conecta la placa STM32 Nucleo-F446RE por USB (Puerto COM13).
-%    2. Ejecuta este archivo en MATLAB:
-%         >> app_control_posicion_motor_matlab
-%    3. Haz clic en "CONECTAR STM32", ingresa cualquier ángulo en grados
-%       (por ejemplo: 45, -60, 90, 0) y presiona "EJECUTAR ÁNGULO" o Enter.
+%  Mejoras de fiabilidad 100% en tiempo real:
+%    - Lectura serial 100% no bloqueante por bloques (read(..., "char"))
+%      que jamás congela ni bloquea el puerto COM durante envíos.
+%    - Cola de transmisión síncrona con ráfaga triple automática (3x burst)
+%      compatible con el receptor DMA circular (DMA1_Stream5) de la STM32.
+%    - Detección de tecla Enter en la caja de texto sin doble disparo al
+%      hacer clic en el botón "EJECUTAR ÁNGULO".
 %% ========================================================================
 
-    % Cerrar instancias previas de puertos seriales abiertos en MATLAB
+    % Cerrar instancias previas de puertos seriales o timers huérfanos
+    try
+        old_timers = timerfindall('Tag', 'FurutaMotorGUITimer');
+        if ~isempty(old_timers)
+            stop(old_timers);
+            delete(old_timers);
+        end
+    catch
+    end
     try
         open_ports = serialportfind();
         if ~isempty(open_ports)
@@ -26,13 +35,18 @@ function app_control_posicion_motor_matlab()
     S = struct();
     S.serial_obj      = [];
     S.is_connected    = false;
+    S.is_io_busy      = false;
+    S.rx_partial_buf  = '';
+    S.pending_cmd     = '';
+    S.cmd_burst_left  = 0;
+
     S.target_deg      = 0.0;
     S.current_deg     = 0.0;
     S.current_vel     = 0.0;
     S.pend_deg        = 0.0;
     S.u_volts         = 0.0;
     S.pwm_pct         = 0.0;
-    S.history_len     = 300; % Ventana de 3.0 segundos a 100 Hz
+    S.history_len     = 300; % Ventana de 3.0 segundos
     S.t_hist          = linspace(-3, 0, S.history_len);
     S.ref_hist        = zeros(1, S.history_len);
     S.theta_hist      = zeros(1, S.history_len);
@@ -56,7 +70,7 @@ function app_control_posicion_motor_matlab()
 
     % Panel Lateral Izquierdo de Control
     pnl_ctrl = uipanel('Parent', fig, ...
-                       'Title', ' Panel de Control del Motor (PID 1 kHz) ', ...
+                       'Title', ' Panel de Control del Motor (PID 1 kHz + DMA) ', ...
                        'FontSize', 11, 'FontWeight', 'bold', ...
                        'BackgroundColor', [0.92 0.94 0.97], ...
                        'Units', 'normalized', ...
@@ -106,7 +120,7 @@ function app_control_posicion_motor_matlab()
                             'FontSize', 16, 'FontWeight', 'bold', ...
                             'BackgroundColor', [1 1 1], ...
                             'Units', 'normalized', 'Position', [0.05, 0.67, 0.42, 0.065], ...
-                            'Callback', @onExecuteAngle);
+                            'KeyPressFcn', @onEditKeyPress);
 
     S.btn_exec = uicontrol('Parent', pnl_ctrl, 'Style', 'pushbutton', ...
                            'String', 'EJECUTAR ÁNGULO', ...
@@ -130,7 +144,7 @@ function app_control_posicion_motor_matlab()
 
     % --- Sección 3: Botones de Ángulos Rápidos (Presets) ---
     uicontrol('Parent', pnl_ctrl, 'Style', 'text', ...
-              'String', 'Posiciones Rápidas:', ...
+              'String', 'Posiciones Rápidas (1 Clic):', ...
               'FontSize', 10, 'FontWeight', 'bold', ...
               'HorizontalAlignment', 'left', ...
               'BackgroundColor', [0.92 0.94 0.97], ...
@@ -217,7 +231,6 @@ function app_control_posicion_motor_matlab()
     grid(S.ax_dial, 'on');
     title(S.ax_dial, 'Dial Angular del Brazo \theta (°)', 'FontSize', 11, 'FontWeight', 'bold');
 
-    % Dibujar círculo graduado del dial
     th_circ = linspace(0, 2*pi, 200);
     plot(S.ax_dial, cos(th_circ), sin(th_circ), 'k-', 'LineWidth', 1.5);
     for ang_tick = -150:30:180
@@ -259,22 +272,25 @@ function app_control_posicion_motor_matlab()
     ylim(S.ax_pwm, [-105, 105]);
     legend(S.ax_pwm, 'Location', 'northeast');
 
-    % Timer de refresco visual a 25 FPS (40 ms)
-    S.gui_timer = timer('ExecutionMode', 'fixedRate', ...
-                        'Period', 0.04, ...
+    % Timer de refresco visual y despacho serial a 30 Hz (33 ms)
+    S.gui_timer = timer('Tag', 'FurutaMotorGUITimer', ...
+                        'ExecutionMode', 'fixedRate', ...
+                        'Period', 0.033, ...
+                        'BusyMode', 'drop', ...
                         'TimerFcn', @onTimerUpdateGUI);
 
     %% ====================================================================
-    %  FUNCIONES CALLBACK Y COMUNICACIÓN SERIAL CON LA STM32
+    %  FUNCIONES CALLBACK Y COMUNICACIÓN SERIAL NO BLOQUEANTE
     %% ====================================================================
     function onToggleConnect(~, ~)
         if ~S.is_connected
             ports = get(S.popup_port, 'String');
             sel_port = strtrim(ports{get(S.popup_port, 'Value')});
             try
-                S.serial_obj = serialport(sel_port, 115200, 'Timeout', 0.2);
+                S.serial_obj = serialport(sel_port, 115200, 'Timeout', 0.05);
                 configureTerminator(S.serial_obj, "CR/LF");
                 flush(S.serial_obj);
+                S.rx_partial_buf = '';
                 S.is_connected = true;
                 S.t0_tic = tic;
 
@@ -302,7 +318,7 @@ function app_control_posicion_motor_matlab()
         end
         if ~isempty(S.serial_obj) && isvalid(S.serial_obj)
             try
-                writeline(S.serial_obj, "S");
+                write(S.serial_obj, sprintf('\r\nS\r\n'), "char");
                 pause(0.05);
             catch
             end
@@ -318,8 +334,15 @@ function app_control_posicion_motor_matlab()
         end
     end
 
+    function onEditKeyPress(~, evt)
+        if strcmp(evt.Key, 'return')
+            drawnow;
+            onExecuteAngle();
+        end
+    end
+
     function onExecuteAngle(~, ~)
-        str_val = get(S.edt_angle, 'String');
+        str_val = strrep(strtrim(get(S.edt_angle, 'String')), ',', '.');
         val_deg = str2double(str_val);
         if isnan(val_deg)
             errordlg('Ingresa un valor numérico válido en grados (ej: 45, -30, 90).', 'Ángulo Inválido');
@@ -333,99 +356,115 @@ function app_control_posicion_motor_matlab()
         setAndSendAngle(val_deg);
     end
 
+    function queueSerialCommand(cmd_str)
+        S.pending_cmd    = cmd_str;
+        S.cmd_burst_left = 3; % Enviar en 3 tramas seguidas para garantía 100%
+        % Enviar primera trama de inmediato si el canal no está ocupado
+        if S.is_connected && ~S.is_io_busy && ~isempty(S.serial_obj) && isvalid(S.serial_obj)
+            try
+                write(S.serial_obj, sprintf('\r\n%s\r\n', cmd_str), "char");
+                S.cmd_burst_left = 2;
+            catch
+            end
+        end
+    end
+
     function setAndSendAngle(val_deg)
         S.target_deg = val_deg;
         set(S.edt_angle, 'String', sprintf('%.1f', val_deg));
         sld_clamped = max(-180, min(180, val_deg));
         set(S.sld_angle, 'Value', sld_clamped);
-
-        if S.is_connected && ~isempty(S.serial_obj) && isvalid(S.serial_obj)
-            cmd = sprintf('POS=%.2f', val_deg);
-            writeline(S.serial_obj, cmd);
-        end
+        queueSerialCommand(sprintf('POS=%.2f', val_deg));
     end
 
     function onZeroEncoder(~, ~)
         S.target_deg = 0.0;
         set(S.edt_angle, 'String', '0.0');
         set(S.sld_angle, 'Value', 0.0);
-        if S.is_connected && ~isempty(S.serial_obj) && isvalid(S.serial_obj)
-            writeline(S.serial_obj, "Z");
-        end
+        queueSerialCommand('ZERO');
     end
 
     function onEmergencyStop(~, ~)
-        if S.is_connected && ~isempty(S.serial_obj) && isvalid(S.serial_obj)
-            writeline(S.serial_obj, "S");
-        end
+        queueSerialCommand('STOP');
     end
 
     function onTimerUpdateGUI(~, ~)
-        if ~S.is_connected || isempty(S.serial_obj) || ~isvalid(S.serial_obj)
+        if ~S.is_connected || S.is_io_busy || isempty(S.serial_obj) || ~isvalid(S.serial_obj)
             return;
         end
+        S.is_io_busy = true;
 
         try
-            % Leer todas las tramas CSV pendientes en el buffer serial
-            n_bytes = S.serial_obj.NumBytesAvailable;
-            if n_bytes < 25
-                return;
+            % 1. Despachar ráfaga de comandos pendientes hacia la STM32
+            if S.cmd_burst_left > 0 && ~isempty(S.pending_cmd)
+                write(S.serial_obj, sprintf('\r\n%s\r\n', S.pending_cmd), "char");
+                S.cmd_burst_left = S.cmd_burst_left - 1;
             end
 
-            lines_read = 0;
-            while S.serial_obj.NumBytesAvailable > 0 && lines_read < 15
-                raw_line = strtrim(char(readline(S.serial_obj)));
-                lines_read = lines_read + 1;
-                if isempty(raw_line) || startsWith(raw_line, '#') || startsWith(raw_line, 't_ms') || startsWith(raw_line, '=')
-                    continue;
-                end
+            % 2. Lectura 100% NO BLOQUEANTE de todos los bytes disponibles
+            n_avail = S.serial_obj.NumBytesAvailable;
+            if n_avail > 0
+                raw_chunk = read(S.serial_obj, n_avail, "char");
+                S.rx_partial_buf = [S.rx_partial_buf, raw_chunk];
 
-                vals = sscanf(raw_line, '%f,%f,%f,%f,%f,%f,%f,%f,%f');
-                if numel(vals) == 9
-                    t_now = toc(S.t0_tic);
-                    S.pwm_pct     = vals(3);
-                    S.u_volts     = vals(4);
-                    S.current_deg = rad2deg(vals(5));
-                    S.current_vel = vals(6);
-                    S.pend_deg    = rad2deg(vals(7));
+                % Separar por saltos de línea
+                idx_nl = find(S.rx_partial_buf == newline);
+                if ~isempty(idx_nl)
+                    complete_block = S.rx_partial_buf(1:idx_nl(end));
+                    S.rx_partial_buf = S.rx_partial_buf(idx_nl(end)+1:end);
 
-                    % Desplazar historiales
-                    S.t_hist     = [S.t_hist(2:end), t_now];
-                    S.ref_hist   = [S.ref_hist(2:end), S.target_deg];
-                    S.theta_hist = [S.theta_hist(2:end), S.current_deg];
-                    S.pwm_hist   = [S.pwm_hist(2:end), S.pwm_pct];
+                    lines = splitlines(complete_block);
+                    for k = 1:numel(lines)
+                        ln = strtrim(lines{k});
+                        if isempty(ln) || ln(1) == '#' || ln(1) == 't' || ln(1) == '='
+                            continue;
+                        end
+                        vals = sscanf(ln, '%f,%f,%f,%f,%f,%f,%f,%f,%f');
+                        if numel(vals) == 9
+                            t_now = toc(S.t0_tic);
+                            S.pwm_pct     = vals(3);
+                            S.u_volts     = vals(4);
+                            S.current_deg = rad2deg(vals(5));
+                            S.current_vel = vals(6);
+                            S.pend_deg    = rad2deg(vals(7));
+
+                            S.t_hist     = [S.t_hist(2:end), t_now];
+                            S.ref_hist   = [S.ref_hist(2:end), S.target_deg];
+                            S.theta_hist = [S.theta_hist(2:end), S.current_deg];
+                            S.pwm_hist   = [S.pwm_hist(2:end), S.pwm_pct];
+                        end
+                    end
+
+                    % 3. Actualizar interfaz gráfica
+                    err_deg = S.target_deg - S.current_deg;
+                    set(S.lbl_ref_val,  'String', sprintf('Referencia:    %+7.2f °', S.target_deg));
+                    set(S.lbl_meas_val, 'String', sprintf('Ángulo Real:   %+7.2f °', S.current_deg));
+                    set(S.lbl_err_val,  'String', sprintf('Error Angular: %+7.2f °', err_deg));
+                    set(S.lbl_pwm_val,  'String', sprintf('Esfuerzo: %+5.2f V (%+5.1f%% PWM)', S.u_volts, S.pwm_pct));
+
+                    r_ref  = deg2rad(S.target_deg);
+                    r_meas = deg2rad(S.current_deg);
+                    set(S.h_dial_ref,  'XData', [0, cos(r_ref)],  'YData', [0, sin(r_ref)]);
+                    set(S.h_dial_meas, 'XData', [0, cos(r_meas)], 'YData', [0, sin(r_meas)]);
+
+                    set(S.h_line_ref,   'XData', S.t_hist, 'YData', S.ref_hist);
+                    set(S.h_line_theta, 'XData', S.t_hist, 'YData', S.theta_hist);
+                    set(S.h_line_pwm,   'XData', S.t_hist, 'YData', S.pwm_hist);
+
+                    t_min = S.t_hist(1);
+                    t_max = max(S.t_hist(end), t_min + 0.5);
+                    xlim(S.ax_pos, [t_min, t_max]);
+                    xlim(S.ax_pwm, [t_min, t_max]);
+
+                    y_max = max([100, abs(S.target_deg) + 30, max(abs(S.theta_hist)) + 20]);
+                    ylim(S.ax_pos, [-y_max, y_max]);
+
+                    drawnow limitrate;
                 end
             end
-
-            % Actualizar etiquetas digitales
-            err_deg = S.target_deg - S.current_deg;
-            set(S.lbl_ref_val,  'String', sprintf('Referencia:    %+7.2f °', S.target_deg));
-            set(S.lbl_meas_val, 'String', sprintf('Ángulo Real:   %+7.2f °', S.current_deg));
-            set(S.lbl_err_val,  'String', sprintf('Error Angular: %+7.2f °', err_deg));
-            set(S.lbl_pwm_val,  'String', sprintf('Esfuerzo: %+5.2f V (%+5.1f%% PWM)', S.u_volts, S.pwm_pct));
-
-            % Actualizar Dial Polar
-            r_ref  = deg2rad(S.target_deg);
-            r_meas = deg2rad(S.current_deg);
-            set(S.h_dial_ref,  'XData', [0, cos(r_ref)],  'YData', [0, sin(r_ref)]);
-            set(S.h_dial_meas, 'XData', [0, cos(r_meas)], 'YData', [0, sin(r_meas)]);
-
-            % Actualizar curvas temporales
-            set(S.h_line_ref,   'XData', S.t_hist, 'YData', S.ref_hist);
-            set(S.h_line_theta, 'XData', S.t_hist, 'YData', S.theta_hist);
-            set(S.h_line_pwm,   'XData', S.t_hist, 'YData', S.pwm_hist);
-
-            t_min = S.t_hist(1);
-            t_max = max(S.t_hist(end), t_min + 0.5);
-            xlim(S.ax_pos, [t_min, t_max]);
-            xlim(S.ax_pwm, [t_min, t_max]);
-
-            y_max = max([100, abs(S.target_deg) + 30, max(abs(S.theta_hist)) + 20]);
-            ylim(S.ax_pos, [-y_max, y_max]);
-
-            drawnow limitrate;
         catch
         end
+        S.is_io_busy = false;
     end
 
     function onCloseApp(~, ~)

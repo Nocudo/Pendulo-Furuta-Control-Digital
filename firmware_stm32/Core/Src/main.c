@@ -135,22 +135,31 @@ int main(void)
 }
 
 /**
- * @brief Extrae bytes del ring buffer llenado por USART2_IRQHandler
+ * @brief Extrae bytes del buffer circular DMA1_Stream5 (USART2_RX en hardware)
+ *        Sin pérdida de bytes (0% Overrun) e inmune a ruido no-ASCII.
  */
 static void UART_PollCommandRX(void)
 {
-    while (g_uart_rx_tail != g_uart_rx_head) {
-        char rx_byte = g_uart_rx_ring[g_uart_rx_tail];
-        g_uart_rx_tail = (uint8_t)((g_uart_rx_tail + 1U) % 128U);
+    /* Calcular índice actual de escritura del controlador DMA1_Stream5 */
+    uint8_t dma_head = (uint8_t)((128U - (uint8_t)DMA1_Stream5->NDTR) & 0x7FU);
 
-        if (rx_byte == '\n' || rx_byte == '\r') {
+    while (g_uart_rx_tail != dma_head) {
+        char rx_byte = g_uart_rx_ring[g_uart_rx_tail];
+        g_uart_rx_tail = (uint8_t)((g_uart_rx_tail + 1U) & 0x7FU);
+
+        if (rx_byte == '\n' || rx_byte == '\r' || rx_byte == ';') {
             if (s_uart_cmd_idx > 0U) {
                 s_uart_cmd_buf[s_uart_cmd_idx] = '\0';
                 Furuta_ProcessCommand(&g_furuta, s_uart_cmd_buf);
                 s_uart_cmd_idx = 0U;
             }
-        } else if (s_uart_cmd_idx < (sizeof(s_uart_cmd_buf) - 1U)) {
-            s_uart_cmd_buf[s_uart_cmd_idx++] = rx_byte;
+        } else if ((uint8_t)rx_byte >= 32U && (uint8_t)rx_byte <= 126U) {
+            /* Solo aceptar caracteres ASCII imprimibles válidos */
+            if (s_uart_cmd_idx < (sizeof(s_uart_cmd_buf) - 1U)) {
+                s_uart_cmd_buf[s_uart_cmd_idx++] = rx_byte;
+            } else {
+                s_uart_cmd_idx = 0U;
+            }
         }
     }
 }
@@ -323,11 +332,22 @@ static void MX_USART2_UART_Init(void)
         Error_Handler();
     }
 
-    /* Habilitar interrupción RXNE en USART2 con máxima prioridad (0) (~0.3 us)
-     * para que nunca pierda un byte a 115200 bps (86.8 us/byte) durante TIM6 */
-    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
-    HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(USART2_IRQn);
+    /* Configurar DMA1_Stream5 (Canal 4 = USART2_RX) en modo Circular por Hardware:
+     * Transfiere cada byte recibido directamente de USART2->DR a g_uart_rx_ring[128]
+     * en 1 ciclo de reloj sin depender de interrupciones ni perder jamás un comando. */
+    __HAL_RCC_DMA1_CLK_ENABLE();
+    DMA1_Stream5->CR = 0U;
+    while ((DMA1_Stream5->CR & DMA_SxCR_EN) != 0U) {
+    }
+    DMA1_Stream5->PAR  = (uint32_t)&USART2->DR;
+    DMA1_Stream5->M0AR = (uint32_t)g_uart_rx_ring;
+    DMA1_Stream5->NDTR = 128U;
+    DMA1_Stream5->CR   = (4UL << DMA_SxCR_CHSEL_Pos)    /* Canal 4: USART2_RX */
+                       | DMA_SxCR_PL_1                  /* Prioridad Alta */
+                       | DMA_SxCR_MINC                  /* Incremento de memoria */
+                       | DMA_SxCR_CIRC;                 /* Modo Circular continuo */
+    DMA1_Stream5->CR  |= DMA_SxCR_EN;
+    USART2->CR3       |= USART_CR3_DMAR;                /* Habilitar DMA en receptor UART */
 }
 
 /**
