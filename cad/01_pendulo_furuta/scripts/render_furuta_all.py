@@ -101,7 +101,12 @@ mat_motor_coupler = {"diffuse": (0.88, 0.92, 0.10), "specular": (0.8, 0.9, 0.3),
 mat_motor_mag_holder = {"diffuse": (0.95, 0.25, 0.55), "specular": (0.9, 0.5, 0.7), "shininess": 0.75} # Coral Pink (Portaimán Trasero)
 mat_motor_pcb = {"diffuse": (0.08, 0.25, 0.75), "specular": (0.3, 0.5, 0.8), "shininess": 0.5}      # Royal Navy Blue FR4 (Sensor Motor)
 
-tower = doc.getObject("Base_Torre_Furuta").Shape
+tower_inf = get_optional_shape(doc, "Base_Inferior_Torre_Furuta")
+tower_sup = get_optional_shape(doc, "Torre_Superior_Motor_Furuta")
+if tower_inf is not None and tower_sup is not None:
+    tower = Part.Compound([tower_inf, tower_sup])
+else:
+    tower = doc.getObject("Base_Torre_Furuta").Shape
 cap = get_optional_shape(doc, "Tapa_Motor_Torre_Furuta")
 arm = doc.getObject("Brazo_Horizontal_L88").Shape
 axle = doc.getObject("Eje_Portaiman_Pendulo").Shape
@@ -124,10 +129,12 @@ motor_objs = [
 
 m2_screws = get_optional_shape(doc, "Tornillos_Motor_M2_Avellanados", "Tornillos_Motor_M2")
 cap_screws = get_optional_shape(doc, "Tornillos_Tapa_M3_Avellanados")
+joint_screws = get_optional_shape(doc, "Tornillos_Union_Torre_M3")
 fasteners = []
 for s in [
     m2_screws,
     cap_screws,
+    joint_screws,
     get_optional_shape(doc, "Tornillo_Masa_M3"),
     get_optional_shape(doc, "Tornillos_PCB_Pendulo_M3"),
 ]:
@@ -254,5 +261,18 @@ tower_section = [
 ]
 out_tower_cut = os.path.join(RENDERS_DIR, "render_corte_torre_motor.png")
 render_scene(tower_section, out_tower_cut, cam_orientation=(1.10, 0.60), cam_zoom=0.95)
+
+# 8. Rear/Head Detail of Pendulum AS5600 Sensor Mounting
+joint_sensor_view = [
+    (arm, mat_arm),
+    (axle, mat_axle),
+    (pendulum, mat_pendulum),
+    (bearing, mat_bearing),
+    (pen_sensor, mat_pcb),
+    (pen_mag, mat_magnet),
+    (doc.getObject("Tornillos_PCB_Pendulo_M3").Shape, mat_screws),
+]
+out_head = os.path.join(RENDERS_DIR, "render_detalle_sensor_pendulo.png")
+render_scene(joint_sensor_view, out_head, cam_orientation=(1.35, -1.8), cam_zoom=1.0)
 
 print("All Coin3D renders completed successfully!")

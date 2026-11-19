@@ -1,6 +1,5 @@
 import os
 import math
-import shutil
 import FreeCAD as App
 import Part
 import MeshPart
@@ -642,7 +641,7 @@ def main():
         AngularDeflection=0.08,
     ).write(stl_asm)
 
-    # Export printable individual parts across cad/01_pendulo_furuta and IMPRESION_3D/02_Pendulo_Furuta
+    # Export printable individual parts directly to IMPRESION_3D/02_Pendulo_Furuta (sin duplicados en cad/)
     printable_parts = [
         ("Base_Inferior_Torre_Furuta", tower_base_shape),
         ("Torre_Superior_Motor_Furuta", tower_upper_shape),
@@ -654,16 +653,14 @@ def main():
     ]
     os.makedirs(IMPRESION_FURUTA_DIR, exist_ok=True)
     for name, shp in printable_parts:
-        stl_p = os.path.join(MODEL_DIR, f"{name}.stl")
-        stp_p = os.path.join(MODEL_DIR, f"{name}.step")
+        stl_p = os.path.join(IMPRESION_FURUTA_DIR, f"{name}.stl")
+        stp_p = os.path.join(IMPRESION_FURUTA_DIR, f"{name}.step")
         MeshPart.meshFromShape(Shape=shp, LinearDeflection=0.03, AngularDeflection=0.06).write(stl_p)
         tmp_f = doc.addObject("Part::Feature", f"Tmp_{name}")
         tmp_f.Shape = shp
         Part.export([tmp_f], stp_p)
         doc.removeObject(tmp_f.Name)
-        shutil.copy2(stl_p, os.path.join(IMPRESION_FURUTA_DIR, f"{name}.stl"))
-        shutil.copy2(stp_p, os.path.join(IMPRESION_FURUTA_DIR, f"{name}.step"))
-        print(f"Exported & synced {name} (Vol={shp.Volume:.2f} mm^3)")
+        print(f"Exported to IMPRESION_3D/02_Pendulo_Furuta: {name} (Vol={shp.Volume:.2f} mm^3)")
 
     App.closeDocument(doc.Name)
     print("=== ALL FURUTA DFAM CAD MODELS GENERATED, CLASH-TESTED & SYNCED ===")

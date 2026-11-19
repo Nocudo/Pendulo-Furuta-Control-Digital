@@ -1,6 +1,5 @@
 import os
 import math
-import shutil
 import FreeCAD as App
 import Part
 import MeshPart
@@ -226,13 +225,11 @@ def main():
         ("Acoplador_Motor_AS5600", o_acop, acop_shape),
         ("Portaiman_AS5600", o_port, port_shape),
     ]:
-        step_out = os.path.join(MODEL_DIR, f"{name}.step")
-        stl_out = os.path.join(MODEL_DIR, f"{name}.stl")
+        step_out = os.path.join(IMPRESION_FURUTA_DIR, f"{name}.step")
+        stl_out = os.path.join(IMPRESION_FURUTA_DIR, f"{name}.stl")
         Part.export([obj], step_out)
         MeshPart.meshFromShape(Shape=shp, LinearDeflection=0.03, AngularDeflection=0.08).write(stl_out)
-        shutil.copy2(step_out, os.path.join(IMPRESION_FURUTA_DIR, f"{name}.step"))
-        shutil.copy2(stl_out, os.path.join(IMPRESION_FURUTA_DIR, f"{name}.stl"))
-        print(f"Exported & synced {name} (Vol={shp.Volume:.2f} mm^3)")
+        print(f"Exported to IMPRESION_3D/02_Pendulo_Furuta: {name} (Vol={shp.Volume:.2f} mm^3)")
 
     App.closeDocument(doc.Name)
     print("DONE: Motor coupler DfAM build verified & synced!")

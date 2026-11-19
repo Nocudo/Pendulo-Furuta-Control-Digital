@@ -23,7 +23,6 @@ Integra:
 
 import os
 import sys
-import shutil
 
 
 def _ensure_freecad_path():
@@ -333,18 +332,18 @@ def main():
     Part.export(all_objects, asm_step_path)
     print(f"[OK] Ensamblaje Completo STEP: {asm_step_path}")
     
-    # Piezas imprimibles 3D individuales
-    base_stl_path = os.path.join(CAJA_L298N_DIR, "Caja_Base_L298N.stl")
+    # Piezas imprimibles 3D individuales directamente en IMPRESION_3D/03_Caja_L298N (sin duplicados en cad/)
+    base_stl_path = os.path.join(IMPRESION_DIR, "Caja_Base_L298N.stl")
     base_shape.exportStl(base_stl_path)
-    base_step_path = os.path.join(CAJA_L298N_DIR, "Caja_Base_L298N.step")
+    base_step_path = os.path.join(IMPRESION_DIR, "Caja_Base_L298N.step")
     Part.export([o_base], base_step_path)
-    print(f"[OK] Caja Base STL y STEP")
+    print(f"[OK] Caja Base STL y STEP -> IMPRESION_3D/03_Caja_L298N/")
     
-    lid_stl_path = os.path.join(CAJA_L298N_DIR, "Tapa_Caja_L298N.stl")
+    lid_stl_path = os.path.join(IMPRESION_DIR, "Tapa_Caja_L298N.stl")
     lid_shape.exportStl(lid_stl_path)
-    lid_step_path = os.path.join(CAJA_L298N_DIR, "Tapa_Caja_L298N.step")
+    lid_step_path = os.path.join(IMPRESION_DIR, "Tapa_Caja_L298N.step")
     Part.export([o_lid], lid_step_path)
-    print(f"[OK] Tapa Superior STL y STEP")
+    print(f"[OK] Tapa Superior STL y STEP -> IMPRESION_3D/03_Caja_L298N/")
     
     # Subensamblaje del Driver L298N
     driver_objects = [o_board, o_mota, o_motb, o_pwr, o_cpins, o_lhdr, o_creg, o_pscrews]
@@ -364,13 +363,6 @@ def main():
         asm_stl_path = os.path.join(CAJA_L298N_DIR, "Caja_L298N_Completa_Assembly.stl")
         asm_stl_compound.exportStl(asm_stl_path)
         print(f"[OK] Ensamblaje Completo STL: {asm_stl_path}")
-    
-    # Sincronizar piezas imprimibles (.stl y .step) a IMPRESION_3D/03_Caja_L298N
-    shutil.copy2(base_stl_path, os.path.join(IMPRESION_DIR, "Caja_Base_L298N.stl"))
-    shutil.copy2(base_step_path, os.path.join(IMPRESION_DIR, "Caja_Base_L298N.step"))
-    shutil.copy2(lid_stl_path, os.path.join(IMPRESION_DIR, "Tapa_Caja_L298N.stl"))
-    shutil.copy2(lid_step_path, os.path.join(IMPRESION_DIR, "Tapa_Caja_L298N.step"))
-    print(f"[OK] Copia sincronizada en IMPRESION_3D/03_Caja_L298N/")
     
     print("\n¡Construcción y ensamblaje de la Caja L298N completados exitosamente!")
 

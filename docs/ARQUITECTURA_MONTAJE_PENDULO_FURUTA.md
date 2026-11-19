@@ -821,12 +821,12 @@ E IMPRESION 3D          ELECTRONICA            PERIFERICOS STM32      Y MODELADO
 ```
 
 ### Fase 1: Fabricación Mecánica e Impresión 3D
-1. Imprimir las 9 piezas STL del proyecto (empaquetadas en `IMPRESION_3D/`):
-   - `Base_Torre_Furuta.stl`: PETG/PLA+, relleno 25% Giroide, 4 perímetros.
-   - `Brazo_Horizontal_L88.stl`: PETG/ABS, relleno 50% Giroide, 5 perímetros.
-   - `Barra_Pendulo_Furuta.stl`: PETG, 40% Rectilíneo orientado a lo largo del eje.
-   - `Eje_Portaiman_Pendulo.stl` y `Portaiman_AS5600.stl`: 100% sólido.
-   - `Caja_Base_Nucleo.stl` y `Tapa_Caja_Nucleo.stl`: Chasis ventilado para la STM32.
+1. Imprimir las piezas STL del proyecto (empaquetadas en `IMPRESION_3D/`):
+   - `Base_Inferior_Torre_Furuta.stl` y `Torre_Superior_Motor_Furuta.stl` (junto con `Tapa_Motor_Torre_Furuta.stl`): PLA+/PETG, relleno 25% Giroide, 4 perímetros, sin soportes (`SUP = 0`).
+   - `Brazo_Horizontal_L88.stl`: PETG/PLA+, relleno 45% Giroide, 5 perímetros.
+   - `Barra_Pendulo_Furuta.stl`: PETG/PLA+, 45% Giroide orientada plana sobre la cama.
+   - `Eje_Portaiman_Pendulo.stl`, `Acoplador_Motor_AS5600.stl` y `Portaiman_AS5600.stl`: 100% sólido ($0.12\text{ mm}$).
+   - `Caja_Base_Nucleo.stl`, `Tapa_Caja_Nucleo.stl`, `Caja_Base_L298N.stl` y `Tapa_Caja_L298N.stl`: Chasis ventilados para STM32 y puente H.
 2. Limpiar rebabas y verificar tolerancias con pie de rey.
 
 ### Fase 2: Montaje Físico y Cableado Eléctrico
@@ -898,7 +898,7 @@ E IMPRESION 3D          ELECTRONICA            PERIFERICOS STM32      Y MODELADO
 
 ### Piezas Mecánicas y Rodamientos:
 * **1x** Rodamiento de bolas 608-2RS ($\varnothing 22 \times \varnothing 8 \times 7\text{ mm}$).
-* **1x** Kit completo de piezas impresas 3D (`Base_Torre_Furuta`, `Brazo_Horizontal_L88`, `Barra_Pendulo_Furuta`, `Eje_Portaiman_Pendulo`, `Masa_Ajustable_Pendulo`, `Acoplador_Motor_AS5600`, `Portaiman_AS5600`, `Caja_Base_Nucleo`, `Tapa_Caja_Nucleo`).
+* **1x** Kit completo de piezas impresas 3D (`Base_Inferior_Torre_Furuta`, `Torre_Superior_Motor_Furuta`, `Tapa_Motor_Torre_Furuta`, `Brazo_Horizontal_L88`, `Barra_Pendulo_Furuta`, `Eje_Portaiman_Pendulo`, `Masa_Ajustable_Pendulo`, `Acoplador_Motor_AS5600`, `Portaiman_AS5600`, `Caja_Base_Nucleo`, `Tapa_Caja_Nucleo`, `Caja_Base_L298N`, `Tapa_Caja_L298N`).
 
 ### Tornillería Estándar (Ferretería M3, M2, M5):
 * **8x** Tornillos M3 $\times 6\text{ mm}$ (fijación de los 2 sensores AS5600).

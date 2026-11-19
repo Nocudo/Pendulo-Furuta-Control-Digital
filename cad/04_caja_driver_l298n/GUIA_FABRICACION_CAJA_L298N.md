@@ -42,8 +42,8 @@ Para evitar el sobrecalentamiento térmico del chip sin requerir forzosamente un
 
 | Ítem | Componente | Cantidad | Especificación / Referencia |
 | :---: | :--- | :---: | :--- |
-| **1** | Carcasa Base (`Caja_Base_L298N.stl`) | 1 | Impresa en 3D (PLA/PETG/ABS), gris oscuro |
-| **2** | Tapa Superior (`Tapa_Caja_L298N.stl`) | 1 | Impresa en 3D (PLA/PETG/ABS), naranja o rojo |
+| **1** | Carcasa Base ([`Caja_Base_L298N.stl`](../../IMPRESION_3D/03_Caja_L298N/Caja_Base_L298N.stl)) | 1 | Impresa en 3D (PLA/PETG/ABS), gris oscuro (`IMPRESION_3D/03_Caja_L298N/`) |
+| **2** | Tapa Superior ([`Tapa_Caja_L298N.stl`](../../IMPRESION_3D/03_Caja_L298N/Tapa_Caja_L298N.stl)) | 1 | Impresa en 3D (PLA/PETG/ABS), naranja o rojo (`IMPRESION_3D/03_Caja_L298N/`) |
 | **3** | Módulo Driver L298N | 1 | Tarjeta comercial estándar ($43 \times 43\text{ mm}$ o $50 \times 40\text{ mm}$ con disipador) |
 | **4** | Tornillos Fijación PCB | 4 | M3 $\times 6\text{ mm}$ o M3 $\times 8\text{ mm}$ (autorroscante para termoplástico) |
 | **5** | Tornillos Cierre Caja | 4 | M3 $\times 12\text{ mm}$ o M3 $\times 14\text{ mm}$ DIN 7991 (cabeza avellanada) |

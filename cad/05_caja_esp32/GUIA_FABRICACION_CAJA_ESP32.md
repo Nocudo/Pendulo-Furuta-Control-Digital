@@ -26,14 +26,14 @@ Este documento detalla el diseño mecánico, tolerancias de fabricación aditiva
 
 ## 2. Archivos del Proyecto
 
-Todos los archivos CAD se encuentran en `cad/05_caja_esp32/` (y la versión optimizada para impresión en `IMPRESION_3D/04_Caja_ESP32/`):
+Los archivos paramétricos y ensamblajes se encuentran en `cad/05_caja_esp32/`, y los modelos individuales optimizados listos para impresión 3D están centralizados en [`IMPRESION_3D/04_Caja_ESP32/`](../../IMPRESION_3D/04_Caja_ESP32/):
 
-| Archivo | Formato | Descripción |
+| Archivo | Formato | Ubicación / Descripción |
 |---|---|---|
-| `Caja_ESP32_Expansion.FCStd` | FreeCAD 1.1 | Archivo nativo paramétrico editable con árbol de operaciones y materiales |
-| `Caja_ESP32_Completa_Assembly.step` | STEP AP214 | Ensamble maestro interoperable con tornillería y electrónica de referencia *(el `.stl` completo se regenera con `--with-huge-stl`)* |
-| `Caja_Base_ESP32.stl` / `.step` | STL & STEP | **Pieza para impresión 3D**: Cuerpo principal inferior de la caja |
-| `Tapa_Caja_ESP32.stl` / `.step` | STL & STEP | **Pieza para impresión 3D**: Tapa superior con rejilla y avellanados M3 |
+| `Caja_ESP32_Expansion.FCStd` | FreeCAD 1.1 | `cad/05_caja_esp32/` — Archivo nativo paramétrico editable con árbol de operaciones y materiales |
+| `Caja_ESP32_Completa_Assembly.step` | STEP AP214 | `cad/05_caja_esp32/` — Ensamble maestro interoperable con tornillería y electrónica de referencia *(el `.stl` completo se regenera con `--with-huge-stl`)* |
+| `Caja_Base_ESP32.stl` / `.step` | STL & STEP | `IMPRESION_3D/04_Caja_ESP32/` — **Pieza para impresión 3D (Placa 7)**: Cuerpo principal inferior de la caja |
+| `Tapa_Caja_ESP32.stl` / `.step` | STL & STEP | `IMPRESION_3D/04_Caja_ESP32/` — **Pieza para impresión 3D (Placa 7)**: Tapa superior con rejilla y avellanados M3 |
 
 ---
 

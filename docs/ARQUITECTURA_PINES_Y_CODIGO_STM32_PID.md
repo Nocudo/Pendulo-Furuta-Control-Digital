@@ -88,7 +88,7 @@ flowchart TD
 
 ### 2.2. Configuración Matemática Exacta de los Relojes y Timers (`main.c`)
 
-En la función [`SystemClock_Config()`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/main.c#L139-L178), el PLL lleva el núcleo Cortex-M4F a **$180\text{ MHz}$** a partir del reloj de $8\text{ MHz}$ del ST-LINK (`HSE_BYPASS`):
+En la función [`SystemClock_Config()`](../firmware_stm32/Core/Src/main.c#L139-L178), el PLL lleva el núcleo Cortex-M4F a **$180\text{ MHz}$** a partir del reloj de $8\text{ MHz}$ del ST-LINK (`HSE_BYPASS`):
 * **`SYSCLK = HCLK = 180 MHz`**
 * **Bus `APB2` (`PCLK2 = 90 MHz`):** Como el divisor APB2 es distinto de 1 ($\div 2$), el reloj de los timers de APB2 se multiplica por 2: **$f_{\text{TIM1}} = 180\text{ MHz}$**.
   - **Cálculo de `TIM1_CH1` (`PA8`) para PWM de $20.0\text{ kHz}$ (inaudible y sin rizado de corriente):**
@@ -103,7 +103,7 @@ En la función [`SystemClock_Config()`](file:///c:/Users/rodri/Mi%20unidad/Docum
 
 ### 3.1. Diagrama de Bloques de la Caracterización Experimental (Motor y Sistema)
 
-El firmware incluye en [`caracterizacion.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/caracterizacion.c) 5 protocolos automatizados que excitan el hardware y transmiten la respuesta por UART hacia los scripts de identificación [`caracterizacion_y_pid_sistema.py`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/caracterizacion_y_pid_pc/caracterizacion_y_pid_sistema.py) y [`caracterizacion_y_pid_matlab.m`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/caracterizacion_y_pid_pc/caracterizacion_y_pid_matlab.m):
+El firmware incluye en [`caracterizacion.c`](../firmware_stm32/Core/Src/caracterizacion.c) 5 protocolos automatizados que excitan el hardware y transmiten la respuesta por UART hacia los scripts de identificación [`caracterizacion_y_pid_sistema.py`](../firmware_stm32/caracterizacion_y_pid_pc/caracterizacion_y_pid_sistema.py) y [`caracterizacion_y_pid_matlab.m`](../firmware_stm32/caracterizacion_y_pid_pc/caracterizacion_y_pid_matlab.m):
 
 ```mermaid
 flowchart LR
@@ -233,22 +233,22 @@ Cada uno de los 4 controladores PID implementa la ecuación en diferencias obten
 
 ## 4. Explicación Detallada del Código Fuente de la STM32
 
-El código fuente para **STM32CubeIDE** se encuentra íntegramente en [`firmware_stm32/Core/`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core):
+El código fuente para **STM32CubeIDE** se encuentra íntegramente en [`firmware_stm32/Core/`](../firmware_stm32/Core):
 
 | Archivo | Rol y Responsabilidad |
 | :--- | :--- |
-| [`Core/Inc/main.h`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Inc/main.h) | Definiciones globales de pines (`PA8`, `PB4`, `PB5`, `PB8..PB11`, `PA2/PA3`, `PC13`, `PA5`), constantes de reloj y frecuencia de muestreo ($1000\text{ Hz}$). |
-| [`Core/Src/main.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/main.c) | Inicialización del PLL a $180\text{ MHz}$, configuración de `TIM1` (PWM $20\text{ kHz}$), `TIM6` (ISR $1\text{ kHz}$), `I2C1`/`I2C2` ($400\text{ kHz}$), `USART2` ($115200\text{ bps}$) y bucle principal no bloqueante. |
-| [`Core/Inc/as5600.h`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Inc/as5600.h) / [`Core/Src/as5600.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/as5600.c) | Driver de los encoders magnéticos AS5600: lectura de 12 bits, desenvoltura multi-vuelta, calibración circular de cero, error respecto a $\pi\text{ rad}$ y filtro IIR de velocidad. |
-| [`Core/Inc/l298n_motor.h`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Inc/l298n_motor.h) / [`Core/Src/l298n_motor.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/l298n_motor.c) | Driver del puente H L298N: control PWM directo, control por tensión con compensación inversa de zona muerta, freno electromagnético y parada libre. |
-| [`Core/Inc/pid_controller.h`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Inc/pid_controller.h) / [`Core/Src/pid_controller.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/pid_controller.c) | Motor matemático del controlador PID digital discreto con integración trapezoidal, derivada filtrada pasabajos y anti-windup por clamping. |
-| [`Core/Inc/caracterizacion.h`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Inc/caracterizacion.h) / [`Core/Src/caracterizacion.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/caracterizacion.c) | Máquina de estados de los 5 ensayos de caracterización experimental del motor y del péndulo + validación en lazo cerrado de los PID del motor. |
-| [`Core/Inc/furuta_control.h`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Inc/furuta_control.h) / [`Core/Src/furuta_control.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/furuta_control.c) | Lazo maestro de control a $1\text{ kHz}$: Swing-Up por energía, PID Dual ($\alpha + \theta$), Watchdog de ángulo máximo ($\pm 25^\circ$), telemetría CSV y parser de comandos UART. |
-| [`Core/Src/stm32f4xx_it.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/stm32f4xx_it.c) | Rutinas de servicio de interrupción (`TIM6_DAC_IRQHandler` a $1\text{ kHz}$ y `EXTI15_10_IRQHandler` para el botón B1). |
+| [`Core/Inc/main.h`](../firmware_stm32/Core/Inc/main.h) | Definiciones globales de pines (`PA8`, `PB4`, `PB5`, `PB8..PB11`, `PA2/PA3`, `PC13`, `PA5`), constantes de reloj y frecuencia de muestreo ($1000\text{ Hz}$). |
+| [`Core/Src/main.c`](../firmware_stm32/Core/Src/main.c) | Inicialización del PLL a $180\text{ MHz}$, configuración de `TIM1` (PWM $20\text{ kHz}$), `TIM6` (ISR $1\text{ kHz}$), `I2C1`/`I2C2` ($400\text{ kHz}$), `USART2` ($115200\text{ bps}$) y bucle principal no bloqueante. |
+| [`Core/Inc/as5600.h`](../firmware_stm32/Core/Inc/as5600.h) / [`Core/Src/as5600.c`](../firmware_stm32/Core/Src/as5600.c) | Driver de los encoders magnéticos AS5600: lectura de 12 bits, desenvoltura multi-vuelta, calibración circular de cero, error respecto a $\pi\text{ rad}$ y filtro IIR de velocidad. |
+| [`Core/Inc/l298n_motor.h`](../firmware_stm32/Core/Inc/l298n_motor.h) / [`Core/Src/l298n_motor.c`](../firmware_stm32/Core/Src/l298n_motor.c) | Driver del puente H L298N: control PWM directo, control por tensión con compensación inversa de zona muerta, freno electromagnético y parada libre. |
+| [`Core/Inc/pid_controller.h`](../firmware_stm32/Core/Inc/pid_controller.h) / [`Core/Src/pid_controller.c`](../firmware_stm32/Core/Src/pid_controller.c) | Motor matemático del controlador PID digital discreto con integración trapezoidal, derivada filtrada pasabajos y anti-windup por clamping. |
+| [`Core/Inc/caracterizacion.h`](../firmware_stm32/Core/Inc/caracterizacion.h) / [`Core/Src/caracterizacion.c`](../firmware_stm32/Core/Src/caracterizacion.c) | Máquina de estados de los 5 ensayos de caracterización experimental del motor y del péndulo + validación en lazo cerrado de los PID del motor. |
+| [`Core/Inc/furuta_control.h`](../firmware_stm32/Core/Inc/furuta_control.h) / [`Core/Src/furuta_control.c`](../firmware_stm32/Core/Src/furuta_control.c) | Lazo maestro de control a $1\text{ kHz}$: Swing-Up por energía, PID Dual ($\alpha + \theta$), Watchdog de ángulo máximo ($\pm 25^\circ$), telemetría CSV y parser de comandos UART. |
+| [`Core/Src/stm32f4xx_it.c`](../firmware_stm32/Core/Src/stm32f4xx_it.c) | Rutinas de servicio de interrupción (`TIM6_DAC_IRQHandler` a $1\text{ kHz}$ y `EXTI15_10_IRQHandler` para el botón B1). |
 
 ---
 
-### 4.1. Driver de los Encoders Magnéticos AS5600 ([`as5600.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/as5600.c))
+### 4.1. Driver de los Encoders Magnéticos AS5600 ([`as5600.c`](../firmware_stm32/Core/Src/as5600.c))
 
 1. **Lectura Síncrona de 12 Bits (`AS5600_ReadRaw12Bit`):**
    Lee en una sola transacción $\text{I}^2\text{C}$ de 2 bytes los registros `0x0C` (`RAW_ANGLE_H`) y `0x0D` (`RAW_ANGLE_L`), reconstruyendo un entero entre $0$ y $4095$ ($\Delta q = \frac{2\pi}{4096} \approx 0.001534\text{ rad} \approx 0.0879^\circ$).
@@ -266,11 +266,11 @@ El código fuente para **STM32CubeIDE** se encuentra íntegramente en [`firmware
 
 ---
 
-### 4.2. Driver del Puente H L298N y Compensación de Zona Muerta ([`l298n_motor.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/l298n_motor.c))
+### 4.2. Driver del Puente H L298N y Compensación de Zona Muerta ([`l298n_motor.c`](../firmware_stm32/Core/Src/l298n_motor.c))
 
 El puente H bipolar L298N presenta una caída de tensión en sus transistores Darlington ($\approx 1.8\text{ V}-2.2\text{ V}$) sumada al par de fricción estática (*stiction*) del reductor planetario Namiki 22CL. Si no se compensa, para tensiones de control $|u| < 1.7\text{ V}$ ($\approx 14\%$ de ciclo útil PWM) el motor permanece inmóvil, provocando un ciclo límite de oscilación (*hunting*) en el péndulo invertido.
 
-La función [`L298N_SetVoltage()`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/l298n_motor.c#L96-L137) linealiza el conjunto driver-motor aplicando la ley inversa de zona muerta:
+La función [`L298N_SetVoltage()`](../firmware_stm32/Core/Src/l298n_motor.c#L96-L137) linealiza el conjunto driver-motor aplicando la ley inversa de zona muerta:
 
 $$PWM_{\text{efectivo}}(\%) = \begin{cases} 0\% & \text{si } |u| < 0.08\text{ V} \\ +\left[ PWM_{\text{dz}}^{+} + \left(100 - PWM_{\text{dz}}^{+}\right)\dfrac{|u|}{12.0} \right] & \text{si } u \ge 0.08\text{ V} \\ -\left[ PWM_{\text{dz}}^{-} + \left(100 - PWM_{\text{dz}}^{-}\right)\dfrac{|u|}{12.0} \right] & \text{si } u \le -0.08\text{ V} \end{cases}$$
 
@@ -278,7 +278,7 @@ Y convierte dicho porcentaje en cuentas del registro de comparación `TIM1->CCR1
 
 ---
 
-### 4.3. Módulo de Caracterización Experimental del Motor y del Sistema ([`caracterizacion.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/caracterizacion.c))
+### 4.3. Módulo de Caracterización Experimental del Motor y del Sistema ([`caracterizacion.c`](../firmware_stm32/Core/Src/caracterizacion.c))
 
 Se activa enviando los comandos `CHAR1` a `CHAR5B` por el puerto serie `USART2`:
 
@@ -293,9 +293,9 @@ Se activa enviando los comandos `CHAR1` a `CHAR5B` por el puerto serie `USART2`:
 
 ---
 
-### 4.4. Controlador Maestro del Péndulo de Furuta ([`furuta_control.c`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/furuta_control.c))
+### 4.4. Controlador Maestro del Péndulo de Furuta ([`furuta_control.c`](../firmware_stm32/Core/Src/furuta_control.c))
 
-La función [`Furuta_ControlISR_1kHz()`](file:///c:/Users/rodri/Mi%20unidad/Documentos/Documentos%20Miguel/Universidad/10mo%20semestre/Control%20digital/Proyecto%20final/firmware_stm32/Core/Src/furuta_control.c#L118-L246) es invocada cada **$1.000\text{ ms}$** por `TIM6_DAC_IRQHandler`:
+La función [`Furuta_ControlISR_1kHz()`](../firmware_stm32/Core/Src/furuta_control.c#L118-L246) es invocada cada **$1.000\text{ ms}$** por `TIM6_DAC_IRQHandler`:
 
 1. **Enganche Automático (*Auto-Catch*) y Swing-Up por Energía de Lyapunov:**
    - Si el sistema está en `FURUTA_STATE_IDLE` y el usuario acerca manualmente el péndulo a menos de $\pm 12^\circ$ de la vertical superior con velocidad $|\dot{\alpha}| < 1.5\text{ rad/s}$, la máquina de estados engancha automáticamente `FURUTA_STATE_BALANCE_PID`.
@@ -323,7 +323,7 @@ La función [`Furuta_ControlISR_1kHz()`](file:///c:/Users/rodri/Mi%20unidad/Docu
 
 ### Gráficas de Validación Experimental y Respuesta de los 4 Controladores PID ($1\text{ kHz}$)
 
-![Resultados de Caracterización y Controladores PID](firmware_stm32/caracterizacion_y_pid_pc/resultados_caracterizacion_y_pid_furuta.png)
+![Resultados de Caracterización y Controladores PID](../firmware_stm32/caracterizacion_y_pid_pc/resultados_caracterizacion_y_pid_furuta.png)
 
 ---
 

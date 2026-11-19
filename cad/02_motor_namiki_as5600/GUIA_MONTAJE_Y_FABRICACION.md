@@ -8,17 +8,15 @@ El sistema fue diseñado en **FreeCAD 1.1** bajo estándares estrictos de ingeni
 
 ## 1. Estructura de Archivos del Proyecto
 
-La carpeta contiene los modelos paramétricos nativos, ensambles completos y piezas listas para fabricar:
+La carpeta contiene los modelos paramétricos nativos y ensambles completos (`cad/02_motor_namiki_as5600/`), mientras que las piezas individuales listas para impresión se exportan directamente en [`IMPRESION_3D/02_Pendulo_Furuta/`](../../IMPRESION_3D/02_Pendulo_Furuta/):
 
-| Archivo | Formato | Descripción |
+| Archivo | Formato | Ubicación / Descripción |
 |---|---|---|
-| `Motor_22CL_AS5600.FCStd` | FreeCAD 1.1 | Proyecto nativo con árbol de operaciones paramétricas, materiales y ensamblaje completo |
-| `Motor_22CL_AS5600_Assembly.step` | STEP AP214 | Ensamble master interoperable para SolidWorks, Inventor, Fusion360, etc. |
-| `Motor_22CL_AS5600_Assembly.stl` | STL Mesh | Malla 3D del ensamble completo para visualizadores y pruebas |
-| `Acoplador_Motor_AS5600.step` | STEP AP214 | Modelo CAD individual del acoplador/estator |
-| `Acoplador_Motor_AS5600.stl` | STL Mesh | **Pieza para imprimir en 3D**: Acoplador/soporte estator (alta resolución) |
-| `Portaiman_AS5600.step` | STEP AP214 | Modelo CAD individual del portaimán del rotor |
-| `Portaiman_AS5600.stl` | STL Mesh | **Pieza para imprimir en 3D**: Portaimán para eje de 2.0 mm (alta resolución) |
+| `Motor_22CL_AS5600.FCStd` | FreeCAD 1.1 | `cad/02_motor_namiki_as5600/` — Proyecto nativo con árbol de operaciones paramétricas, materiales y ensamblaje completo |
+| `Motor_22CL_AS5600_Assembly.step` | STEP AP214 | `cad/02_motor_namiki_as5600/` — Ensamble master interoperable para SolidWorks, Inventor, Fusion360, etc. |
+| `Motor_22CL_AS5600_Assembly.stl` | STL Mesh | `cad/02_motor_namiki_as5600/` — Malla 3D del ensamble completo para visualizadores y pruebas |
+| `Acoplador_Motor_AS5600.step` / `.stl` | STEP & STL | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza para imprimir en 3D (Placa 4)**: Acoplador/soporte estator DfAM sin soportes |
+| `Portaiman_AS5600.step` / `.stl` | STEP & STL | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza para imprimir en 3D (Placa 4)**: Portaimán para eje de 2.0 mm |
 
 ---
 

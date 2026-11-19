@@ -163,4 +163,72 @@ if clamp_nut is not None:
 out4 = os.path.join(RENDERS_DIR, "render_corte_transversal.png")
 render_scene(cut_shapes, out4, cam_orientation=(1.1, 0.4), cam_zoom=1.2)
 
+# 5. Bottom PCB & Screw Mounting View
+bottom_shapes = [
+    (adapter, mat_printed_adapter),
+    (sensor, mat_pcb_sensor),
+    (pcb_screws, mat_screws),
+    (housing, mat_motor_housing),
+]
+if clamp_screw is not None:
+    bottom_shapes.append((clamp_screw, mat_screws))
+out5 = os.path.join(RENDERS_DIR, "render_vista_inferior_pcb.png")
+render_scene(bottom_shapes, out5, cam_orientation=(2.3, 0.8), cam_zoom=1.2)
+
+# 6. Magnet Holder Closeup
+holder_shapes = [
+    (holder, mat_printed_holder),
+    (magnet, mat_magnet),
+]
+out6 = os.path.join(RENDERS_DIR, "render_portaiman.png")
+render_scene(holder_shapes, out6, cam_orientation=(1.1, 0.7), cam_zoom=1.3)
+
+# 7. Exploded Assembly View
+adapter_exp = adapter.copy()
+adapter_exp.translate(App.Vector(0, 0, -25))
+holder_exp = holder.copy()
+holder_exp.translate(App.Vector(0, 0, -50))
+magnet_exp = magnet.copy()
+magnet_exp.translate(App.Vector(0, 0, -50))
+sensor_exp = sensor.copy()
+sensor_exp.translate(App.Vector(0, 0, -75))
+pcb_screws_exp = pcb_screws.copy()
+pcb_screws_exp.translate(App.Vector(0, 0, -95))
+
+exploded_shapes = [
+    (gearbox, mat_gearbox),
+    (boss, mat_gearbox),
+    (shaft, mat_steel_shaft),
+    (housing, mat_motor_housing),
+    (rear_shaft, mat_steel_shaft),
+    (adapter_exp, mat_printed_adapter),
+    (holder_exp, mat_printed_holder),
+    (magnet_exp, mat_magnet),
+    (sensor_exp, mat_pcb_sensor),
+    (pcb_screws_exp, mat_screws),
+]
+if clamp_screw is not None:
+    cs_e = clamp_screw.copy()
+    cs_e.translate(App.Vector(-20, 0, -25))
+    exploded_shapes.append((cs_e, mat_screws))
+if clamp_nut is not None:
+    cn_e = clamp_nut.copy()
+    cn_e.translate(App.Vector(20, 0, -25))
+    exploded_shapes.append((cn_e, mat_screws))
+out7 = os.path.join(RENDERS_DIR, "render_despiece_explosivo.png")
+render_scene(exploded_shapes, out7, cam_orientation=(1.25, 0.65), cam_zoom=0.85)
+
+# 8. Internal Cutaway Section
+cut_box_int = Part.makeBox(100.0, 100.0, 150.0, App.Vector(-50.0, -100.0, -100.0))
+internal_shapes = [
+    (housing.cut(cut_box_int), mat_motor_housing),
+    (rear_shaft.cut(cut_box_int), mat_steel_shaft),
+    (adapter.cut(cut_box_int), mat_printed_adapter),
+    (holder.cut(cut_box_int), mat_printed_holder),
+    (magnet.cut(cut_box_int), mat_magnet),
+    (sensor.cut(cut_box_int), mat_pcb_sensor),
+]
+out8 = os.path.join(RENDERS_DIR, "render_corte_interno.png")
+render_scene(internal_shapes, out8, cam_orientation=(1.35, 0.25), cam_zoom=1.4)
+
 print("All photorealistic renders generated successfully!")

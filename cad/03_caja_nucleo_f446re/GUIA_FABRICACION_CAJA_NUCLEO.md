@@ -88,7 +88,7 @@ El microcontrolador STM32F401 (ARM Cortex-M4 a 84 MHz) y el chip ST-LINK V2-1 ge
 
 ## 5. Lista de Materiales (BOM) y Tornillería
 
-1. **Piezas Impresas 3D**:
+1. **Piezas Impresas 3D** (ubicadas en [`IMPRESION_3D/01_Caja_STM32_Nucleo/`](../../IMPRESION_3D/01_Caja_STM32_Nucleo/)):
    * $1\times$ Chasis Base: `Caja_Base_Nucleo.stl` (volumen de plástico: $\sim 34.0\text{ cm}^3$, aprox. $42\text{ g}$ de filamento).
    * $1\times$ Tapa Superior: `Tapa_Caja_Nucleo.stl` (volumen de plástico: $\sim 12.1\text{ cm}^3$, aprox. $15\text{ g}$ de filamento).
 2. **Fijación de la Tarjeta Nucleo-64 a los Separadores**:

@@ -58,21 +58,20 @@ Este documento detalla el diseño mecánico optimizado, manufactura aditiva (imp
 
 ## 1. Estructura de Archivos del Proyecto
 
-Todos los archivos se encuentran disponibles en `cad/01_pendulo_furuta/` y sincronizados para impresión en `IMPRESION_3D/02_Pendulo_Furuta/`:
+Todos los modelos paramétricos y ensamblajes se encuentran en `cad/01_pendulo_furuta/`, y todas las piezas individuales listas para impresión (`.stl` / `.step`) están centralizadas en [`IMPRESION_3D/02_Pendulo_Furuta/`](../../IMPRESION_3D/02_Pendulo_Furuta/):
 
-| Archivo | Formato | Descripción |
+| Archivo | Formato | Ubicación / Descripción |
 |---|---|---|
-| `Pendulo_Furuta_Completo.FCStd` | FreeCAD 1.1 | Ensamble paramétrico completo editable en FreeCAD con árbol de operaciones y materiales |
-| `Pendulo_Furuta_Assembly.step` | STEP AP214 | Ensamble master interoperable para SolidWorks, Inventor, Fusion 360, Onshape |
-| `Pendulo_Furuta_Assembly.stl` | STL Mesh | Malla 3D del conjunto completo para visualización o simulación física |
-| `Base_Inferior_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 1)**: Base inferior pedestal ($Z=0..82\text{ mm}$) con espiga macho coaxial $\varnothing 31.6\text{ mm}$, base $120 \times 120\text{ mm}$ y barreno de cables $\varnothing 24\text{ mm}$ |
-| `Torre_Superior_Motor_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 2)**: Torre superior motor ($Z=70..156\text{ mm}$) con 4 ventanas de doble arco ojival a $37.8^\circ$, barreno hembra $\varnothing 32\text{ mm}$ y brida superior $52 \times 52\text{ mm}$ optimizada para impresión boca abajo sin soportes |
-| `Base_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Opcional)**: Torre monolítica en una sola pieza ($156\text{ mm}$) con arcos autoportantes y base $120 \times 120\text{ mm}$ |
-| `Tapa_Motor_Torre_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 3)**: Tapa desmontable del motor ($52 \times 52 \times 9.0\text{ mm}$, placa de $5.0\text{ mm}$ de espesor) con orificios M2 rotados a $45^\circ$, cajera central de $\varnothing 11.5\text{ mm} \times 3.5\text{ mm}$ y avellanados M3/M2 al ras |
-| `Brazo_Horizontal_L88.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 3)**: Brazo plano DfAM sin soportes, sosteniendo la caja inferior del encoder |
-| `Eje_Portaiman_Pendulo.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 4)**: Eje para rodamiento 608 ($\varnothing 8\text{ mm}$), copa para imán y espiga D con cono a $32.7°$ |
-| `Barra_Pendulo_Furuta.stl` / `.step` | STL & STEP | **Pieza 3D (Placa 3)**: Barra oscilante coplanar con cubo hembra D, corredera de $50\text{ mm}$ y despeje de $30\text{ mm}$ |
-| `Masa_Ajustable_Pendulo.stl` / `.step` | STL & STEP | **Pieza 3D**: Contrapeso cilíndrico de $\varnothing 18\text{ mm}$ en dos mitades con tornillo M3 |
+| `Pendulo_Furuta_Completo.FCStd` | FreeCAD 1.1 | `cad/01_pendulo_furuta/` — Ensamble paramétrico completo editable en FreeCAD con árbol de operaciones y materiales |
+| `Pendulo_Furuta_Assembly.step` | STEP AP214 | `cad/01_pendulo_furuta/` — Ensamble master interoperable para SolidWorks, Inventor, Fusion 360, Onshape |
+| `Pendulo_Furuta_Assembly.stl` | STL Mesh | `cad/01_pendulo_furuta/` — Malla 3D del conjunto completo para visualización o simulación física |
+| `Base_Inferior_Torre_Furuta.stl` / `.step` | STL & STEP | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza 3D (Placa 1)**: Base inferior pedestal ($Z=0..82\text{ mm}$) con espiga macho coaxial $\varnothing 31.6\text{ mm}$, base $120 \times 120\text{ mm}$ y barreno de cables $\varnothing 24\text{ mm}$ |
+| `Torre_Superior_Motor_Furuta.stl` / `.step` | STL & STEP | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza 3D (Placa 2)**: Torre superior motor ($Z=70..156\text{ mm}$) con 4 ventanas de doble arco ojival a $37.8^\circ$, barreno hembra $\varnothing 32\text{ mm}$ y brida superior $52 \times 52\text{ mm}$ optimizada para impresión boca abajo sin soportes |
+| `Tapa_Motor_Torre_Furuta.stl` / `.step` | STL & STEP | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza 3D (Placa 3)**: Tapa desmontable del motor ($52 \times 52 \times 8.5\text{ mm}$, placa de $5.0\text{ mm}$ + faldón de $3.5\text{ mm}$) con orificios M2 rotados a $45^\circ$, cajera central de $\varnothing 11.5\text{ mm} \times 1.7\text{ mm}$ y avellanados M3/M2 al ras |
+| `Brazo_Horizontal_L88.stl` / `.step` | STL & STEP | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza 3D (Placa 3)**: Brazo plano DfAM sin soportes, sosteniendo la caja inferior del encoder |
+| `Eje_Portaiman_Pendulo.stl` / `.step` | STL & STEP | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza 3D (Placa 4)**: Eje para rodamiento 608 ($\varnothing 8\text{ mm}$), copa para imán y espiga D con cono a $32.7^\circ$ |
+| `Barra_Pendulo_Furuta.stl` / `.step` | STL & STEP | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza 3D (Placa 3)**: Barra oscilante coplanar con cubo hembra D, corredera de $50\text{ mm}$ y despeje de $30\text{ mm}$ |
+| `Masa_Ajustable_Pendulo.stl` / `.step` | STL & STEP | `IMPRESION_3D/02_Pendulo_Furuta/` — **Pieza 3D**: Contrapeso cilíndrico de $\varnothing 18\text{ mm}$ en dos mitades con tornillo M3 |
 
 ---
 

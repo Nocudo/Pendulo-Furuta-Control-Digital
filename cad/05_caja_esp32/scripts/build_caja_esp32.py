@@ -397,18 +397,22 @@ def main():
     Part.export(all_objects, asm_step_path)
     print(f"[OK] Exportado STEP Ensamblaje Completo: {asm_step_path}")
     
-    # Piezas Imprimibles individuales
-    base_stl_path = os.path.join(MODEL_DIR, "Caja_Base_ESP32.stl")
-    base_shape.exportStl(base_stl_path)
-    base_step_path = os.path.join(MODEL_DIR, "Caja_Base_ESP32.step")
-    Part.export([obj_base], base_step_path)
-    print(f"[OK] Exportado Base STL y STEP")
-    
-    lid_stl_path = os.path.join(MODEL_DIR, "Tapa_Caja_ESP32.stl")
-    lid_shape.exportStl(lid_stl_path)
-    lid_step_path = os.path.join(MODEL_DIR, "Tapa_Caja_ESP32.step")
-    Part.export([obj_lid], lid_step_path)
-    print(f"[OK] Exportado Tapa STL y STEP")
+    # Piezas imprimibles individuales: se exportan únicamente a IMPRESION_3D/04_Caja_ESP32 bajo --export-impresion
+    # para no duplicar archivos en cad/ ni sobrescribir las mallas 80x66x26 de Placa 7 por defecto.
+    if "--export-impresion" in sys.argv:
+        impresion_dir = os.path.join(os.path.dirname(os.path.dirname(MODEL_DIR)), "IMPRESION_3D", "04_Caja_ESP32")
+        os.makedirs(impresion_dir, exist_ok=True)
+        base_stl_path = os.path.join(impresion_dir, "Caja_Base_ESP32.stl")
+        base_shape.exportStl(base_stl_path)
+        base_step_path = os.path.join(impresion_dir, "Caja_Base_ESP32.step")
+        Part.export([obj_base], base_step_path)
+        print(f"[OK] Exportado Base STL y STEP -> {impresion_dir}")
+
+        lid_stl_path = os.path.join(impresion_dir, "Tapa_Caja_ESP32.stl")
+        lid_shape.exportStl(lid_stl_path)
+        lid_step_path = os.path.join(impresion_dir, "Tapa_Caja_ESP32.step")
+        Part.export([obj_lid], lid_step_path)
+        print(f"[OK] Exportado Tapa STL y STEP -> {impresion_dir}")
     
     # Ensamblaje Electrónico Real (Placa Expansión Real + ESP32 DevKit V1 Real)
     elec_objects = [obj_exp_pcb, obj_tb, obj_tb_sc, obj_hdr, obj_dc, obj_exp_el, obj_sc_pcb,

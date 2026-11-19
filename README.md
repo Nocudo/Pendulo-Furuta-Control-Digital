@@ -9,24 +9,33 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 ## 📂 Estructura del Repositorio
 
 ```
-├── cad/                              # Modelos CAD paramétricos (FreeCAD 1.1)
+├── cad/                              # Diseño CAD paramétrico (FreeCAD 1.1), ensamblajes, scripts y renders
 │   ├── 01_pendulo_furuta/            # Ensamblaje completo del péndulo
 │   │   ├── Pendulo_Furuta_Completo.FCStd
-│   │   ├── *.step / *.stl           # Piezas exportadas (8 partes imprimibles DfAM)
-│   │   ├── scripts/                  # Scripts de construcción y renderizado
+│   │   ├── Pendulo_Furuta_Assembly.step / .stl
+│   │   ├── GUIA_FABRICACION_Y_CONTROL_FURUTA.md
+│   │   ├── scripts/                  # Scripts de construcción (build_furuta_complete.py) y renderizado (render_furuta_all.py)
 │   │   └── renders/                  # Vistas renderizadas
 │   ├── 02_motor_namiki_as5600/       # Motor Namiki 22CL + encoder AS5600
 │   │   ├── Motor_22CL_AS5600.FCStd
-│   │   ├── scripts/
+│   │   ├── Motor_22CL_AS5600_Assembly.step / .stl
+│   │   ├── GUIA_MONTAJE_Y_FABRICACION.md
+│   │   ├── scripts/                  # Scripts (build_full_project.py, render_models.py)
 │   │   └── renders/
 │   ├── 03_caja_nucleo_f446re/        # Caja para STM32 Nucleo-F446RE
+│   │   ├── Caja_Nucleo_F401.FCStd / Caja_Nucleo_Completa_Assembly.step
+│   │   ├── NUCLEO-60-F401.STEP
+│   │   ├── GUIA_FABRICACION_CAJA_NUCLEO.md
 │   │   └── renders/
 │   ├── 04_caja_driver_l298n/         # Caja para driver L298N
-│   │   ├── Caja_L298N.FCStd
+│   │   ├── Caja_L298N.FCStd / Caja_L298N_Completa_Assembly.step / Driver_L298N_Real.step
+│   │   ├── GUIA_FABRICACION_CAJA_L298N.md
 │   │   ├── scripts/
 │   │   └── renders/
 │   ├── 05_caja_esp32/                # Caja para ESP32 (expansión opcional)
-│   │   ├── Caja_ESP32_Expansion.FCStd
+│   │   ├── Caja_ESP32_Expansion.FCStd / Caja_ESP32_Completa_Assembly.step
+│   │   ├── GUIA_FABRICACION_CAJA_ESP32.md / reporte_diseno_caja_esp32.md
+│   │   ├── components/
 │   │   ├── scripts/
 │   │   └── renders/
 │   └── referencias/                  # Modelos STEP de referencia (motor, rodamiento, tornillos)
@@ -46,14 +55,14 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 │   ├── ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md      # Arquitectura STM32, pinout, código y diagramas de bloques
 │   └── Ricardo_ToroSantaMaria_2009.pdf               # Referencia académica
 │
-├── IMPRESION_3D/                     # Todo lo necesario para imprimir
-│   ├── 01_Caja_STM32_Nucleo/        # STL/STEP listos para Caja Nucleo
-│   ├── 02_Pendulo_Furuta/            # STL/STEP listos para el péndulo (8 piezas)
-│   ├── 03_Caja_L298N/               # STL/STEP listos para Caja L298N
-│   ├── 04_Caja_ESP32/               # STL/STEP listos para Caja ESP32
+├── IMPRESION_3D/                     # Única fuente de piezas imprimibles (.stl/.step) y placas listas para Cura
+│   ├── 01_Caja_STM32_Nucleo/        # STL/STEP listos para Caja Nucleo (2 piezas)
+│   ├── 02_Pendulo_Furuta/            # STL/STEP listos para péndulo + acoplador motor/AS5600 (9 piezas)
+│   ├── 03_Caja_L298N/               # STL/STEP listos para Caja L298N (2 piezas)
+│   ├── 04_Caja_ESP32/               # STL/STEP listos para Caja ESP32 (2 piezas)
 │   ├── Placas_Cura_Listas/          # Placas de impresión preconfiguradas (7 placas)
 │   │   ├── Proyectos_3MF/           # Proyectos Cura (.3mf) con piezas posicionadas
-│   │   ├── GCode/                   # G-code listo para Anycubic Kobra 2
+│   │   ├── GCode/                   # G-code listo para Anycubic Kobra 2 (Placas 1, 2, 4, 5, 6 y 7)
 │   │   └── Perfiles_Cura/           # Perfiles de impresión (.curaprofile)
 │   └── GUIA_IMPRESION_3D_CURA.md    # Guía completa de impresión paso a paso
 │
@@ -104,12 +113,13 @@ Si tienes una **Anycubic Kobra 2**, puedes copiar directamente los archivos `.gc
 IMPRESION_3D/Placas_Cura_Listas/GCode/
 ├── Placa_1_Base_Inferior_Torre.gcode
 ├── Placa_2_Torre_Superior_Motor.gcode
-├── Placa_3_Brazo_Barra_y_Tapa.gcode
 ├── Placa_4_Precision_Encoder_AS5600.gcode
 ├── Placa_5_Caja_Nucleo.gcode
 ├── Placa_6_Caja_L298N.gcode
 └── Placa_7_Caja_ESP32.gcode
 ```
+
+*(Nota: la **Placa 3** (`Brazo_Horizontal_L88`, `Barra_Pendulo_Furuta`, `Tapa_Motor_Torre_Furuta`) se distribuye como proyecto preconfigurado [`Placa_3_Brazo_Barra_y_Tapa.3mf`](IMPRESION_3D/Placas_Cura_Listas/Proyectos_3MF/Placa_3_Brazo_Barra_y_Tapa.3mf) para laminar directamente en Cura.)*
 
 ### Impresión personalizada
 
@@ -192,7 +202,7 @@ El dueño del repositorio puede agregar colaboradores en:
 
 | Documento | Descripción |
 |---|---|
-| [`ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md`](ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md) | Arquitectura de control STM32F446RE, tabla de pines, explicación del código C/caracterización y diagramas de bloques |
+| [`docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md`](docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md) | Arquitectura de control STM32F446RE, tabla de pines, explicación del código C/caracterización y diagramas de bloques |
 | [`docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md`](docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md) | Arquitectura mecánica, modelo matemático y estrategia de control |
 | [`cad/01_pendulo_furuta/GUIA_FABRICACION_Y_CONTROL_FURUTA.md`](cad/01_pendulo_furuta/GUIA_FABRICACION_Y_CONTROL_FURUTA.md) | Guía de fabricación y montaje del péndulo |
 | [`cad/02_motor_namiki_as5600/GUIA_MONTAJE_Y_FABRICACION.md`](cad/02_motor_namiki_as5600/GUIA_MONTAJE_Y_FABRICACION.md) | Guía del subsistema motor + encoder |

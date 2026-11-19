@@ -48,7 +48,7 @@ Se ha actualizado y regenerado en **FreeCAD 1.1** el modelo de la caja protector
 
 - [`Caja_ESP32_Expansion.FCStd`](Caja_ESP32_Expansion.FCStd) — Archivo maestro paramétrico en FreeCAD 1.1 con puertos lado a lado y modelos CAD reales.
 - [`Caja_ESP32_Completa_Assembly.step`](Caja_ESP32_Completa_Assembly.step) — Ensamble completo universal para visualización y verificación (el `.stl` completo se puede regenerar localmente ejecutando `scripts/build_caja_esp32.py --with-huge-stl`).
-- [`Caja_Base_ESP32.stl`](Caja_Base_ESP32.stl) | [STEP](Caja_Base_ESP32.step) — Base inferior lista para imprimir en 3D en PLA/PETG.
-- [`Tapa_Caja_ESP32.stl`](Tapa_Caja_ESP32.stl) | [STEP](Tapa_Caja_ESP32.step) — Tapa desmontable con avellanados M3 y persiana convectiva.
+- [`Caja_Base_ESP32.stl`](../../IMPRESION_3D/04_Caja_ESP32/Caja_Base_ESP32.stl) | [STEP](../../IMPRESION_3D/04_Caja_ESP32/Caja_Base_ESP32.step) — Base inferior lista para imprimir en 3D en PLA/PETG (`IMPRESION_3D/04_Caja_ESP32/`).
+- [`Tapa_Caja_ESP32.stl`](../../IMPRESION_3D/04_Caja_ESP32/Tapa_Caja_ESP32.stl) | [STEP](../../IMPRESION_3D/04_Caja_ESP32/Tapa_Caja_ESP32.step) — Tapa desmontable con avellanados M3 y persiana convectiva (`IMPRESION_3D/04_Caja_ESP32/`).
 - [`Placa_ESP32_Expansion_Real.step`](Placa_ESP32_Expansion_Real.step) — Hardware electrónico real ensamblado.
 - [`GUIA_FABRICACION_CAJA_ESP32.md`](GUIA_FABRICACION_CAJA_ESP32.md) — Manual de impresión, parámetros slicer y conexionado.
