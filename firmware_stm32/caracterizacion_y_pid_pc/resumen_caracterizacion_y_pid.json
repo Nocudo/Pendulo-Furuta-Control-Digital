@@ -1,0 +1,52 @@
+{
+  "motor_characterization": {
+    "deadzone_pct": 14.0,
+    "Km_rad_s_per_V": 1.29537,
+    "tau_m_sec": 0.19255,
+    "Gv_s": "1.2954 / (0.1926 s + 1)",
+    "Gp_s": "1.2954 / (s (0.1926 s + 1))"
+  },
+  "pendulum_characterization": {
+    "wn_rad_s": 9.72188,
+    "period_sec": 0.64629,
+    "zeta": 0.011532,
+    "J1_pivot_kg_m2": 0.00038348859123751925,
+    "b1_Nms_rad": 8.598685971090324e-05,
+    "K_acople": 876.94317
+  },
+  "tuned_pid_controllers_1kHz": {
+    "pid_motor_velocity": {
+      "Kp": 0.85,
+      "Ki": 12.5,
+      "Kd": 0.005,
+      "N": 40.0,
+      "Ts": 0.001
+    },
+    "pid_motor_position": {
+      "Kp": 9.5,
+      "Ki": 3.2,
+      "Kd": 0.72,
+      "N": 35.0,
+      "Ts": 0.001
+    },
+    "pid_furuta_pendulum_alpha": {
+      "Kp": 48.0,
+      "Ki": 14.0,
+      "Kd": 3.6,
+      "N": 25.0,
+      "Ts": 0.001
+    },
+    "pid_furuta_arm_theta": {
+      "Kp": -2.4,
+      "Ki": -0.35,
+      "Kd": -1.65,
+      "N": 20.0,
+      "Ts": 0.001
+    }
+  },
+  "validation_metrics": {
+    "initial_perturbation_deg": 12.0,
+    "steady_state_error_pre_disturbance_deg": 1.5989,
+    "steady_state_error_post_disturbance_deg": 1.3036
+  }
+}

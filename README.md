@@ -31,9 +31,20 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 │   │   └── renders/
 │   └── referencias/                  # Modelos STEP de referencia (motor, rodamiento, tornillos)
 │
+├── firmware_stm32/                   # Firmware C para STM32 Nucleo-F446RE y Caracterización
+│   ├── Core/
+│   │   ├── Inc/                      # Headers (main.h, as5600.h, l298n_motor.h, pid_controller.h, caracterizacion.h, furuta_control.h)
+│   │   └── Src/                      # Código C (main.c, as5600.c, l298n_motor.c, pid_controller.c, caracterizacion.c, furuta_control.c, stm32f4xx_it.c)
+│   └── caracterizacion_y_pid_pc/     # Scripts Python/MATLAB de identificación y aplicación de PID
+│       ├── caracterizacion_y_pid_sistema.py
+│       ├── caracterizacion_y_pid_matlab.m
+│       ├── resultados_caracterizacion_y_pid_furuta.png
+│       └── resumen_caracterizacion_y_pid.json
+│
 ├── docs/                             # Documentación del proyecto
-│   ├── ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md   # Arquitectura mecánica y de control
-│   └── Ricardo_ToroSantaMaria_2009.pdf          # Referencia académica
+│   ├── ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md        # Arquitectura mecánica y de control
+│   ├── ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md      # Arquitectura STM32, pinout, código y diagramas de bloques
+│   └── Ricardo_ToroSantaMaria_2009.pdf               # Referencia académica
 │
 ├── IMPRESION_3D/                     # Todo lo necesario para imprimir
 │   ├── 01_Caja_STM32_Nucleo/        # STL/STEP listos para Caja Nucleo
@@ -181,6 +192,7 @@ El dueño del repositorio puede agregar colaboradores en:
 
 | Documento | Descripción |
 |---|---|
+| [`ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md`](ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md) | Arquitectura de control STM32F446RE, tabla de pines, explicación del código C/caracterización y diagramas de bloques |
 | [`docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md`](docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md) | Arquitectura mecánica, modelo matemático y estrategia de control |
 | [`cad/01_pendulo_furuta/GUIA_FABRICACION_Y_CONTROL_FURUTA.md`](cad/01_pendulo_furuta/GUIA_FABRICACION_Y_CONTROL_FURUTA.md) | Guía de fabricación y montaje del péndulo |
 | [`cad/02_motor_namiki_as5600/GUIA_MONTAJE_Y_FABRICACION.md`](cad/02_motor_namiki_as5600/GUIA_MONTAJE_Y_FABRICACION.md) | Guía del subsistema motor + encoder |
