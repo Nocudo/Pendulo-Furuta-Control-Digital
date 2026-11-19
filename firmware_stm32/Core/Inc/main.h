@@ -59,6 +59,8 @@ extern "C" {
 
 #define MOTOR_IN2_PORT          GPIOB
 #define MOTOR_IN2_PIN           GPIO_PIN_5              /* PB5 (Arduino D4, CN9-5) -> GPIO Out (L298N IN2) */
+#define MOTOR_IN2_MIRROR_PORT   GPIOA
+#define MOTOR_IN2_MIRROR_PIN    (GPIO_PIN_9 | GPIO_PIN_10) /* PA9 (D8) y PA10 (D2) -> Espejos redundantes de IN2 */
 
 /* 2. SENSOR 1: AS5600 DEL MOTOR / BRAZO (Mide ángulo horizontal Theta - Bus I2C1)
  *    Ubicación física: Parte trasera del motor Namiki 22CL (dentro de la torre).

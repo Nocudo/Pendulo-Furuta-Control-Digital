@@ -361,13 +361,20 @@ static void MX_GPIO_Init(void)
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();
 
-    /* 1. Pines de Dirección L298N: PB4 (IN1) y PB5 (IN2) -> Output Push-Pull */
+    /* 1. Pines de Dirección L298N: PB4 (IN1 en D5), PB5 (IN2 en D4) y espejo PA9 (IN2 en D8) -> Output Push-Pull */
     HAL_GPIO_WritePin(GPIOB, MOTOR_IN1_PIN | MOTOR_IN2_PIN, GPIO_PIN_RESET);
     GPIO_InitStruct.Pin   = MOTOR_IN1_PIN | MOTOR_IN2_PIN;
     GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull  = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    HAL_GPIO_WritePin(MOTOR_IN2_MIRROR_PORT, MOTOR_IN2_MIRROR_PIN, GPIO_PIN_RESET);
+    GPIO_InitStruct.Pin   = MOTOR_IN2_MIRROR_PIN;
+    GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull  = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(MOTOR_IN2_MIRROR_PORT, &GPIO_InitStruct);
 
     /* 2. Pin PWM L298N: PA8 (TIM1_CH1 -> ENA) -> Alternate Function AF1 */
     GPIO_InitStruct.Pin       = MOTOR_PWM_TIM_PIN;
@@ -425,6 +432,7 @@ void Error_Handler(void)
 {
     __disable_irq();
     HAL_GPIO_WritePin(GPIOB, MOTOR_IN1_PIN | MOTOR_IN2_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MOTOR_IN2_MIRROR_PORT, MOTOR_IN2_MIRROR_PIN, GPIO_PIN_RESET);
     while (1) {
     }
 }

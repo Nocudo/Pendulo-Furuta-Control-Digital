@@ -39,6 +39,7 @@ void L298N_Init(L298N_Handle_t *motor,
     /* Asegurar motor detenido antes de habilitar el canal PWM */
     HAL_GPIO_WritePin(motor->in1_port, motor->in1_pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(motor->in2_port, motor->in2_pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MOTOR_IN2_MIRROR_PORT, MOTOR_IN2_MIRROR_PIN, GPIO_PIN_RESET);
     __HAL_TIM_SET_COMPARE(motor->htim_pwm, motor->pwm_channel, 0U);
     (void)HAL_TIM_PWM_Start(motor->htim_pwm, motor->pwm_channel);
 }
@@ -85,17 +86,20 @@ void L298N_SetRawPWM(L298N_Handle_t *motor, float pwm_percent)
     }
 
     if (pwm_percent > 0.05f) {
-        /* Giro Positivo (IN1 = 1, IN2 = 0) */
+        /* Giro Positivo / Antihorario (IN1 = 1, IN2 = 0) */
         HAL_GPIO_WritePin(motor->in1_port, motor->in1_pin, GPIO_PIN_SET);
         HAL_GPIO_WritePin(motor->in2_port, motor->in2_pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(MOTOR_IN2_MIRROR_PORT, MOTOR_IN2_MIRROR_PIN, GPIO_PIN_RESET);
     } else if (pwm_percent < -0.05f) {
-        /* Giro Negativo (IN1 = 0, IN2 = 1) */
+        /* Giro Negativo / Horario (IN1 = 0, IN2 = 1 en D4/PB5 y espejo D8/PA9) */
         HAL_GPIO_WritePin(motor->in1_port, motor->in1_pin, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(motor->in2_port, motor->in2_pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(MOTOR_IN2_MIRROR_PORT, MOTOR_IN2_MIRROR_PIN, GPIO_PIN_SET);
     } else {
         /* Zona neutra: desacople suave */
         HAL_GPIO_WritePin(motor->in1_port, motor->in1_pin, GPIO_PIN_RESET);
         HAL_GPIO_WritePin(motor->in2_port, motor->in2_pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(MOTOR_IN2_MIRROR_PORT, MOTOR_IN2_MIRROR_PIN, GPIO_PIN_RESET);
         ccr = 0U;
         pwm_percent = 0.0f;
     }
@@ -158,6 +162,7 @@ void L298N_Brake(L298N_Handle_t *motor)
 {
     HAL_GPIO_WritePin(motor->in1_port, motor->in1_pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(motor->in2_port, motor->in2_pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(MOTOR_IN2_MIRROR_PORT, MOTOR_IN2_MIRROR_PIN, GPIO_PIN_SET);
     __HAL_TIM_SET_COMPARE(motor->htim_pwm, motor->pwm_channel, PWM_MAX_DUTY);
 
     motor->current_voltage_cmd = 0.0f;
@@ -172,6 +177,7 @@ void L298N_Coast(L298N_Handle_t *motor)
 {
     HAL_GPIO_WritePin(motor->in1_port, motor->in1_pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(motor->in2_port, motor->in2_pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(MOTOR_IN2_MIRROR_PORT, MOTOR_IN2_MIRROR_PIN, GPIO_PIN_RESET);
     __HAL_TIM_SET_COMPARE(motor->htim_pwm, motor->pwm_channel, 0U);
 
     motor->current_voltage_cmd = 0.0f;
