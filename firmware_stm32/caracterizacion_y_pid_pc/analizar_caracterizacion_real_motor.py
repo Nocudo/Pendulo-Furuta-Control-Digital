@@ -29,8 +29,12 @@ def analyze_deadzone_csv(dz_csv_path):
 
     t_s = (data[:, 0] - data[0, 0]) / 1000.0
     pwm = data[:, 2]
-    theta_rot = -data[:, 4]  # Invertir signo para que +PWM -> +theta
-    omega_rot = -data[:, 5]
+    if np.max(np.abs(data[:, 5])) < 30.0:
+        theta_rot = data[:, 4] * GEAR_RATIO
+        omega_rot = data[:, 5] * GEAR_RATIO
+    else:
+        theta_rot = -data[:, 4]
+        omega_rot = -data[:, 5]
 
     # Buscar el último escalón de PWM positivo y negativo antes de que se corte a 0
     pos_pwms = pwm[pwm > 0.5]
@@ -51,11 +55,16 @@ def analyze_motor_steps_csv(steps_csv_path, dz_pos, dz_neg):
     dt = float(np.median(np.diff(t_s)))
     pwm = data[:, 2]
     u_volts = data[:, 3]
-    # El AS5600 trasero mide en dirección negativa respecto a +PWM (direction = -1)
-    theta_rotor = -data[:, 4]
-    omega_rotor = -data[:, 5]
-    theta_arm = theta_rotor / GEAR_RATIO
-    omega_arm = omega_rotor / GEAR_RATIO
+    if np.max(np.abs(data[:, 5])) < 30.0:
+        theta_arm = data[:, 4]
+        omega_arm = data[:, 5]
+        theta_rotor = theta_arm * GEAR_RATIO
+        omega_rotor = omega_arm * GEAR_RATIO
+    else:
+        theta_rotor = -data[:, 4]
+        omega_rotor = -data[:, 5]
+        theta_arm = theta_rotor / GEAR_RATIO
+        omega_arm = omega_rotor / GEAR_RATIO
     alpha_pend = data[:, 6]
     alpha_dot_pend = data[:, 8]
 

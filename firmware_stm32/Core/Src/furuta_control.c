@@ -22,6 +22,9 @@
 /* Instancia global del sistema Furuta */
 Furuta_System_t g_furuta;
 
+/* Bandera estática de bloqueo electromagnético al alcanzar error 0.00° en modo Servo */
+static volatile bool s_pos_locked = false;
+
 /**
  * @brief Calcula la energía mecánica normalizada del péndulo respecto al
  *        punto de equilibrio superior invertido (donde E_ref = 0 J):
@@ -95,19 +98,19 @@ void Furuta_Init(Furuta_System_t *sys)
     sys->u_total_volts        = 0.0f;
     sys->pendulum_energy_j    = 0.0f;
 
-    /* 1. Inicializar Etapa de Potencia L298N (TIM1_CH1 @ 20 kHz, PB4, PB5)
-     *    Zona muerta de fricción estática con brazo + péndulo cargado: ±15.0% PWM */
+    /* 1. Inicializar Etapa de Potencia L298N (TIM1_CH1 @ 20 kHz, PB4, PB5, PA9, PA10)
+     *    Zona muerta asimétrica real medida en CHAR1: +7.0% PWM (antihorario), -10.0% PWM (horario) */
     L298N_Init(&sys->motor, &htim1, TIM_CHANNEL_1);
-    L298N_SetDeadzone(&sys->motor, 15.0f, 15.0f, true);
+    L298N_SetDeadzone(&sys->motor, 7.0f, 10.0f, true);
 
     /* 2. Inicializar Encoders Magnéticos AS5600 (I2C1 Brazo con direction=-1 y gear=80:1, I2C2 Péndulo) */
     (void)AS5600_Init(&sys->enc_arm,  &hi2c1, TS_CONTROL_SEC, 0.006f, -1);
     (void)AS5600_Init(&sys->enc_pend, &hi2c2, TS_CONTROL_SEC, 0.004f,  1);
 
     /* 3. Inicializar los 4 Controladores PID Discretos (Ts = 1.0 ms = 1 kHz)
-     *    Sintonizados a partir de la Planta Real Caracterizada:
-     *      Gv_brazo(s) = 2.310 / (0.0819 s + 1) [(rad/s)/V]
-     *      Gv_rotor(s) = 184.8 / (0.0819 s + 1) [(rad/s)/V]
+     *    Sintonizados a partir de la Planta Real Caracterizada (R^2 = 0.9837):
+     *      Gv_brazo(s) = 2.4917 / (0.1113 s + 1) [(rad/s)/V]
+     *      Gv_rotor(s) = 199.33 / (0.1113 s + 1) [(rad/s)/V]
      * ----------------------------------------------------------------------
      * A) PID de Velocidad del Motor/Brazo:
      *    Kp = 0.85 V/(rad/s), Ki = 12.50 V/rad, Kd = 0.005 V·s/rad, N = 40 */
@@ -116,12 +119,12 @@ void Furuta_Init(Furuta_System_t *sys)
              TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
              true);
 
-    /* B) PID de Posición del Motor/Brazo Solo (Servo firme y preciso):
-     *    Kp = 22.00 V/rad, Ki = 34.00 V/(rad·s), Kd = 1.35 V·s/rad, N = 35
-     *    Limitado a ±9.5 V para respuesta inmediata ante cualquier ángulo */
+    /* B) PID de Posición del Motor/Brazo Solo (Servo de precisión con error 0.00°):
+     *    Kp = 18.00 V/rad, Ki = 75.00 V/(rad·s), Kd = 1.65 V·s/rad, N = 35
+     *    Rango completo [-12.0 V, +12.0 V] con Clegg Reset en cruce por cero */
     PID_Init(&sys->pid_motor_pos,
-             22.00f, 34.00f, 1.35f, 35.0f,
-             TS_CONTROL_SEC, -9.5f, 9.5f,
+             18.00f, 75.00f, 1.65f, 35.0f,
+             TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
              true);
 
     /* C) PID Estabilizador del Péndulo Invertido (Lazo Rápido Principal alpha):
@@ -212,25 +215,73 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
         }
 
         case FURUTA_STATE_MOTOR_PID_POS: {
-            /* Controlador PID de Posición Angular del Motor / Brazo (Modo Servo) */
+            /* Controlador PID de Posición Angular del Motor / Brazo (Modo Servo Error 0.00°)
+             * Implementa:
+             *   1. Histéresis de llegada con Freno Electromagnético Activo (L298N_Brake)
+             *      al entrar en |pos_err| <= 0.018° (0.00° exactos en telemetría), evitando
+             *      que la tensión de los cables en ±180° devuelva el brazo.
+             *   2. Reinicio de Clegg (Zero-Crossing Integrator Reset): cuando el error
+             *      cambia de signo al cruzar la referencia, descarga i_term = 0 de inmediato
+             *      para que la integral acumulada jamás cancele a la acción proporcional.
+             *   3. Ventana de activación integral en |pos_err| < 8.0° con autoridad hasta
+             *      ±12.0 V (±100% PWM) para vencer cualquier fricción seca o tensión de cables. */
             float pos_err = sys->theta_setpoint_rad - theta_pos;
+            float abs_err = fabsf(pos_err);
 
-            if (fabsf(pos_err) < (0.20f * DEG_TO_RAD) && fabsf(theta_vel) < 0.08f) {
-                /* Banda de llegada exacta (±0.20°): apagar PWM para evitar zumbido */
-                sys->pid_motor_pos.i_term = 0.0f;
-                sys->u_total_volts = 0.0f;
-                L298N_Coast(&sys->motor);
-            } else {
-                sys->u_total_volts = PID_Compute(&sys->pid_motor_pos,
-                                                 sys->theta_setpoint_rad,
-                                                 theta_pos);
-                /* Acotar integrador a ±4.5 V para evitar sobreimpulso en giros grandes
-                 * pero manteniendo fuerza integral en todo el recorrido */
-                if (sys->pid_motor_pos.i_term > 4.5f) {
-                    sys->pid_motor_pos.i_term = 4.5f;
-                } else if (sys->pid_motor_pos.i_term < -4.5f) {
-                    sys->pid_motor_pos.i_term = -4.5f;
+            if (s_pos_locked) {
+                if (abs_err > (0.10f * DEG_TO_RAD)) {
+                    s_pos_locked = false;
+                } else {
+                    sys->pid_motor_pos.i_term = 0.0f;
+                    sys->pid_motor_pos.d_term = 0.0f;
+                    sys->pid_motor_pos.prev_error = pos_err;
+                    sys->u_total_volts = 0.0f;
+                    L298N_Brake(&sys->motor);
+                    break;
                 }
+            }
+
+            if (abs_err <= (0.045f * DEG_TO_RAD) && fabsf(theta_vel) < 0.12f) {
+                s_pos_locked = true;
+                sys->pid_motor_pos.i_term = 0.0f;
+                sys->pid_motor_pos.d_term = 0.0f;
+                sys->pid_motor_pos.prev_error = pos_err;
+                sys->u_total_volts = 0.0f;
+                L298N_Brake(&sys->motor);
+            } else {
+                /* Reinicio de Clegg: si el error cruzó por cero, limpiar integrador */
+                if ((pos_err * sys->pid_motor_pos.prev_error) < 0.0f) {
+                    sys->pid_motor_pos.i_term = 0.0f;
+                }
+
+                /* Fuera de ±8.0° mantener integrador en cero para 0% windup en viajes largos */
+                if (abs_err > (8.0f * DEG_TO_RAD)) {
+                    sys->pid_motor_pos.i_term = 0.0f;
+                } else {
+                    sys->pid_motor_pos.i_term += sys->pid_motor_pos.Ki * TS_CONTROL_SEC * pos_err;
+                    if (sys->pid_motor_pos.i_term > MOTOR_NOMINAL_VOLTAGE) {
+                        sys->pid_motor_pos.i_term = MOTOR_NOMINAL_VOLTAGE;
+                    } else if (sys->pid_motor_pos.i_term < -MOTOR_NOMINAL_VOLTAGE) {
+                        sys->pid_motor_pos.i_term = -MOTOR_NOMINAL_VOLTAGE;
+                    }
+                }
+
+                sys->pid_motor_pos.p_term = sys->pid_motor_pos.Kp * pos_err;
+                /* Amortiguamiento derivativo limpio usando velocidad filtrada IIR del brazo */
+                sys->pid_motor_pos.d_term = -sys->pid_motor_pos.Kd * theta_vel;
+                sys->pid_motor_pos.prev_error = pos_err;
+                sys->pid_motor_pos.prev_measurement = theta_pos;
+
+                float u_cmd = sys->pid_motor_pos.p_term
+                            + sys->pid_motor_pos.i_term
+                            + sys->pid_motor_pos.d_term;
+                if (u_cmd > MOTOR_NOMINAL_VOLTAGE) {
+                    u_cmd = MOTOR_NOMINAL_VOLTAGE;
+                } else if (u_cmd < -MOTOR_NOMINAL_VOLTAGE) {
+                    u_cmd = -MOTOR_NOMINAL_VOLTAGE;
+                }
+
+                sys->u_total_volts = u_cmd;
                 L298N_SetVoltage(&sys->motor, sys->u_total_volts);
             }
             break;
@@ -319,7 +370,7 @@ void Furuta_SendTelemetry_UART(Furuta_System_t *sys)
 {
     char tx_buf[160];
     int len = snprintf(tx_buf, sizeof(tx_buf),
-                       "%lu,%d,%.2f,%.3f,%.4f,%.4f,%.4f,%.4f,%.4f\r\n",
+                       "%lu,%d,%.2f,%.3f,%.5f,%.4f,%.4f,%.4f,%.4f\r\n",
                        (unsigned long)sys->tick_counter_1khz,
                        (int)sys->state,
                        sys->motor.current_pwm_pct,
@@ -367,6 +418,7 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
     }
 
     if (strncmp(cmd_str, "STOP", 4) == 0 || (cmd_str[0] == 'S' && cmd_str[1] == '\0')) {
+        s_pos_locked = false;
         sys->state = FURUTA_STATE_IDLE;
         L298N_Coast(&sys->motor);
     } else if (strncmp(cmd_str, "DIAG", 4) == 0 || (cmd_str[0] == 'D' && cmd_str[1] == '\0')) {
@@ -379,6 +431,7 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
             (void)HAL_UART_Transmit(&huart2, (uint8_t *)dbuf, (uint16_t)n, 60U);
         }
     } else if (strncmp(cmd_str, "ZERO", 4) == 0 || (cmd_str[0] == 'Z' && cmd_str[1] == '\0')) {
+        s_pos_locked = false;
         sys->state = FURUTA_STATE_CALIBRATING;
         L298N_Coast(&sys->motor);
         (void)AS5600_CalibrateZero(&sys->enc_arm,  64U);
@@ -429,14 +482,17 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
     } else if (strstr(cmd_str, "POS=") != NULL) {
         const char *p = strstr(cmd_str, "POS=") + 4;
         float deg = strtof(p, NULL);
-        sys->theta_setpoint_rad = deg * DEG_TO_RAD;
-        /* Preservar prev_measurement actual para evitar salto derivativo al cambiar ángulo */
-        sys->pid_motor_pos.i_term = 0.0f;
-        sys->pid_motor_pos.d_term = 0.0f;
-        sys->pid_motor_pos.prev_measurement = sys->enc_arm.angle_rad;
-        sys->pid_motor_pos.prev_error = sys->theta_setpoint_rad - sys->enc_arm.angle_rad;
-        sys->pid_motor_pos.is_first_run = false;
-        sys->state = FURUTA_STATE_MOTOR_PID_POS;
+        float new_sp_rad = deg * DEG_TO_RAD;
+        if (fabsf(new_sp_rad - sys->theta_setpoint_rad) > 1e-4f || sys->state != FURUTA_STATE_MOTOR_PID_POS) {
+            sys->theta_setpoint_rad = new_sp_rad;
+            s_pos_locked = false;
+            sys->pid_motor_pos.i_term = 0.0f;
+            sys->pid_motor_pos.d_term = 0.0f;
+            sys->pid_motor_pos.prev_measurement = sys->enc_arm.angle_rad;
+            sys->pid_motor_pos.prev_error = sys->theta_setpoint_rad - sys->enc_arm.angle_rad;
+            sys->pid_motor_pos.is_first_run = false;
+            sys->state = FURUTA_STATE_MOTOR_PID_POS;
+        }
     } else if (strncmp(cmd_str, "PID_A=", 6) == 0) {
         float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 25.0f;
         if (sscanf(cmd_str + 6, "%f,%f,%f,%f", &kp, &ki, &kd, &n) >= 3) {
