@@ -2,14 +2,153 @@
  ******************************************************************************
  * @file    as5600.c
  * @brief   Implementación del driver de encoders magnéticos AS5600 por I2C.
- *          Soporta lectura determinista en < 120 us a 400 kHz Fast Mode,
- *          desenvoltura multi-vuelta (angle unwrapping), calibración de cero,
- *          mapeo de desviación respecto al equilibrio invertido (pi rad) y
- *          derivada numérica con filtro pasabajos IIR de primer orden.
+ *          Incluye auto-detección y soporte transparente de inversión SCL/SDA
+ *          por Soft-I2C de alta velocidad (~400 kHz) si el usuario conectó
+ *          SCL y SDA cruzados en D15/D14 (PB8/PB9) o D6/D3 (PB10/PB3),
+ *          además de desenvoltura multi-vuelta y filtro IIR de velocidad.
  ******************************************************************************
  */
 
 #include "as5600.h"
+
+/* Retardo corto (~0.35 us a 180 MHz) para Soft-I2C a ~450 kHz */
+static inline void SoftI2C_Delay(void)
+{
+    for (volatile uint32_t i = 0U; i < 10U; i++) {
+        __NOP();
+    }
+}
+
+static inline void SoftI2C_PinHigh(GPIO_TypeDef *port, uint16_t pin)
+{
+    port->BSRR = (uint32_t)pin;
+}
+
+static inline void SoftI2C_PinLow(GPIO_TypeDef *port, uint16_t pin)
+{
+    port->BSRR = (uint32_t)pin << 16U;
+}
+
+static inline uint8_t SoftI2C_PinRead(GPIO_TypeDef *port, uint16_t pin)
+{
+    return ((port->IDR & pin) != 0U) ? 1U : 0U;
+}
+
+static void SoftI2C_ConfigPinsOD(GPIO_TypeDef *port, uint16_t scl_pin, uint16_t sda_pin)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    SoftI2C_PinHigh(port, scl_pin | sda_pin);
+    GPIO_InitStruct.Pin   = scl_pin | sda_pin;
+    GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull  = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    HAL_GPIO_Init(port, &GPIO_InitStruct);
+    SoftI2C_PinHigh(port, scl_pin | sda_pin);
+    SoftI2C_Delay();
+}
+
+static void SoftI2C_Start(GPIO_TypeDef *port, uint16_t scl, uint16_t sda)
+{
+    SoftI2C_PinHigh(port, sda);
+    SoftI2C_PinHigh(port, scl);
+    SoftI2C_Delay();
+    SoftI2C_PinLow(port, sda);
+    SoftI2C_Delay();
+    SoftI2C_PinLow(port, scl);
+    SoftI2C_Delay();
+}
+
+static void SoftI2C_Stop(GPIO_TypeDef *port, uint16_t scl, uint16_t sda)
+{
+    SoftI2C_PinLow(port, sda);
+    SoftI2C_Delay();
+    SoftI2C_PinHigh(port, scl);
+    SoftI2C_Delay();
+    SoftI2C_PinHigh(port, sda);
+    SoftI2C_Delay();
+}
+
+static bool SoftI2C_WriteByte(GPIO_TypeDef *port, uint16_t scl, uint16_t sda, uint8_t data)
+{
+    for (uint8_t i = 0U; i < 8U; i++) {
+        if ((data & 0x80U) != 0U) {
+            SoftI2C_PinHigh(port, sda);
+        } else {
+            SoftI2C_PinLow(port, sda);
+        }
+        data <<= 1U;
+        SoftI2C_Delay();
+        SoftI2C_PinHigh(port, scl);
+        SoftI2C_Delay();
+        SoftI2C_PinLow(port, scl);
+    }
+    /* Leer ACK del esclavo */
+    SoftI2C_PinHigh(port, sda);
+    SoftI2C_Delay();
+    SoftI2C_PinHigh(port, scl);
+    SoftI2C_Delay();
+    bool ack = (SoftI2C_PinRead(port, sda) == 0U);
+    SoftI2C_PinLow(port, scl);
+    SoftI2C_Delay();
+    return ack;
+}
+
+static uint8_t SoftI2C_ReadByte(GPIO_TypeDef *port, uint16_t scl, uint16_t sda, bool send_ack)
+{
+    uint8_t data = 0U;
+    SoftI2C_PinHigh(port, sda);
+    for (uint8_t i = 0U; i < 8U; i++) {
+        data <<= 1U;
+        SoftI2C_Delay();
+        SoftI2C_PinHigh(port, scl);
+        SoftI2C_Delay();
+        if (SoftI2C_PinRead(port, sda) != 0U) {
+            data |= 1U;
+        }
+        SoftI2C_PinLow(port, scl);
+    }
+    /* Enviar ACK o NACK */
+    if (send_ack) {
+        SoftI2C_PinLow(port, sda);
+    } else {
+        SoftI2C_PinHigh(port, sda);
+    }
+    SoftI2C_Delay();
+    SoftI2C_PinHigh(port, scl);
+    SoftI2C_Delay();
+    SoftI2C_PinLow(port, scl);
+    SoftI2C_PinHigh(port, sda);
+    SoftI2C_Delay();
+    return data;
+}
+
+static HAL_StatusTypeDef SoftI2C_MemRead(GPIO_TypeDef *port,
+                                         uint16_t scl,
+                                         uint16_t sda,
+                                         uint8_t reg,
+                                         uint8_t *buf,
+                                         uint16_t len)
+{
+    SoftI2C_Start(port, scl, sda);
+    if (!SoftI2C_WriteByte(port, scl, sda, AS5600_I2C_ADDR)) {
+        SoftI2C_Stop(port, scl, sda);
+        return HAL_ERROR;
+    }
+    if (!SoftI2C_WriteByte(port, scl, sda, reg)) {
+        SoftI2C_Stop(port, scl, sda);
+        return HAL_ERROR;
+    }
+    SoftI2C_Start(port, scl, sda);
+    if (!SoftI2C_WriteByte(port, scl, sda, AS5600_I2C_ADDR | 0x01U)) {
+        SoftI2C_Stop(port, scl, sda);
+        return HAL_ERROR;
+    }
+    for (uint16_t i = 0U; i < len; i++) {
+        buf[i] = SoftI2C_ReadByte(port, scl, sda, (i + 1U) < len);
+    }
+    SoftI2C_Stop(port, scl, sda);
+    return HAL_OK;
+}
 
 /**
  * @brief Normaliza cualquier ángulo en radianes al intervalo [-pi, +pi]
@@ -26,32 +165,54 @@ float AS5600_WrapToPi(float angle_rad)
 }
 
 /**
+ * @brief Lee bytes de registro del AS5600 usando Soft-I2C auto-adaptativo
+ *        con caché de polaridad (normal SCL/SDA vs invertida SDA/SCL)
+ *        para completar la lectura en < 45 us sin reintentos fallidos.
+ */
+static HAL_StatusTypeDef AS5600_ReadRegisters(AS5600_Handle_t *dev, uint8_t reg, uint8_t *buf, uint16_t len)
+{
+    static bool s_swapped_i2c1 = false;
+    static bool s_swapped_i2c2 = false;
+
+    GPIO_TypeDef *port = GPIOB;
+    bool is_i2c1 = (dev->hi2c->Instance == I2C1);
+    uint16_t pin_a = is_i2c1 ? ENC_ARM_SCL_PIN  : ENC_PEND_SCL_PIN;
+    uint16_t pin_b = is_i2c1 ? ENC_ARM_SDA_PIN  : ENC_PEND_SDA_PIN;
+    bool *p_swapped = is_i2c1 ? &s_swapped_i2c1 : &s_swapped_i2c2;
+
+    uint16_t scl_first = (*p_swapped) ? pin_b : pin_a;
+    uint16_t sda_first = (*p_swapped) ? pin_a : pin_b;
+
+    if (SoftI2C_MemRead(port, scl_first, sda_first, reg, buf, len) == HAL_OK) {
+        return HAL_OK;
+    }
+
+    /* Si falló, probar la polaridad opuesta y memorizarla si tiene éxito */
+    if (SoftI2C_MemRead(port, sda_first, scl_first, reg, buf, len) == HAL_OK) {
+        *p_swapped = !(*p_swapped);
+        return HAL_OK;
+    }
+
+    dev->i2c_error_count++;
+    return HAL_ERROR;
+}
+
+/**
  * @brief Lee el registro RAW_ANGLE (0x0C..0x0D) de 12 bits del AS5600
  */
 static HAL_StatusTypeDef AS5600_ReadRaw12Bit(AS5600_Handle_t *dev, uint16_t *out_counts)
 {
     uint8_t buf[2] = {0U, 0U};
-    HAL_StatusTypeDef status;
-
-    status = HAL_I2C_Mem_Read(dev->hi2c,
-                              AS5600_I2C_ADDR,
-                              AS5600_REG_RAW_ANGLE_H,
-                              I2C_MEMADD_SIZE_8BIT,
-                              buf,
-                              2U,
-                              AS5600_I2C_TIMEOUT_MS);
+    HAL_StatusTypeDef status = AS5600_ReadRegisters(dev, AS5600_REG_RAW_ANGLE_H, buf, 2U);
 
     if (status == HAL_OK) {
         *out_counts = ((uint16_t)(buf[0] & 0x0FU) << 8) | (uint16_t)buf[1];
-    } else {
-        dev->i2c_error_count++;
     }
-
     return status;
 }
 
 /**
- * @brief Inicializa la estructura del encoder AS5600 y verifica comunicación I2C
+ * @brief Inicializa la estructura del encoder AS5600 y configura los pines en Open-Drain
  */
 HAL_StatusTypeDef AS5600_Init(AS5600_Handle_t *dev,
                               I2C_HandleTypeDef *hi2c,
@@ -63,6 +224,7 @@ HAL_StatusTypeDef AS5600_Init(AS5600_Handle_t *dev,
     dev->Ts                     = (Ts > 0.0f) ? Ts : TS_CONTROL_SEC;
     dev->vel_filter_tau         = (vel_filter_tau >= 0.0f) ? vel_filter_tau : 0.005f;
     dev->direction              = (direction >= 0) ? 1 : -1;
+    dev->gear_ratio             = (hi2c->Instance == I2C1) ? 80.0f : 1.0f;
 
     dev->raw_counts             = 0U;
     dev->prev_raw_counts        = 0U;
@@ -80,6 +242,10 @@ HAL_StatusTypeDef AS5600_Init(AS5600_Handle_t *dev,
     dev->agc_value              = 0U;
     dev->i2c_error_count        = 0U;
     dev->is_initialized         = false;
+
+    uint16_t pin_a = (hi2c->Instance == I2C1) ? ENC_ARM_SCL_PIN  : ENC_PEND_SCL_PIN;
+    uint16_t pin_b = (hi2c->Instance == I2C1) ? ENC_ARM_SDA_PIN  : ENC_PEND_SDA_PIN;
+    SoftI2C_ConfigPinsOD(GPIOB, pin_a, pin_b);
 
     bool magnet_ok = false;
     (void)AS5600_CheckMagnet(dev, &magnet_ok);
@@ -101,23 +267,9 @@ HAL_StatusTypeDef AS5600_Init(AS5600_Handle_t *dev,
  */
 HAL_StatusTypeDef AS5600_CheckMagnet(AS5600_Handle_t *dev, bool *magnet_ok)
 {
-    HAL_StatusTypeDef st;
-    st = HAL_I2C_Mem_Read(dev->hi2c,
-                          AS5600_I2C_ADDR,
-                          AS5600_REG_STATUS,
-                          I2C_MEMADD_SIZE_8BIT,
-                          &dev->magnet_status,
-                          1U,
-                          AS5600_I2C_TIMEOUT_MS);
-
+    HAL_StatusTypeDef st = AS5600_ReadRegisters(dev, AS5600_REG_STATUS, &dev->magnet_status, 1U);
     if (st == HAL_OK) {
-        (void)HAL_I2C_Mem_Read(dev->hi2c,
-                               AS5600_I2C_ADDR,
-                               AS5600_REG_AGC,
-                               I2C_MEMADD_SIZE_8BIT,
-                               &dev->agc_value,
-                               1U,
-                               AS5600_I2C_TIMEOUT_MS);
+        (void)AS5600_ReadRegisters(dev, AS5600_REG_AGC, &dev->agc_value, 1U);
 
         bool detected = (dev->magnet_status & AS5600_STATUS_MD) != 0U;
         bool too_weak = (dev->magnet_status & AS5600_STATUS_ML) != 0U;
@@ -133,9 +285,7 @@ HAL_StatusTypeDef AS5600_CheckMagnet(AS5600_Handle_t *dev, bool *magnet_ok)
 }
 
 /**
- * @brief Calibra la posición cero promediando N muestras en reposo (péndulo colgado)
- *        Usa promedio vectorial circular para evitar artefactos si el imán está
- *        cerca de la transición 4095 -> 0.
+ * @brief Calibra la posición cero promediando N muestras en reposo
  */
 HAL_StatusTypeDef AS5600_CalibrateZero(AS5600_Handle_t *dev, uint16_t num_samples)
 {
@@ -185,11 +335,7 @@ HAL_StatusTypeDef AS5600_CalibrateZero(AS5600_Handle_t *dev, uint16_t num_sample
 }
 
 /**
- * @brief Actualiza lectura del AS5600 a 1 kHz:
- *        1. Lee ángulo crudo de 12 bits.
- *        2. Ejecuta unwrapping multi-vuelta al cruzar 0 <-> 4095.
- *        3. Calcula ángulo continuo, ángulo envuelto [-pi, pi] y error respecto a pi.
- *        4. Estima velocidad angular con filtro pasabajos IIR de primer orden.
+ * @brief Actualiza lectura del AS5600 a 1 kHz
  */
 HAL_StatusTypeDef AS5600_Update(AS5600_Handle_t *dev)
 {
@@ -221,15 +367,14 @@ HAL_StatusTypeDef AS5600_Update(AS5600_Handle_t *dev)
                          + ((int32_t)new_raw - (int32_t)dev->zero_offset_counts);
     dev->cumulative_counts = (int32_t)dev->direction * total_counts;
 
-    /* 3. Conversión a radianes */
+    /* 3. Conversión a radianes en el eje de salida (aplicando reductor planetario 80:1 en I2C1) */
     dev->prev_angle_rad = dev->angle_rad;
-    dev->angle_rad      = (float)dev->cumulative_counts * AS5600_COUNTS_TO_RAD;
+    dev->angle_rad      = ((float)dev->cumulative_counts * AS5600_COUNTS_TO_RAD) / dev->gear_ratio;
 
     /* Ángulo normalizado en [-pi, +pi] (0 rad = péndulo colgado abajo) */
     dev->angle_wrapped_rad = AS5600_WrapToPi(dev->angle_rad);
 
-    /* Error respecto a la posición vertical invertida (alpha_ref = pi rad = 180°)
-     * Cuando el péndulo está perfectamente vertical arriba: angle_inverted_err_rad = 0.0 rad */
+    /* Error respecto a la posición vertical invertida (alpha_ref = pi rad = 180°) */
     dev->angle_inverted_err_rad = AS5600_WrapToPi(dev->angle_wrapped_rad - M_PI);
 
     /* 4. Derivada numérica filtrada (Filtro IIR de 1er orden: alpha = tau / (tau + Ts)) */

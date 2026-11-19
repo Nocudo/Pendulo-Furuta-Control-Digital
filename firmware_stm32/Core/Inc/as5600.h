@@ -50,6 +50,7 @@ typedef struct {
     float Ts;                       /* Periodo de muestreo en segundos (0.001 s) */
     float vel_filter_tau;           /* Constante de tiempo LPF de velocidad (s) */
     int8_t direction;               /* Polaridad de giro (+1 o -1) */
+    float gear_ratio;               /* Relación de reducción (80.0 para motor, 1.0 para péndulo) */
 
     /* Lecturas crudas y desenvoltura (unwrapping) */
     uint16_t raw_counts;            /* Valor actual de 12 bits [0..4095] */

@@ -20,8 +20,8 @@ extern "C" {
 
 /* Parámetros Nominales del Actuador (Motor Namiki 22CL + Puente H L298N) ----*/
 #define MOTOR_NOMINAL_VOLTAGE       12.0f   /* Tensión máxima efectiva (V) */
-#define MOTOR_DEFAULT_DEADZONE_PCT  14.0f   /* Zona muerta típica L298N + fricción (%) */
-#define MOTOR_MIN_CMD_THRESHOLD_V   0.08f   /* Umbral de corte para evitar zumbido (V) */
+#define MOTOR_DEFAULT_DEADZONE_PCT  11.5f   /* Zona muerta típica L298N + fricción (%) */
+#define MOTOR_MIN_CMD_THRESHOLD_V   0.03f   /* Umbral de corte para evitar zumbido (V) */
 
 /**
  * @brief Estructura de configuración y estado del driver L298N

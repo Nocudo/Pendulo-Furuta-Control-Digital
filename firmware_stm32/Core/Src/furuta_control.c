@@ -95,28 +95,33 @@ void Furuta_Init(Furuta_System_t *sys)
     sys->u_total_volts        = 0.0f;
     sys->pendulum_energy_j    = 0.0f;
 
-    /* 1. Inicializar Etapa de Potencia L298N (TIM1_CH1 @ 20 kHz, PB4, PB5) */
+    /* 1. Inicializar Etapa de Potencia L298N (TIM1_CH1 @ 20 kHz, PB4, PB5)
+     *    Zona muerta de fricción estática con brazo + péndulo cargado: ±11.5% PWM */
     L298N_Init(&sys->motor, &htim1, TIM_CHANNEL_1);
-    L298N_SetDeadzone(&sys->motor, 14.0f, 14.0f, true);
+    L298N_SetDeadzone(&sys->motor, 11.5f, 11.5f, true);
 
-    /* 2. Inicializar Encoders Magnéticos AS5600 (I2C1 Brazo, I2C2 Péndulo) */
-    (void)AS5600_Init(&sys->enc_arm,  &hi2c1, TS_CONTROL_SEC, 0.006f,  1);
+    /* 2. Inicializar Encoders Magnéticos AS5600 (I2C1 Brazo con direction=-1 y gear=80:1, I2C2 Péndulo) */
+    (void)AS5600_Init(&sys->enc_arm,  &hi2c1, TS_CONTROL_SEC, 0.006f, -1);
     (void)AS5600_Init(&sys->enc_pend, &hi2c2, TS_CONTROL_SEC, 0.004f,  1);
 
     /* 3. Inicializar los 4 Controladores PID Discretos (Ts = 1.0 ms = 1 kHz)
+     *    Sintonizados a partir de la Planta Real Caracterizada:
+     *      Gv_brazo(s) = 2.310 / (0.0819 s + 1) [(rad/s)/V]
+     *      Gv_rotor(s) = 184.8 / (0.0819 s + 1) [(rad/s)/V]
      * ----------------------------------------------------------------------
-     * A) PID de Velocidad del Motor (Caracterización Gv(s) = Km / (tau_m*s + 1)):
-     *    Kp = 0.85 V/(rad/s), Ki = 12.5 V/rad, Kd = 0.005 V·s/rad, N = 40 */
+     * A) PID de Velocidad del Motor/Brazo:
+     *    Kp = 0.85 V/(rad/s), Ki = 12.50 V/rad, Kd = 0.005 V·s/rad, N = 40 */
     PID_Init(&sys->pid_motor_vel,
              0.85f, 12.50f, 0.005f, 40.0f,
              TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
              true);
 
-    /* B) PID de Posición del Motor Solo (Caracterización Gp(s) = Gv(s)/s):
-     *    Kp = 9.50 V/rad, Ki = 3.20 V/(rad·s), Kd = 0.72 V·s/rad, N = 35 */
+    /* B) PID de Posición del Motor/Brazo Solo (Servo suave de alta precisión):
+     *    Kp = 16.00 V/rad, Ki = 22.00 V/(rad·s), Kd = 1.65 V·s/rad, N = 35
+     *    Limitado a ±8.0 V para movimientos suaves que no tiren de los jumpers */
     PID_Init(&sys->pid_motor_pos,
-             9.50f, 3.20f, 0.72f, 35.0f,
-             TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
+             16.00f, 22.00f, 1.65f, 35.0f,
+             TS_CONTROL_SEC, -8.0f, 8.0f,
              true);
 
     /* C) PID Estabilizador del Péndulo Invertido (Lazo Rápido Principal alpha):
@@ -145,6 +150,11 @@ void Furuta_Init(Furuta_System_t *sys)
 void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
 {
     sys->tick_counter_1khz++;
+
+    /* Si el bucle principal está calibrando los sensores I2C, no colisionar el bus */
+    if (sys->state == FURUTA_STATE_CALIBRATING) {
+        return;
+    }
 
     /* 1. Adquisición Síncrona de ambos Encoders Magnéticos AS5600 */
     (void)AS5600_Update(&sys->enc_arm);
@@ -202,11 +212,25 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
         }
 
         case FURUTA_STATE_MOTOR_PID_POS: {
-            /* Controlador PID de Posición Angular del Motor / Brazo */
-            sys->u_total_volts = PID_Compute(&sys->pid_motor_pos,
-                                             sys->theta_setpoint_rad,
-                                             theta_pos);
-            L298N_SetVoltage(&sys->motor, sys->u_total_volts);
+            /* Controlador PID de Posición Angular del Motor / Brazo (Modo Servo) */
+            float pos_err = sys->theta_setpoint_rad - theta_pos;
+
+            /* Integración condicional sólo en zona fina (< 8°) para evitar sobreimpulso */
+            if (fabsf(pos_err) > (8.0f * DEG_TO_RAD)) {
+                sys->pid_motor_pos.i_term = 0.0f;
+            }
+
+            if (fabsf(pos_err) < (0.20f * DEG_TO_RAD) && fabsf(theta_vel) < 0.08f) {
+                /* Banda de llegada exacta (±0.20°): frenar y apagar PWM */
+                sys->pid_motor_pos.i_term = 0.0f;
+                sys->u_total_volts = 0.0f;
+                L298N_Coast(&sys->motor);
+            } else {
+                sys->u_total_volts = PID_Compute(&sys->pid_motor_pos,
+                                                 sys->theta_setpoint_rad,
+                                                 theta_pos);
+                L298N_SetVoltage(&sys->motor, sys->u_total_volts);
+            }
             break;
         }
 
@@ -305,7 +329,7 @@ void Furuta_SendTelemetry_UART(Furuta_System_t *sys)
                        sys->enc_pend.velocity_rad_s);
 
     if (len > 0) {
-        (void)HAL_UART_Transmit(&huart2, (uint8_t *)tx_buf, (uint16_t)len, 4U);
+        (void)HAL_UART_Transmit(&huart2, (uint8_t *)tx_buf, (uint16_t)len, 25U);
     }
 }
 
@@ -332,49 +356,66 @@ void Furuta_SendTelemetry_UART(Furuta_System_t *sys)
  */
 void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
 {
-    if (strncmp(cmd_str, "STOP", 4) == 0) {
+    /* Ignorar espacios iniciales */
+    while (*cmd_str == ' ' || *cmd_str == '\t') {
+        cmd_str++;
+    }
+    if (*cmd_str == '\0') {
+        return;
+    }
+
+    if (strncmp(cmd_str, "STOP", 4) == 0 || (cmd_str[0] == 'S' && cmd_str[1] == '\0')) {
         sys->state = FURUTA_STATE_IDLE;
         L298N_Coast(&sys->motor);
-    } else if (strncmp(cmd_str, "ZERO", 4) == 0) {
+    } else if (strncmp(cmd_str, "DIAG", 4) == 0 || (cmd_str[0] == 'D' && cmd_str[1] == '\0')) {
+        char dbuf[256];
+        int n = snprintf(dbuf, sizeof(dbuf),
+            "#DIAG I2C1_Motor: St=0x%02X,AGC=%u,Raw=%u,Zero=%u,Err=%lu | I2C2_Pend: St=0x%02X,AGC=%u,Raw=%u,Zero=%u,Err=%lu\r\n",
+            sys->enc_arm.magnet_status, sys->enc_arm.agc_value, sys->enc_arm.raw_counts, sys->enc_arm.zero_offset_counts, (unsigned long)sys->enc_arm.i2c_error_count,
+            sys->enc_pend.magnet_status, sys->enc_pend.agc_value, sys->enc_pend.raw_counts, sys->enc_pend.zero_offset_counts, (unsigned long)sys->enc_pend.i2c_error_count);
+        if (n > 0) {
+            (void)HAL_UART_Transmit(&huart2, (uint8_t *)dbuf, (uint16_t)n, 60U);
+        }
+    } else if (strncmp(cmd_str, "ZERO", 4) == 0 || (cmd_str[0] == 'Z' && cmd_str[1] == '\0')) {
         sys->state = FURUTA_STATE_CALIBRATING;
         L298N_Coast(&sys->motor);
         (void)AS5600_CalibrateZero(&sys->enc_arm,  64U);
         (void)AS5600_CalibrateZero(&sys->enc_pend, 64U);
         sys->theta_setpoint_rad = 0.0f;
         sys->state = FURUTA_STATE_IDLE;
-    } else if (strncmp(cmd_str, "BALANCE", 7) == 0) {
+    } else if (strncmp(cmd_str, "BALANCE", 7) == 0 || (cmd_str[0] == 'B' && cmd_str[1] == '\0')) {
         PID_Reset(&sys->pid_pend_alpha);
         PID_Reset(&sys->pid_arm_theta);
         sys->theta_setpoint_rad   = sys->enc_arm.angle_rad;
         sys->enable_auto_swingup  = false;
         sys->state                = FURUTA_STATE_BALANCE_PID;
-    } else if (strncmp(cmd_str, "SWING", 5) == 0) {
+    } else if (strncmp(cmd_str, "SWING", 5) == 0 || (cmd_str[0] == 'W' && cmd_str[1] == '\0')) {
         PID_Reset(&sys->pid_pend_alpha);
         PID_Reset(&sys->pid_arm_theta);
         sys->theta_setpoint_rad   = sys->enc_arm.angle_rad;
         sys->enable_auto_swingup  = true;
         sys->state                = FURUTA_STATE_SWING_UP;
-    } else if (strncmp(cmd_str, "CHAR1", 5) == 0) {
+    } else if (strncmp(cmd_str, "CHAR1", 5) == 0 || (cmd_str[0] == '1' && cmd_str[1] == '\0')) {
         Caracterizacion_StartMode(&sys->char_mgr, CHAR_MODE_DEADZONE_RAMP,
                                   &sys->motor, &sys->pid_motor_vel, &sys->pid_motor_pos);
         sys->state = FURUTA_STATE_CHARACTERIZATION;
-    } else if (strncmp(cmd_str, "CHAR2", 5) == 0) {
+    } else if (strncmp(cmd_str, "CHAR2", 5) == 0 || (cmd_str[0] == '2' && cmd_str[1] == '\0')) {
         Caracterizacion_StartMode(&sys->char_mgr, CHAR_MODE_MOTOR_STEPS,
                                   &sys->motor, &sys->pid_motor_vel, &sys->pid_motor_pos);
         sys->state = FURUTA_STATE_CHARACTERIZATION;
-    } else if (strncmp(cmd_str, "CHAR3", 5) == 0) {
+    } else if (strncmp(cmd_str, "CHAR3", 5) == 0 || (cmd_str[0] == '3' && cmd_str[1] == '\0')) {
         Caracterizacion_StartMode(&sys->char_mgr, CHAR_MODE_PENDULUM_FREE_DECAY,
                                   &sys->motor, &sys->pid_motor_vel, &sys->pid_motor_pos);
         sys->state = FURUTA_STATE_CHARACTERIZATION;
-    } else if (strncmp(cmd_str, "CHAR4", 5) == 0) {
+    } else if (strncmp(cmd_str, "CHAR4", 5) == 0 || (cmd_str[0] == '4' && cmd_str[1] == '\0')) {
         Caracterizacion_StartMode(&sys->char_mgr, CHAR_MODE_COUPLED_DOUBLET,
                                   &sys->motor, &sys->pid_motor_vel, &sys->pid_motor_pos);
         sys->state = FURUTA_STATE_CHARACTERIZATION;
-    } else if (strncmp(cmd_str, "CHAR5A", 6) == 0) {
+    } else if (strncmp(cmd_str, "CHAR5A", 6) == 0 || (cmd_str[0] == '5' && cmd_str[1] == '\0')) {
         Caracterizacion_StartMode(&sys->char_mgr, CHAR_MODE_MOTOR_PID_VELOCITY,
                                   &sys->motor, &sys->pid_motor_vel, &sys->pid_motor_pos);
         sys->state = FURUTA_STATE_CHARACTERIZATION;
-    } else if (strncmp(cmd_str, "CHAR5B", 6) == 0) {
+    } else if (strncmp(cmd_str, "CHAR5B", 6) == 0 || (cmd_str[0] == '6' && cmd_str[1] == '\0')) {
         Caracterizacion_StartMode(&sys->char_mgr, CHAR_MODE_MOTOR_PID_POSITION,
                                   &sys->motor, &sys->pid_motor_vel, &sys->pid_motor_pos);
         sys->state = FURUTA_STATE_CHARACTERIZATION;

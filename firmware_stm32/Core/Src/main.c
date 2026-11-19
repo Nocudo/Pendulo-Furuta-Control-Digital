@@ -28,6 +28,9 @@ UART_HandleTypeDef huart2;
 /* Variables de sincronización con ISRs (definidas en stm32f4xx_it.c) --------*/
 extern volatile bool g_flag_telemetry_ready;
 extern volatile bool g_flag_user_btn_pressed;
+extern volatile char g_uart_rx_ring[128];
+extern volatile uint8_t g_uart_rx_head;
+extern volatile uint8_t g_uart_rx_tail;
 
 /* Buffer de recepción UART por polling no bloqueante ------------------------*/
 static char s_uart_cmd_buf[64];
@@ -71,15 +74,26 @@ int main(void)
     (void)AS5600_CalibrateZero(&g_furuta.enc_pend, 64U);
     HAL_GPIO_WritePin(USER_LED_PORT, USER_LED_PIN, GPIO_PIN_RESET);
 
-    /* Mensaje de bienvenida y cabecera CSV por USART2 */
-    const char *banner =
+    /* Mensaje de bienvenida y diagnóstico de sensores I2C por USART2 */
+    bool mag_arm_ok = false, mag_pend_ok = false;
+    HAL_StatusTypeDef st_arm  = AS5600_CheckMagnet(&g_furuta.enc_arm,  &mag_arm_ok);
+    HAL_StatusTypeDef st_pend = AS5600_CheckMagnet(&g_furuta.enc_pend, &mag_pend_ok);
+
+    char diag_msg[512];
+    int dlen = snprintf(diag_msg, sizeof(diag_msg),
         "\r\n==================================================================\r\n"
         " STM32 Nucleo-F446RE - Control Digital Pendulo Invertido de Furuta\r\n"
-        " Comandos: ZERO | BALANCE | SWING | STOP | CHAR1..CHAR4 | CHAR5A/B\r\n"
-        "           VEL=<rad/s> | POS=<deg> | PID_A=kp,ki,kd,n | PID_T=...\r\n"
+        " [I2C1 Motor   PB8/PB9 ] Status=%s | Reg0x0B=0x%02X | AGC=%u | Raw=%u\r\n"
+        " [I2C2 Pendulo PB10/PB3] Status=%s | Reg0x0B=0x%02X | AGC=%u | Raw=%u\r\n"
         "==================================================================\r\n"
-        "t_ms,state,pwm_pct,u_volts,theta_rad,omega_rad_s,alpha_rad,alpha_err_rad,alpha_dot_rad_s\r\n";
-    (void)HAL_UART_Transmit(&huart2, (uint8_t *)banner, (uint16_t)strlen(banner), 100U);
+        "t_ms,state,pwm_pct,u_volts,theta_rad,omega_rad_s,alpha_rad,alpha_err_rad,alpha_dot_rad_s\r\n",
+        (st_arm == HAL_OK) ? "OK" : "ERR_I2C",
+        g_furuta.enc_arm.magnet_status, g_furuta.enc_arm.agc_value, g_furuta.enc_arm.raw_counts,
+        (st_pend == HAL_OK) ? "OK" : "ERR_I2C",
+        g_furuta.enc_pend.magnet_status, g_furuta.enc_pend.agc_value, g_furuta.enc_pend.raw_counts);
+    if (dlen > 0) {
+        (void)HAL_UART_Transmit(&huart2, (uint8_t *)diag_msg, (uint16_t)dlen, 200U);
+    }
 
     /* 6. Arrancar interrupción periódica determinista de control a 1 kHz (TIM6) */
     (void)HAL_TIM_Base_Start_IT(&htim6);
@@ -121,12 +135,14 @@ int main(void)
 }
 
 /**
- * @brief Lee bytes entrantes en USART2 sin bloquear el procesador
+ * @brief Extrae bytes del ring buffer llenado por USART2_IRQHandler
  */
 static void UART_PollCommandRX(void)
 {
-    uint8_t rx_byte = 0U;
-    while (HAL_UART_Receive(&huart2, &rx_byte, 1U, 0U) == HAL_OK) {
+    while (g_uart_rx_tail != g_uart_rx_head) {
+        char rx_byte = g_uart_rx_ring[g_uart_rx_tail];
+        g_uart_rx_tail = (uint8_t)((g_uart_rx_tail + 1U) % 128U);
+
         if (rx_byte == '\n' || rx_byte == '\r') {
             if (s_uart_cmd_idx > 0U) {
                 s_uart_cmd_buf[s_uart_cmd_idx] = '\0';
@@ -134,7 +150,7 @@ static void UART_PollCommandRX(void)
                 s_uart_cmd_idx = 0U;
             }
         } else if (s_uart_cmd_idx < (sizeof(s_uart_cmd_buf) - 1U)) {
-            s_uart_cmd_buf[s_uart_cmd_idx++] = (char)rx_byte;
+            s_uart_cmd_buf[s_uart_cmd_idx++] = rx_byte;
         }
     }
 }
@@ -245,6 +261,9 @@ static void MX_TIM6_ControlTick_Init(void)
 static void MX_I2C1_Init(void)
 {
     __HAL_RCC_I2C1_CLK_ENABLE();
+    __HAL_RCC_I2C1_FORCE_RESET();
+    HAL_Delay(2);
+    __HAL_RCC_I2C1_RELEASE_RESET();
 
     hi2c1.Instance             = I2C1;
     hi2c1.Init.ClockSpeed      = 400000;
@@ -261,12 +280,15 @@ static void MX_I2C1_Init(void)
 }
 
 /**
- * @brief Configuración de I2C2 (PB10=SCL2, PB11/PB3=SDA2) a 400 kHz Fast Mode
+ * @brief Configuración de I2C2 (PB10=SCL2, PB3=SDA2) a 400 kHz Fast Mode
  *        Conectado al Sensor AS5600 Distal (Ángulo del Péndulo Alfa)
  */
 static void MX_I2C2_Init(void)
 {
     __HAL_RCC_I2C2_CLK_ENABLE();
+    __HAL_RCC_I2C2_FORCE_RESET();
+    HAL_Delay(2);
+    __HAL_RCC_I2C2_RELEASE_RESET();
 
     hi2c2.Instance             = I2C2;
     hi2c2.Init.ClockSpeed      = 400000;
@@ -300,6 +322,12 @@ static void MX_USART2_UART_Init(void)
     if (HAL_UART_Init(&huart2) != HAL_OK) {
         Error_Handler();
     }
+
+    /* Habilitar interrupción RXNE en USART2 con máxima prioridad (0) (~0.3 us)
+     * para que nunca pierda un byte a 115200 bps (86.8 us/byte) durante TIM6 */
+    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+    HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
 /**

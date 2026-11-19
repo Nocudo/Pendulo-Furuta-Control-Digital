@@ -15,6 +15,29 @@
 volatile bool g_flag_telemetry_ready = false;
 volatile bool g_flag_user_btn_pressed = false;
 
+/* Ring buffer de recepción UART2 por interrupción RXNE sin bloqueo HAL */
+#define UART_RX_RING_SIZE   128U
+volatile char g_uart_rx_ring[UART_RX_RING_SIZE];
+volatile uint8_t g_uart_rx_head = 0U;
+volatile uint8_t g_uart_rx_tail = 0U;
+
+/**
+ * @brief ISR de USART2: Captura cada byte entrante al instante por registro
+ *        sin colisionar con el Lock de HAL_UART_Transmit del superloop.
+ */
+void USART2_IRQHandler(void)
+{
+    uint32_t sr = USART2->SR;
+    if ((sr & (USART_SR_RXNE | USART_SR_ORE)) != 0U) {
+        char rx_char = (char)(USART2->DR & 0xFFU);
+        uint8_t next_head = (uint8_t)((g_uart_rx_head + 1U) % UART_RX_RING_SIZE);
+        if (next_head != g_uart_rx_tail) {
+            g_uart_rx_ring[g_uart_rx_head] = rx_char;
+            g_uart_rx_head = next_head;
+        }
+    }
+}
+
 /**
  * @brief ISR del Sistema Operativo / HAL Tick (1 ms)
  */

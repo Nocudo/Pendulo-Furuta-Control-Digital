@@ -31,7 +31,7 @@ extern "C" {
 /* Parámetros Temporales del Lazo de Control Digital -------------------------*/
 #define CONTROL_LOOP_FREQ_HZ    1000.0f                 /* Frecuencia ISR TIM6: 1 kHz */
 #define TS_CONTROL_SEC          0.001f                  /* Periodo de muestreo Ts = 1.0 ms */
-#define TELEMETRY_DECIMATION    5U                      /* Envío UART cada 5 ms (200 Hz) */
+#define TELEMETRY_DECIMATION    10U                     /* Envío UART cada 10 ms (100 Hz limpios a 115200 bps) */
 
 /* Configuración del Timer PWM (TIM1_CH1 @ 20 kHz, APB2 Timer Clock = 180 MHz) */
 #define TIM1_PRESCALER          9U                      /* 180 MHz / (9 + 1) = 18 MHz */

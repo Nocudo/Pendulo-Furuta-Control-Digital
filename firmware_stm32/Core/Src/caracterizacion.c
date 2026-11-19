@@ -75,30 +75,39 @@ void Caracterizacion_Update_1kHz(Characterization_Manager_t *mgr,
     switch (mgr->active_mode) {
 
         /* ==================================================================
-         * ENSAYO 1: CARACTERIZACIÓN DE ZONA MUERTA (DEAD-ZONE RAMP)
-         * - 0 a 10 s: Incrementa PWM de 0% a +50% a razón de 1% cada 200 ms.
-         * - 10 a 12 s: Reposo en 0% PWM.
-         * - 12 a 22 s: Decrementa PWM de 0% a -50% a razón de -1% cada 200 ms.
-         * - Detecta automáticamente el umbral donde |omega| > 0.35 rad/s.
+         * ENSAYO 1: CARACTERIZACIÓN DE ZONA MUERTA (DEAD-ZONE RAMP SEGURA)
+         * - 0 a 4.0 s: Rampa positiva 0% a +40% (1% cada 100 ms). Corta en
+         *   cuanto detecta movimiento (|theta| > 0.08 rad o |omega| > 0.35 rad/s).
+         * - 4.0 a 5.0 s: Reposo en 0% PWM.
+         * - 5.0 a 9.0 s: Rampa negativa 0% a -40% (-1% cada 100 ms) que
+         *   regresa el brazo hacia 0 rad y detecta la zona muerta negativa.
          * ================================================================== */
         case CHAR_MODE_DEADZONE_RAMP: {
             float pwm_cmd = 0.0f;
 
-            if (t_ms < 10000U) {
-                uint32_t step_idx = t_ms / 200U; /* 0..50 */
-                pwm_cmd = (float)step_idx * 1.0f;
-                if (!mgr->deadzone_pos_found && fabsf(enc_arm->velocity_rad_s) > 0.35f) {
-                    mgr->detected_deadzone_pos_pct = pwm_cmd;
-                    mgr->deadzone_pos_found = true;
+            if (t_ms < 4000U) {
+                if (!mgr->deadzone_pos_found) {
+                    uint32_t step_idx = t_ms / 100U; /* 0..40% */
+                    pwm_cmd = (float)step_idx * 1.0f;
+                    if (fabsf(enc_arm->velocity_rad_s) > 0.35f || fabsf(enc_arm->angle_rad) > 0.06f) {
+                        mgr->detected_deadzone_pos_pct = pwm_cmd;
+                        mgr->deadzone_pos_found = true;
+                    }
+                } else {
+                    pwm_cmd = 0.0f; /* Detener apenas se detecta para no enrollar cables */
                 }
-            } else if (t_ms < 12000U) {
+            } else if (t_ms < 5000U) {
                 pwm_cmd = 0.0f;
-            } else if (t_ms < 22000U) {
-                uint32_t step_idx = (t_ms - 12000U) / 200U; /* 0..50 */
-                pwm_cmd = -((float)step_idx * 1.0f);
-                if (!mgr->deadzone_neg_found && fabsf(enc_arm->velocity_rad_s) > 0.35f) {
-                    mgr->detected_deadzone_neg_pct = fabsf(pwm_cmd);
-                    mgr->deadzone_neg_found = true;
+            } else if (t_ms < 9000U) {
+                if (!mgr->deadzone_neg_found) {
+                    uint32_t step_idx = (t_ms - 5000U) / 100U; /* 0..40% */
+                    pwm_cmd = -((float)step_idx * 1.0f);
+                    if (fabsf(enc_arm->velocity_rad_s) > 0.35f) {
+                        mgr->detected_deadzone_neg_pct = fabsf(pwm_cmd);
+                        mgr->deadzone_neg_found = true;
+                    }
+                } else {
+                    pwm_cmd = 0.0f;
                 }
             } else {
                 pwm_cmd = 0.0f;
@@ -114,35 +123,48 @@ void Caracterizacion_Update_1kHz(Characterization_Manager_t *mgr,
         }
 
         /* ==================================================================
-         * ENSAYO 2: IDENTIFICACIÓN DEL MOTOR POR ESCALONES MULTINIVEL
-         * Excita el motor con escalones bidireccionales (+30%, +45%, +60%,
-         * -30%, -45%) separados por reposos para identificar:
-         *   Gv(s) = Omega(s)/U(s) = Km / (tau_m * s + 1)
-         *   Gp(s) = Theta(s)/U(s) = Km / (s * (tau_m * s + 1))
+         * ENSAYO 2: IDENTIFICACIÓN DEL MOTOR POR ESCALONES BIDIRECCIONALES
+         *           SIMÉTRICOS IDA Y VUELTA (CERO ENREDO DE CABLES)
+         * Aplica pares simétricos (+PWM para ir y -PWM para volver al centro)
+         * en niveles de ±20%, ±30%, ±40% y ±50% separados por pausas de 450 ms.
          * ================================================================== */
         case CHAR_MODE_MOTOR_STEPS: {
             float pwm_cmd = 0.0f;
 
-            if (t_ms < 1000U) {
-                pwm_cmd = 0.0f;         /* 0.0 - 1.0 s: Reposo inicial */
-            } else if (t_ms < 3500U) {
-                pwm_cmd = 30.0f;        /* 1.0 - 3.5 s: Escalón +30% PWM */
-            } else if (t_ms < 5000U) {
-                pwm_cmd = 0.0f;         /* 3.5 - 5.0 s: Reposo */
-            } else if (t_ms < 7500U) {
-                pwm_cmd = 45.0f;        /* 5.0 - 7.5 s: Escalón +45% PWM */
-            } else if (t_ms < 9000U) {
-                pwm_cmd = 0.0f;         /* 7.5 - 9.0 s: Reposo */
-            } else if (t_ms < 11500U) {
-                pwm_cmd = 60.0f;        /* 9.0 - 11.5 s: Escalón +60% PWM */
-            } else if (t_ms < 13000U) {
-                pwm_cmd = 0.0f;         /* 11.5 - 13.0 s: Reposo */
-            } else if (t_ms < 15500U) {
-                pwm_cmd = -30.0f;       /* 13.0 - 15.5 s: Escalón -30% PWM */
-            } else if (t_ms < 17000U) {
-                pwm_cmd = 0.0f;         /* 15.5 - 17.0 s: Reposo */
-            } else if (t_ms < 19500U) {
-                pwm_cmd = -45.0f;       /* 17.0 - 19.5 s: Escalón -45% PWM */
+            if (t_ms < 300U) {
+                pwm_cmd = 0.0f;         /* 0.00 - 0.30 s: Reposo inicial */
+            } else if (t_ms < 520U) {
+                pwm_cmd = 20.0f;        /* 0.30 - 0.52 s: Escalón +20% PWM (220 ms) */
+            } else if (t_ms < 970U) {
+                pwm_cmd = 0.0f;         /* 0.52 - 0.97 s: Reposo */
+            } else if (t_ms < 1190U) {
+                pwm_cmd = -20.0f;       /* 0.97 - 1.19 s: Escalón -20% PWM (220 ms - regresa) */
+            } else if (t_ms < 1650U) {
+                pwm_cmd = 0.0f;         /* 1.19 - 1.65 s: Reposo */
+            } else if (t_ms < 1850U) {
+                pwm_cmd = 30.0f;        /* 1.65 - 1.85 s: Escalón +30% PWM (200 ms) */
+            } else if (t_ms < 2300U) {
+                pwm_cmd = 0.0f;         /* 1.85 - 2.30 s: Reposo */
+            } else if (t_ms < 2500U) {
+                pwm_cmd = -30.0f;       /* 2.30 - 2.50 s: Escalón -30% PWM (200 ms - regresa) */
+            } else if (t_ms < 2950U) {
+                pwm_cmd = 0.0f;         /* 2.50 - 2.95 s: Reposo */
+            } else if (t_ms < 3130U) {
+                pwm_cmd = 40.0f;        /* 2.95 - 3.13 s: Escalón +40% PWM (180 ms) */
+            } else if (t_ms < 3600U) {
+                pwm_cmd = 0.0f;         /* 3.13 - 3.60 s: Reposo */
+            } else if (t_ms < 3780U) {
+                pwm_cmd = -40.0f;       /* 3.60 - 3.78 s: Escalón -40% PWM (180 ms - regresa) */
+            } else if (t_ms < 4250U) {
+                pwm_cmd = 0.0f;         /* 3.78 - 4.25 s: Reposo */
+            } else if (t_ms < 4410U) {
+                pwm_cmd = 50.0f;        /* 4.25 - 4.41 s: Escalón +50% PWM (160 ms) */
+            } else if (t_ms < 4900U) {
+                pwm_cmd = 0.0f;         /* 4.41 - 4.90 s: Reposo */
+            } else if (t_ms < 5060U) {
+                pwm_cmd = -50.0f;       /* 4.90 - 5.06 s: Escalón -50% PWM (160 ms - regresa) */
+            } else if (t_ms < 5500U) {
+                pwm_cmd = 0.0f;         /* 5.06 - 5.50 s: Reposo final */
             } else {
                 pwm_cmd = 0.0f;
                 mgr->test_finished = true;
