@@ -329,13 +329,19 @@ static void MX_GPIO_Init(void)
     GPIO_InitStruct.Alternate = GPIO_AF1_TIM1;
     HAL_GPIO_Init(MOTOR_PWM_TIM_PORT, &GPIO_InitStruct);
 
-    /* 3. Pines I2C1 (PB8=SCL1, PB9=SDA1) e I2C2 (PB10=SCL2, PB11=SDA2) -> AF4 Open-Drain */
-    GPIO_InitStruct.Pin       = ENC_ARM_SCL_PIN | ENC_ARM_SDA_PIN
-                              | ENC_PEND_SCL_PIN | ENC_PEND_SDA_PIN;
+    /* 3. Pines I2C1 (PB8=D15 SCL1, PB9=D14 SDA1) e I2C2 (PB10=D6 SCL2, PB3=D3 SDA2) -> AF4 Open-Drain */
+    GPIO_InitStruct.Pin       = ENC_ARM_SCL_PIN | ENC_ARM_SDA_PIN | ENC_PEND_SCL_PIN;
     GPIO_InitStruct.Mode      = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull      = GPIO_PULLUP;
     GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin       = ENC_PEND_SDA_PIN;       /* PB3 (Arduino D3) -> I2C2_SDA (AF4_I2C2) */
+    GPIO_InitStruct.Mode      = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull      = GPIO_PULLUP;
+    GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C2;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
     /* 4. Pines USART2 (PA2=TX, PA3=RX) -> Alternate Function AF7 */

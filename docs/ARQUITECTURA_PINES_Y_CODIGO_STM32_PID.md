@@ -60,25 +60,72 @@ flowchart TD
 
 ---
 
-## 2. Mapeo Completo de Pines (Pinout STM32 Nucleo-F446RE)
+## 2. Mapeo Completo de Pines (Optimizado para Usar el Mínimo de Jumpers)
 
-### 2.1. Tabla Maestra de Conexiones Pin a Pin
+### 2.1. Selección de Pines en el Módulo Blanco AS5600 (7 Pines en Placa $\to$ Solo 4 Jumpers en $\text{I}^2\text{C}$ o 3 Jumpers en Analógico)
 
-| Subsistema | Pin STM32 | Conector Nucleo-64 | Periférico / Modo | Destino Físico | Función en el Sistema |
+El módulo blanco **AS5600** cuenta con **7 pines físicos** repartidos en dos cabezales (izquierdo de 3 pines y derecho de 4 pines). Para **usar la menor cantidad posible de jumpers**, la selección óptima es:
+
+```
+              MÓDULO AS5600 (VISTA SUPERIOR - 7 PINES)
+           ┌───────────────────────────────────────────┐
+           │   ( )         C1   C2   R1          ( )   │
+           │             ┌───────────────┐             │
+  3.3V ───►│ [■] VCC     │               │   DIR [✗]   │◄── ¡NO CONECTAR! (Se invierte por software en as5600.c)
+  LIBRE ──►│ [✗] OUT     │    AS5600     │   SCL [■]   │◄── Jumper a SCL (PB8=D15 o PB10=D6)
+   GND ───►│ [■] GND     │   (12-bit)    │   SDA [■]   │◄── Jumper a SDA (PB9=D14 o PB3=D3)
+           │             └───────────────┘   GPO [✗]   │◄── ¡NO CONECTAR! (Tiene pull-up interno a 3.3V)
+           │   ( )         R3   R2   R4          ( )   │
+           └───────────────────────────────────────────┘
+```
+
+#### ¿Cuáles pines del AS5600 SÍ se conectan y cuáles se dejan SIN JUMPER?
+
+1. **Modo Digital $\text{I}^2\text{C}$ (Recomendado por máxima precisión de 12 bits — Solo 4 jumpers por sensor):**
+   * ✅ **`VCC` (1 jumper):** Conectar a **`3.3V`** de la STM32 Nucleo.
+   * ✅ **`GND` (1 jumper):** Conectar a **`GND`** de la STM32 Nucleo.
+   * ✅ **`SCL` (1 jumper):** Conectar a **`PB8` (`D15`)** para el Sensor 1 (Motor) y a **`PB10` (`D6`)** para el Sensor 2 (Péndulo).
+   * ✅ **`SDA` (1 jumper):** Conectar a **`PB9` (`D14`)** para el Sensor 1 (Motor) y a **`PB3` (`D3`)** para el Sensor 2 (Péndulo).
+   * ❌ **`OUT` (0 jumpers — DEJAR LIBRE):** Es la salida analógica/PWM; en modo $\text{I}^2\text{C}$ no se utiliza.
+   * ❌ **`GPO` (0 jumpers — DEJAR LIBRE):** Como indica la hoja del módulo (*"internal pull-up, ground = programming mode B"*), ya tiene pull-up interno. Dejarlo al aire mantiene el sensor en modo normal sin gastar un jumper.
+   * ❌ **`DIR` (0 jumpers hacia la STM32):** El sentido de giro ya se configura por software en [`as5600.c`](../firmware_stm32/Core/Src/as5600.c) (`direction = +1` o `-1`). Además, el módulo blanco incorpora resistencias SMD en placa (`R1..R4`). *(Si tu lote específico dejara `DIR` flotante sin resistencia SMD `R3`, basta poner un punto de estaño entre `DIR` y `GND` en el propio módulo para no tirar ningún cable adicional hacia la STM32).*
+
+2. **Alternativa de Mínimo Absoluto Físico (Modo Analógico `OUT` — Solo 3 jumpers por sensor usando únicamente el lado izquierdo):**
+   * Si deseas usar **únicamente el conector izquierdo de 3 pines seguidos (`VCC`, `OUT`, `GND`)** con un solo cable plano triple tipo servo y dejar **los 4 pines del lado derecho (`DIR`, `SCL`, `SDA`, `GPO`) 100% libres**:
+     * Activa `#define AS5600_USE_3WIRE_ANALOG_OUT 1U` en [`main.h`](../firmware_stm32/Core/Inc/main.h).
+     * Conecta **`VCC` $\to$ `3.3V`**, **`GND` $\to$ `GND`** y **`OUT` $\to$ `PA0` (`A0`)** (Sensor 1) / **`PA1` (`A1`)** (Sensor 2).
+
+---
+
+### 2.2. Agrupación Física en la STM32 Nucleo-F446RE (Todos los Pines Contiguos en los Headers Frontales Arduino)
+
+Para evitar cables cruzados o tener que buscar pines escondidos en los headers Morpho, **todos los pines del sistema se eligieron contiguos en las tiras frontales Arduino (`CN5`, `CN9` y `CN6`)**:
+
+* **Tira Superior Derecha `CN5` (Sensor 1 AS5600 Motor — 3 pines seguidos):**
+  * **`D15` (`PB8`)** $\to$ `SCL` Sensor 1
+  * **`D14` (`PB9`)** $\to$ `SDA` Sensor 1 *(justo debajo de `D15`)*
+  * **`GND` (`CN5-7`)** $\to$ `GND` Sensor 1 *(en la misma tira `CN5`)*
+* **Tira Inferior Derecha `CN9` (Driver L298N + Sensor 2 AS5600 Péndulo — 5 pines seguidos `D3..D7`):**
+  * **`D7` (`PA8`)** $\to$ `ENA` (PWM $20\text{ kHz}$ L298N)
+  * **`D6` (`PB10`)** $\to$ `SCL` Sensor 2 (`I2C2_SCL`)
+  * **`D5` (`PB4`)** $\to$ `IN1` (Dirección A L298N)
+  * **`D4` (`PB5`)** $\to$ `IN2` (Dirección B L298N)
+  * **`D3` (`PB3`)** $\to$ `SDA` Sensor 2 (`I2C2_SDA` con `AF4_I2C2`)
+
+### 2.3. Tabla Maestra de Conexiones Pin a Pin
+
+| Subsistema | Pin STM32 | Header Frontal Arduino | Periférico / Modo | Pin Destino | Función en el Sistema |
 | :--- | :---: | :---: | :--- | :--- | :--- |
-| **Motor PWM** | **`PA8`** | Arduino `D7` / Morpho `CN10-23` | `TIM1_CH1` (`AF1_TIM1`) | **L298N `ENA`** | Señal PWM a **$20.0\text{ kHz}$** ($0\dots 900$ cuentas) para modular tensión de armadura. *(Retirar jumper ENA del L298N)*. |
-| **Motor Dir A** | **`PB4`** | Arduino `D5` / Morpho `CN10-27` | `GPIO_Output` (Push-Pull) | **L298N `IN1`** | Control de sentido horario (`IN1=1, IN2=0`). |
-| **Motor Dir B** | **`PB5`** | Arduino `D4` / Morpho `CN10-29` | `GPIO_Output` (Push-Pull) | **L298N `IN2`** | Control de sentido antihorario (`IN1=0, IN2=1`). |
-| **Encoder 1 SCL** | **`PB8`** | Arduino `D15` (`SCL`) / `CN10-3` | `I2C1_SCL` (`AF4_I2C1`, OD) | **AS5600 Base `SCL`** | Reloj $\text{I}^2\text{C}_1$ a **$400\text{ kHz}$** (sensor del eje trasero del motor Namiki: mide $\theta$). |
-| **Encoder 1 SDA** | **`PB9`** | Arduino `D14` (`SDA`) / `CN10-5` | `I2C1_SDA` (`AF4_I2C1`, OD) | **AS5600 Base `SDA`** | Datos $\text{I}^2\text{C}_1$ a **$400\text{ kHz}$** (con pull-up de $4.7\text{ k}\Omega$ a $3.3\text{ V}$). |
-| **Encoder 2 SCL** | **`PB10`** | Arduino `D6` / Morpho `CN10-25` | `I2C2_SCL` (`AF4_I2C2`, OD) | **AS5600 Distal `SCL`** | Reloj $\text{I}^2\text{C}_2$ a **$400\text{ kHz}$** (sensor en el codo del brazo: mide $\alpha$). |
-| **Encoder 2 SDA** | **`PB11`** *(o `PB3`)* | Morpho `CN10-18` *(o Arduino `D3`)* | `I2C2_SDA` (`AF4_I2C2`, OD) | **AS5600 Distal `SDA`** | Datos $\text{I}^2\text{C}_2$ a **$400\text{ kHz}$** (con pull-up de $4.7\text{ k}\Omega$ a $3.3\text{ V}$). |
-| **Telemetría TX** | **`PA2`** | Internamente conectado a ST-LINK | `USART2_TX` (`AF7_USART2`) | **PC USB Virtual COM** | Envío de tramas CSV a $200\text{ Hz}$ hacia MATLAB / Python ($115200\text{ bps}$). |
-| **Comandos RX** | **`PA3`** | Internamente conectado a ST-LINK | `USART2_RX` (`AF7_USART2`) | **PC USB Virtual COM** | Recepción de comandos en vivo (`BALANCE`, `CHAR1..5`, `PID_A=...`). |
-| **Botón Usuario** | **`PC13`** | Botón Azul **`B1`** en placa | `GPIO_EXTI13` (Flanco bajada) | **Interruptor B1** | Pulsación en reposo: ejecuta `ZERO` (Homing). En marcha: ejecuta `STOP`. |
-| **LED Estado** | **`PA5`** | LED Verde **`LD2`** en placa | `GPIO_Output` (Push-Pull) | **LED LD2** | Encendido fijo cuando el péndulo está estabilizado en `BALANCE_PID`; parpadea en espera. |
-| **Alimentación Sensores** | **`3V3`** | Arduino `CN6-4` | Riel regulado $3.3\text{ V}$ | **AS5600 `VCC` y `DIR`** | Alimenta ambos AS5600 a $3.3\text{ V}$ (conectar pin `PGO`/puente de $3.3\text{ V}$ según módulo). |
-| **Masa Común** | **`GND`** | `CN6-6`, `CN6-7`, `CN10-20` | Referencia $0\text{ V}$ común | **L298N `GND` + Sensores `GND`** | **Obligatorio:** unir la tierra de la fuente de $12\text{ V}$, el `GND` del L298N y el `GND` de la STM32. |
+| **Motor PWM** | **`PA8`** | **`D7`** (`CN9-8`) | `TIM1_CH1` (`AF1_TIM1`) | **L298N `ENA`** | PWM a **$20.0\text{ kHz}$** ($0\dots 900$ cuentas). *(Retirar jumper ENA del L298N)*. |
+| **Encoder 2 SCL** | **`PB10`** | **`D6`** (`CN9-7`) | `I2C2_SCL` (`AF4_I2C2`, OD) | **AS5600 Péndulo `SCL`** | Reloj $\text{I}^2\text{C}_2$ a **$400\text{ kHz}$** (mide ángulo del péndulo $\alpha$). |
+| **Motor Dir A** | **`PB4`** | **`D5`** (`CN9-6`) | `GPIO_Output` (Push-Pull) | **L298N `IN1`** | Control de sentido horario (`IN1=1, IN2=0`). |
+| **Motor Dir B** | **`PB5`** | **`D4`** (`CN9-5`) | `GPIO_Output` (Push-Pull) | **L298N `IN2`** | Control de sentido antihorario (`IN1=0, IN2=1`). |
+| **Encoder 2 SDA** | **`PB3`** | **`D3`** (`CN9-4`) | `I2C2_SDA` (`AF4_I2C2`, OD) | **AS5600 Péndulo `SDA`** | Datos $\text{I}^2\text{C}_2$ a **$400\text{ kHz}$** (ubicado justo al lado de `D4..D6` en `CN9`). |
+| **Encoder 1 SCL** | **`PB8`** | **`D15 / SCL`** (`CN5-10`) | `I2C1_SCL` (`AF4_I2C1`, OD) | **AS5600 Motor `SCL`** | Reloj $\text{I}^2\text{C}_1$ a **$400\text{ kHz}$** (mide ángulo del brazo $\theta$). |
+| **Encoder 1 SDA** | **`PB9`** | **`D14 / SDA`** (`CN5-9`) | `I2C1_SDA` (`AF4_I2C1`, OD) | **AS5600 Motor `SDA`** | Datos $\text{I}^2\text{C}_1$ a **$400\text{ kHz}$** (contiguo a `D15` en `CN5`). |
+| **Alimentación $3.3\text{ V}$** | **`3V3`** | **`3V3`** (`CN6-4`) | Salida regulada $3.3\text{ V}$ | **AS5600 `VCC` (×2)** | Único jumper de alimentación positiva para cada AS5600. |
+| **Masa Común** | **`GND`** | **`GND`** (`CN5-7`, `CN6-6`, `CN6-7`) | Referencia $0\text{ V}$ común | **L298N `GND` + AS5600 `GND`** | Tierra común entre fuente de $12\text{ V}$, L298N, STM32 y los 2 sensores AS5600. |
+| **Telemetría USB** | **`PA2 / PA3`** | Interno (Cable USB ST-LINK) | `USART2` ($115200\text{ bps}$) | **PC USB Virtual COM** | **0 jumpers externos:** viaja directamente por el cable mini-USB de la Nucleo. |
 
 > [!IMPORTANT]
 > **Por qué se utilizan dos buses $\text{I}^2\text{C}$ independientes (`I2C1` e `I2C2`):**  
