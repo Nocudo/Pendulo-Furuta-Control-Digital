@@ -172,7 +172,7 @@ El montaje mecánico se organiza en 4 módulos integrados desarrollados en FreeC
      │                                                  │
      │ [I2C2]                                           │
      │  PB10 (SCL2) ─► SCL (Sensor 2 AS5600: Péndulo)   │
-     │  PB11 (SDA2) ─► SDA (Sensor 2 AS5600: Péndulo)   │
+     │  PB3  (SDA2) ─► SDA (Sensor 2 AS5600: Péndulo)   │
      │  VCC ────────────────────────────────────────────┘
      │  GND ────────────────────────────────────────────┐
      │                                                  │
@@ -191,7 +191,7 @@ El montaje mecánico se organiza en 4 módulos integrados desarrollados en FreeC
 | **I2C1_SCL** | **PB8** | **SCL** (AS5600 Motor) | Open-Drain con Pull-Up externo ($4.7\text{ k}\Omega$) |
 | **I2C1_SDA** | **PB9** | **SDA** (AS5600 Motor) | Open-Drain con Pull-Up externo ($4.7\text{ k}\Omega$) |
 | **I2C2_SCL** | **PB10**| **SCL** (AS5600 Péndulo)| Open-Drain con Pull-Up externo ($4.7\text{ k}\Omega$) |
-| **I2C2_SDA** | **PB11**| **SDA** (AS5600 Péndulo)| Open-Drain con Pull-Up externo ($4.7\text{ k}\Omega$) |
+| **I2C2_SDA** | **PB3** | **SDA** (AS5600 Péndulo)| Open-Drain (`Arduino D3`, Soft-I2C ~450 kHz) |
 | **USART2_TX**| **PA2** | ST-LINK VCP TX | Comunicación UART asíncrona a 115200 o 921600 bps |
 | **USART2_RX**| **PA3** | ST-LINK VCP RX | Comunicación UART asíncrona |
 | **Alimentación**| **3.3V / GND**| VCC / GND Sensores | Riel regulado interno de la placa Nucleo |
@@ -605,18 +605,18 @@ Dado que los actuadores lineales no pueden levantar el péndulo desde la posici�
                                        │
                      ┌─────────────────┴─────────────────┐
                      │ Condicion de conmutacion lineal:  │
-                     │  |alpha - 180°| < 15° Y           │
-                     │  |d(alpha)/dt|  < 2.5 rad/s       │
+                     │  |alpha - 180°| < 20° Y           │
+                     │  |d(alpha)/dt|  < 4.8 rad/s       │
                      └─────────────────┬─────────────────┘
                                        │
                       SI ──────────────┴────────────── NO
                       │                                │
                       ▼                                ▼
        ┌───────────────────────────────┐ ┌───────────────────────────────┐
-       │ CONTROL EN LINEA: LQR / PID   │ │ CONTROL NO LINEAL: SWING-UP   │
-       │ - Estabiliza alpha en 180°    │ │ - Bombeo de energia Lyapunov  │
-       │ - Regula posicion brazo theta │ │ - Aumenta amplitud balanceo   │
-       │ - Bajo consumo energetico     │ │ - Lleva el pendulo hacia arriba│
+       │ CONTROL LINEAL: M4 ULTRA-SILK │ │ CONTROL NO LINEAL: SWING-UP   │
+       │ - PD alpha + PID theta (1 kHz)│ │ - Bombeo resonante en fase    │
+       │ - Dual-Notch 11Hz/6.2Hz + Slew│ │ - Modulado por energia (wn)   │
+       │ - Sin limite angular de brazo │ │ - Auto-recuperacion si > 32°  │
        └───────────────────────────────┘ └───────────────────────────────┘
 ```
 
@@ -663,14 +663,21 @@ $$D(s) = \frac{K_d N s}{s + N} E(s)$$
 
 ---
 
-### 6.3. Código C de Producción para la ISR de Control en STM32 Nucleo-F446RE
+### 6.3. Parámetros Caracterizados Finales y Esquema de la ISR en STM32 Nucleo-F446RE
 
-Este bloque de código se ejecuta dentro de la rutina de interrupción del temporizador a **$1\text{ kHz}$** (`TIM6_DAC_IRQHandler` o `TIM7`):
+Tras la caracterización experimental en hardware real (`COM13`, **$R^2 = 98.51\%$**, NRMSE $87.79\%$), el modelo identificado y las constantes activas en el firmware de producción ([`firmware_stm32/Core/Src/furuta_control.c`](../firmware_stm32/Core/Src/furuta_control.c) y [`l298n_motor.c`](../firmware_stm32/Core/Src/l298n_motor.c)) son:
+
+* **Subplanta Motor/Brazo (reductor `80:1`):** $G_v(s) = \dfrac{3.3720}{0.1175\,s + 1}$, zona muerta estática `+10.0% / -21.0%` compensada en firmware con rampa continua `+9.2% / -16.0%` ($V_k = 0.65\text{ V}$, silencio `< 0.06 V`).
+* **Subplanta Péndulo Invertido:** $\omega_n = 8.8484\text{ rad/s}$ ($T_d = 0.7116\text{ s}$), $\zeta = 0.06488$, $K_{\text{acople}} = 0.8737$, $J_{1,\text{piv}} = 2.044 \times 10^{-4}\text{ kg}\cdot\text{m}^2$, $b_1 = 2.347 \times 10^{-4}\text{ N}\cdot\text{m}\cdot\text{s/rad}$, $l_{1,\text{eff}} = 0.1253\text{ m}$:
+  $$G_{\alpha/\ddot{\theta}}^{\text{up}}(s) = \frac{0.8737}{s^2 + 1.1482\,s - 78.2942}$$
+* **Ganancias Activas (`M4 Ultra-Silk`, $T_s = 1\text{ ms}$):** PD Péndulo (`Kp=14.50, Ki=0.00, Kd=1.50, N=30`), PID Brazo (`Kp=-1.45, Ki=-0.75, Kd=-0.85, N=20`, sat. `±2.2 V`, int. `±1.6 V`), PID Servo `0°` (`Kp=13.50, Ki=65.00, Kd=1.45`), PID Velocidad (`Kp=1.42, Ki=27.32, Kd=0.005`), Dual-Notch (`11.0 Hz Q=1.2` + adaptativo `-6 dB @ 6.2 Hz Q=1.4`), LPF velocidad IIR ×2 ($\tau = 6\text{ ms}$ c/u) y slew adaptativo `0.065→0.40 V/ms` (`±6.5→±8.5 V`).
+
+El siguiente bloque resume la estructura simplificada de la rutina de interrupción a **$1\text{ kHz}$** (`TIM6_DAC_IRQHandler`, ver implementación completa en [`furuta_control.c`](../firmware_stm32/Core/Src/furuta_control.c)):
 
 ```c
 /**
- * @file furuta_controller.c
- * @brief Lazo cerrado de control digital a 1 kHz en STM32 Nucleo-F446RE
+ * @file furuta_controller.c (resumen conceptual — ver firmware_stm32/Core/Src/furuta_control.c)
+ * @brief Lazo cerrado de control digital a 1 kHz en STM32 Nucleo-F446RE (M4 Ultra-Silk)
  */
 
 #include "main.h"
@@ -678,7 +685,7 @@ Este bloque de código se ejecuta dentro de la rutina de interrupción del tempo
 
 /* Definiciones de constantes de hardware */
 #define TS_CONTROL        0.001f    // Periodo de muestreo: 1 ms (1000 Hz)
-#define PWM_MAX_DUTY      900       // Periodo del Timer PWM (ARR = 900 -> 20 kHz a 180 MHz / 10)
+#define PWM_MAX_DUTY      900       // Periodo del Timer PWM (ARR = 899 -> 20 kHz a 180 MHz / 10)
 #define MAX_VOLTAGE       12.0f
 #define ALPHA_TARGET      3.14159265f // 180 grados en radianes (Invertido)
 
@@ -687,22 +694,22 @@ typedef struct {
     float Kp;
     float Ki;
     float Kd;
-    float N_filter;      // Coeficiente del filtro derivativo (e.g. 15.0)
-    float u_max;         // Limite superior de saturacion (+12V)
-    float u_min;         // Limite inferior de saturacion (-12V)
+    float N_filter;      // Coeficiente del filtro derivativo (30.0 rad/s)
+    float u_max;         // Limite superior de saturacion adaptativo (+6.5..+8.5V)
+    float u_min;         // Limite inferior de saturacion adaptativo (-6.5..-8.5V)
     float integral;
     float prev_error;
     float prev_derivative;
 } PID_Controller;
 
-/* Instancias globales */
+/* Instancia PD Péndulo Invertido (ganancias M4 Ultra-Silk validadas en COM13) */
 PID_Controller pid_alpha = {
-    .Kp = 45.0f,
-    .Ki = 8.0f,
-    .Kd = 3.2f,
-    .N_filter = 15.0f,
-    .u_max = 12.0f,
-    .u_min = -12.0f,
+    .Kp = 14.50f,
+    .Ki = 0.00f,
+    .Kd = 1.50f,
+    .N_filter = 30.0f,
+    .u_max = 8.5f,
+    .u_min = -8.5f,
     .integral = 0.0f,
     .prev_error = 0.0f,
     .prev_derivative = 0.0f
@@ -782,10 +789,10 @@ void ControlLoop_ISR(void) {
     float theta = AS5600_ReadAngle_I2C1();  // Angulo Brazo en radianes
     float alpha = AS5600_ReadAngle_I2C2();  // Angulo Pendulo en radianes
 
-    // 2. Comprobacion de Seguridad (Watchdog de Angulo)
-    if (fabsf(alpha - ALPHA_TARGET) > 0.45f) { // Mas de ~25 grados de error
-        Motor_SetVoltage(0.0f);                 // Desconectar motor
-        pid_alpha.integral = 0.0f;              // Resetear acumulador
+    // 2. Comprobacion de Seguridad / Auto-recuperacion (ver FURUTA_STATE_RECOVER_HOME en furuta_control.c)
+    if (fabsf(alpha - ALPHA_TARGET) > 0.5585f) { // Mas de 32 grados de error -> retorna a 0° y re-levanta
+        Motor_SetVoltage(0.0f);                  // Desconectar motor brevemente
+        pid_alpha.integral = 0.0f;               // Resetear acumulador
         return;
     }
 
@@ -849,7 +856,7 @@ E IMPRESION 3D          ELECTRONICA            PERIFERICOS STM32      Y MODELADO
 4. **GPIO:** Configurar PB4 y PB5 como `GPIO_Output` en modo `Very High Speed`.
 5. **I2C1 e I2C2:**
    - I2C1 en PB8 (SCL) y PB9 (SDA) a Fast Mode ($400\text{ kHz}$).
-   - I2C2 en PB10 (SCL) y PB11 (SDA) a Fast Mode ($400\text{ kHz}$).
+   - I2C2 en PB10 (SCL, `D6`) y PB3 (SDA, `D3`) a ~450 kHz (Soft-I2C auto-polaridad en `as5600.c`).
 6. **TIM6 / TIM7 (Timer Base de Tiempo):**
    - Configurar interrupción periódica exacta cada $1.0\text{ ms}$ ($1000\text{ Hz}$).
 7. **USART2:** Habilitar a 115200 bps o 921600 bps para envío de datos de telemetría por ST-LINK.
@@ -879,8 +886,8 @@ E IMPRESION 3D          ELECTRONICA            PERIFERICOS STM32      Y MODELADO
    - Posicionar manualmente el péndulo cerca de la vertical ($\pm 10^\circ$).
    - Activar el lazo de control PID a $1\text{ kHz}$.
    - Ajustar finamente $K_d$ para amortiguar oscilaciones rápidas y luego $K_p$ para rigidez posicional.
-4. **Verificación de la Parada de Emergencia (Watchdog):**
-   - Provocar una perturbación mayor a $25^\circ$; certificar que el motor se desconecta inmediatamente sin giros descontrolados.
+4. **Verificación de Auto-Recuperación ante Caídas ($|\tilde{\alpha}| > 32^\circ$):**
+   - Provocar una perturbación fuerte mayor a $32^\circ$; certificar que el sistema desenergiza brevemente (`300 ms`), retorna suavemente a $0^\circ$ (`RECOVER_HOME`), espera calma y vuelve a levantar el péndulo automáticamente sin límite angular en el brazo.
 
 ---
 

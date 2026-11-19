@@ -69,6 +69,7 @@
     ]
   },
   "optimized_pid_controllers_1khz": {
+    "note": "Ganancias iniciales obtenidas por Evolucion Diferencial offline sin filtro Notch ni compensacion de holgura",
     "pid_motor_vel": {
       "Kp": 1.42,
       "Ki": 27.32,
@@ -92,6 +93,68 @@
       "Ki": -2.0,
       "Kd": -2.58,
       "N": 20.0
+    }
+  },
+  "active_firmware_m4_ultra_silk_1khz": {
+    "note": "Ganancias activas flasheadas en STM32F446RE (LQR5 + Dual-Notch + Slew adaptativo, validadas en COM13)",
+    "pid_motor_vel": {
+      "Kp": 1.42,
+      "Ki": 27.32,
+      "Kd": 0.005,
+      "N": 40.0,
+      "sat_V": 12.0
+    },
+    "pid_motor_pos": {
+      "Kp": 13.5,
+      "Ki": 65.0,
+      "Kd": 1.45,
+      "N": 35.0,
+      "sat_V": 5.8,
+      "slew_V_per_ms": 0.055
+    },
+    "pid_pend_alpha": {
+      "Kp": 14.5,
+      "Ki": 0.0,
+      "Kd": 1.5,
+      "N": 30.0,
+      "sat_V": 8.5
+    },
+    "pid_arm_theta": {
+      "Kp": -1.45,
+      "Ki": -0.75,
+      "Kd": -0.85,
+      "N": 20.0,
+      "integral_clamp_V": 1.6,
+      "output_clamp_V": 2.2
+    },
+    "l298n_deadzone_comp": {
+      "pos_pct": 9.2,
+      "neg_pct": 16.0,
+      "v_knee_V": 0.65,
+      "silence_band_V": 0.06
+    },
+    "dual_notch_and_adaptive_slew": {
+      "lpf_vel_cascade_ms": [6.0, 6.0],
+      "notch1_hz": 11.0,
+      "notch1_Q": 1.2,
+      "notch2_adaptive_hz": 6.2,
+      "notch2_Q": 1.4,
+      "notch2_depth_dB": -6.0,
+      "slew_quiet_V_per_ms": 0.065,
+      "slew_disturbance_V_per_ms": 0.4,
+      "vcap_quiet_V": 6.5,
+      "vcap_disturbance_V": 8.5
+    },
+    "hardware_validation_com13": {
+      "swing_up_time_sec": 0.98,
+      "continuous_balance_sec": 14.02,
+      "falls": 0,
+      "u_rms_V": [0.5, 0.73],
+      "pwm_rms_pct": [7.3, 10.2],
+      "pend_rms_deg": [1.35, 1.99],
+      "arm_rms_deg": [5.29, 9.31],
+      "alpha_dot_rms_rad_s": [0.54, 0.77],
+      "stophome_park_deg": -0.25
     }
   }
 }

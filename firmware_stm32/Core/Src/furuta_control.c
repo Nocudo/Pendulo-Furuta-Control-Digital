@@ -183,7 +183,7 @@ static float Furuta_ComputePendulumEnergy(const AS5600_Handle_t *enc_pend)
 }
 
 /**
- * @brief Secuencia Suave de Levantamiento Resonante en Cuadratura de Fase (wn = 8.72 rad/s):
+ * @brief Secuencia Suave de Levantamiento Resonante en Cuadratura de Fase (wn = 8.8484 rad/s):
  *        Dispara la carrera al entrar en |alpha_down| < 48° para que el brazo acelere
  *        en el hemisferio inferior (|alpha| < 90°, cos(alpha) > 0) y desacelere en el
  *        hemisferio superior (|alpha| > 90°, cos(alpha) < 0), sumando energía tanto al
@@ -543,7 +543,7 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
                                + sys->pid_pend_alpha.d_term;
 
             /* 4. Lazo Secundario: PID Regulador de Posición del Brazo (theta -> 0°)
-             *    Autoridad acotada (±2.5 V, integración condicional dentro de ±45°) para que,
+             *    Autoridad acotada (±2.2 V, integración condicional dentro de ±45° acotada a ±1.6 V) para que,
              *    sin importar qué tan lejos gire el brazo ante una perturbación, siempre regrese
              *    suavemente a 0° sin saturar ni tumbar el péndulo. */
             float arm_bal_err = sys->theta_setpoint_rad - theta_pos;

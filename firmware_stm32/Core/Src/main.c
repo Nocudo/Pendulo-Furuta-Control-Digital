@@ -6,8 +6,8 @@
  *            - RCC: PLL a 180 MHz con Over-Drive (APB1 = 45 MHz, APB2 = 90 MHz)
  *            - TIM1_CH1 (PA8): PWM a 20.0 kHz para ENA del driver L298N
  *            - GPIO (PB4, PB5): Salidas digitales IN1, IN2 para el L298N
- *            - I2C1 (PB8, PB9): Fast Mode 400 kHz -> AS5600 Base (Brazo Theta)
- *            - I2C2 (PB10, PB11): Fast Mode 400 kHz -> AS5600 Distal (Péndulo Alfa)
+ *            - I2C1 (PB8, PB9): Soft-I2C ~450 kHz -> AS5600 Base (Brazo Theta)
+ *            - I2C2 (PB10, PB3): Soft-I2C ~450 kHz -> AS5600 Distal (Péndulo Alfa)
  *            - TIM6: Interrupción determinista de muestreo a 1.0 kHz (Ts = 1 ms)
  *            - USART2 (PA2, PA3): Telemetría CSV y comandos interactivos (115200 bps)
  ******************************************************************************

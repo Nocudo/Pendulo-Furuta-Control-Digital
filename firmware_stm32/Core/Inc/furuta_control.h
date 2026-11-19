@@ -7,7 +7,7 @@
  *            - Control Híbrido: Swing-Up por Energía (Lyapunov) + Captura
  *            - Controlador PID Dual en Paralelo/Cascada (PID_alpha + PID_theta)
  *            - Controladores PID dedicados del motor (Velocidad y Posición)
- *            - Watchdog de seguridad de ángulo máximo (|alpha_err| > 25°)
+ *            - Detección de caída y auto-recuperación continua (|alpha_err| > 32°)
  *            - Intérprete de comandos UART en tiempo real y telemetría CSV
  ******************************************************************************
  */

@@ -9,6 +9,9 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 ## 📂 Estructura del Repositorio
 
 ```
+├── GUIA_EXPOSICION_PROYECTO.md       # ★ Guía completa de sustentación (filtros, controladores, física y Q&A)
+├── README.md                         # Portada ejecutiva e inicio rápido del proyecto
+│
 ├── interfaz_matlab/                  # ★ Interfaz gráfica principal lista para presentación (MATLAB)
 │   └── app_telemetria_sistema_furuta_matlab.m   # Dashboard maximizado, telemetría en vivo y constantes
 │
@@ -18,18 +21,16 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 │       ├── Inc/                      # main.h, as5600.h, l298n_motor.h, pid_controller.h, caracterizacion.h, furuta_control.h
 │       └── Src/                      # main.c, as5600.c, l298n_motor.c, pid_controller.c, caracterizacion.c, furuta_control.c, stm32f4xx_it.c
 │
-├── caracterizacion_y_validacion/     # ★ Identificación experimental real, ensayos CSV y gráficas
-│   ├── scripts/                      # Scripts reproducibles en Python y MATLAB
+├── caracterizacion_y_validacion/     # ★ Identificación experimental real en hardware (R² = 98.51%)
+│   ├── scripts/                      # Scripts reproducibles de análisis experimental en Python
 │   │   ├── analizar_caracterizacion_real_motor.py
-│   │   ├── analizar_y_optimizar_sistema_furuta.py
-│   │   ├── caracterizacion_y_pid_sistema.py
-│   │   └── caracterizacion_y_pid_matlab.m
-│   ├── datos_experimentales/         # Registros CSV de banco STM32 (CHAR1..4, Swing-Up y Balance)
-│   └── resultados/                   # Gráficas PNG de validación y reportes JSON
+│   │   └── analizar_y_optimizar_sistema_furuta.py
+│   ├── datos_experimentales/         # Registros CSV medidos en STM32 (CHAR1, CHAR2, CHAR4, Swing-Up y Balance)
+│   └── resultados/                   # Gráficas PNG de validación real y reportes JSON finales
 │
 ├── docs/                             # ★ Documentación técnica del proyecto
 │   ├── ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md      # Pinout I2C, código C, controladores y filtros
-│   ├── ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md        # Arquitectura mecánica y modelo matemático
+│   ├── ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md        # Arquitectura mecánica, modelo Euler-Lagrange y BOM
 │   └── Ricardo_ToroSantaMaria_2009.pdf               # Referencia académica
 │
 ├── cad/                              # Diseño CAD paramétrico (FreeCAD 1.1), ensamblajes, scripts y renders
@@ -48,20 +49,22 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 │   ├── Placas_Cura_Listas/           # Proyectos .3mf, perfiles .curaprofile y .gcode listos
 │   └── GUIA_IMPRESION_3D_CURA.md
 │
-├── .gitignore
-└── README.md
+└── .gitignore
 ```
 
 ---
 
 ## 🚀 Inicio Rápido para Presentación
 
+> [!TIP]
+> Para exponer el proyecto paso a paso (filtros, controladores, el porqué físico de cada decisión y preguntas frecuentes), consulta **[`GUIA_EXPOSICION_PROYECTO.md`](GUIA_EXPOSICION_PROYECTO.md)**.
+
 1. **Conectar la STM32 Nucleo-F446RE** por USB (`COM13`, `115200 bps`) y energizar la fuente de `12 V` del puente H `L298N`.
 2. **Abrir la interfaz gráfica en MATLAB** (inicia maximizada y auto-conecta a `COM13`):
    ```matlab
    run('interfaz_matlab/app_telemetria_sistema_furuta_matlab.m')
    ```
-3. **Pulsar `CERO (0°)`** con el péndulo colgado en reposo y luego **`▶ INICIAR`** para levantamiento autónomo (`Swing-Up`) y estabilización invertida continua con auto-recuperación.
+3. **Pulsar `CERO (0°)`** con el péndulo colgado en reposo y luego **`▶ INICIAR`** para levantamiento autónomo (`Swing-Up` en `~0.96 s`) y estabilización invertida continua (`M4 Ultra-Silk`) con auto-recuperación.
 
 ---
 
@@ -69,15 +72,15 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 
 | Bloque | Parámetros Activos en Firmware |
 | :--- | :--- |
-| **PD Péndulo (`pid_pend_alpha`)** | $K_p = 16.50\text{ V/rad}$, $K_i = 0.00$, $K_d = 1.72\text{ V}\cdot\text{s/rad}$ |
-| **PID Brazo (`pid_arm_theta`)** | $K_p = -1.65\text{ V/rad}$, $K_i = -0.85\text{ V/(rad}\cdot\text{s)}$, $K_d = -0.95\text{ V}\cdot\text{s/rad}$ (int. $\pm 1.6\text{ V}$, sat. $\pm 2.2\text{ V}$) |
+| **PD Péndulo (`pid_pend_alpha`)** | $K_p = 14.50\text{ V/rad}$, $K_i = 0.00$, $K_d = 1.50\text{ V}\cdot\text{s/rad}$ (M4 Ultra-Silk) |
+| **PID Brazo (`pid_arm_theta`)** | $K_p = -1.45\text{ V/rad}$, $K_i = -0.75\text{ V/(rad}\cdot\text{s)}$, $K_d = -0.85\text{ V}\cdot\text{s/rad}$ (int. $\pm 1.6\text{ V}$, sat. $\pm 2.2\text{ V}$, sin límite angular) |
 | **PID Servo 0° (`pid_motor_pos`)** | $K_p = 13.50$, $K_i = 65.00$, $K_d = 1.45$ + Clegg reset + freno activo `L298N_Brake` |
-| **PID Velocidad (`pid_motor_vel`)** | $K_p = 1.20$, $K_i = 20.00$, $K_d = 0.005$, Tustin $N = 40\text{ rad/s}$ |
-| **Swing-Up Resonante PD** | $K_p = 13.50$, $K_d = 1.20$, $\omega_n = 8.722\text{ rad/s}$ (captura en $\|\alpha_{\text{err}}\| < 20^\circ$) |
+| **PID Velocidad (`pid_motor_vel`)** | $K_p = 1.42$, $K_i = 27.32$, $K_d = 0.005$, Tustin $N = 40\text{ rad/s}$ |
+| **Swing-Up Resonante PD** | $K_p = 13.50$, $K_d = 1.20$, $\omega_n = 8.8484\text{ rad/s}$ (captura en $\|\alpha_{\text{err}}\| < 20^\circ$, $\|\dot{\alpha}\| < 4.8\text{ rad/s}$) |
 | **Filtros de Velocidad (×2)** | Doble IIR de 1.er orden en cascada ($\tau = 6\text{ ms}$ c/u, $f_c \approx 15.8\text{ Hz}$) |
 | **Filtro Dual-Notch Biquad** | Notch 1 fijo $f_0 = 11.0\text{ Hz}$ ($Q = 1.2$) + Notch 2 adaptativo $f_0 = 6.2\text{ Hz}$ ($Q = 1.4$, $-6\text{ dB}$) |
-| **Slew-Rate / Saturación / L298N** | Adaptativo `0.10–0.40 V/ms`, `±6.5–8.5 V`; zona muerta suave `+7.0% / -11.5%` ($V_k = 0.55\text{ V}$) |
-| **Planta Identificada** | $K_{m,\text{brazo}} = 6.1694\text{ rad/(s}\cdot\text{V)}$, $\tau_m = 0.1381\text{ s}$, $\omega_n = 8.722\text{ rad/s}$, $\zeta = 0.0572$, $K_{\text{acople}} = 0.8808$ |
+| **Slew-Rate / Saturación / L298N** | Adaptativo `0.065–0.40 V/ms`, `±6.5–8.5 V`; zona muerta continua `+9.2% / -16.0%` ($V_k = 0.65\text{ V}$) |
+| **Planta Identificada ($R^2 = 98.51\%$)** | $K_{m,\text{brazo}} = 3.3720\text{ rad/(s}\cdot\text{V)}$, $\tau_m = 0.1175\text{ s}$, $\omega_n = 8.8484\text{ rad/s}$, $\zeta = 0.0649$, $K_{\text{acople}} = 0.8737$, $J_{1,\text{piv}} = 2.044 \times 10^{-4}\text{ kg}\cdot\text{m}^2$ |
 
 ---
 
@@ -211,6 +214,7 @@ El dueño del repositorio puede agregar colaboradores en:
 
 | Documento | Descripción |
 |---|---|
+| [`GUIA_EXPOSICION_PROYECTO.md`](GUIA_EXPOSICION_PROYECTO.md) | **Guía completa de sustentación**: funcionamiento, filtros, controladores, física y preguntas frecuentes |
 | [`docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md`](docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md) | Arquitectura de control STM32F446RE, tabla de pines, explicación del código C/caracterización y diagramas de bloques |
 | [`docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md`](docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md) | Arquitectura mecánica, modelo matemático y estrategia de control |
 | [`cad/01_pendulo_furuta/GUIA_FABRICACION_Y_CONTROL_FURUTA.md`](cad/01_pendulo_furuta/GUIA_FABRICACION_Y_CONTROL_FURUTA.md) | Guía de fabricación y montaje del péndulo |

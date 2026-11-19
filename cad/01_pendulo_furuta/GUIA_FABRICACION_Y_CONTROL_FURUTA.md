@@ -84,7 +84,10 @@ Todos los modelos paramétricos y ensamblajes se encuentran en `cad/01_pendulo_f
 | $l_1$ | Centro de gravedad del péndulo | **$82.0 - 92.5$** | $\text{mm}$ | Distancia al centro de masa (sintonizable con la masa ajustable) |
 | $m_1$ | Masa total del péndulo | **$22.5$** | $\text{g}$ ($0.0225\text{ kg}$) | Masa aligerada por eliminación del tornillo y abrazadera |
 | $J_0$ | Inercia rotacional del brazo 1 | **$2.20 \times 10^{-4}$** | $\text{kg}\cdot\text{m}^2$ | Momento de inercia del brazo horizontal sostenido por abajo |
-| $J_1$ | Inercia rotacional del péndulo | **$3.10 \times 10^{-4}$** | $\text{kg}\cdot\text{m}^2$ | Momento de inercia respecto a su eje horizontal |
+| $J_1$ | Inercia rotacional del péndulo | **$3.10 \times 10^{-4}$** | $\text{kg}\cdot\text{m}^2$ | Momento de inercia respecto a su eje horizontal (nominal CAD) |
+
+> [!NOTE]
+> **Parámetros Experimentales Identificados en Hardware Real (`COM13`, $R^2 = 98.51\%$):** Tras el montaje final con el contrapeso definitivo, la caracterización real en banco (`CHAR1`/`CHAR2`/`CHAR4`) arrojó $K_{m,\text{brazo}} = 3.3720\text{ rad/(s}\cdot\text{V)}$, $\tau_m = 0.1175\text{ s}$, $\omega_n = 8.8484\text{ rad/s}$ ($T_d = 0.7116\text{ s}$), $\zeta = 0.06488$, $K_{\text{acople}} = 0.8737$, $J_{1,\text{piv}} = 2.044 \times 10^{-4}\text{ kg}\cdot\text{m}^2$, $b_1 = 2.347 \times 10^{-4}\text{ N}\cdot\text{m}\cdot\text{s/rad}$ y $l_{1,\text{eff}} = 0.1253\text{ m}$. Ver detalle completo en [`docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md`](../../docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md).
 
 ### Ecuaciones de Euler-Lagrange:
 
