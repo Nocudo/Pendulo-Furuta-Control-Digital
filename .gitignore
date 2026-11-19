@@ -42,3 +42,6 @@ Placa_ESP32_Expansion_Real.stl
 # Engram memory local
 .engram/
 
+
+.pio/
+
