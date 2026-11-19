@@ -248,9 +248,12 @@ def plot_real_characterization(dz_res, mot_res, out_dir):
 
 
 def main():
-    out_dir = os.path.dirname(os.path.abspath(__file__))
-    dz_csv = os.path.join(out_dir, "ensayo_real_zona_muerta_stm32.csv")
-    steps_csv = os.path.join(out_dir, "ensayo_real_motor_stm32.csv")
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(base_dir, "datos_experimentales")
+    out_dir = os.path.join(base_dir, "resultados")
+    os.makedirs(out_dir, exist_ok=True)
+    dz_csv = os.path.join(data_dir, "ensayo_real_zona_muerta_stm32.csv")
+    steps_csv = os.path.join(data_dir, "ensayo_real_motor_stm32.csv")
 
     dz_pos, dz_neg, dz_data = analyze_deadzone_csv(dz_csv)
     mot_res = analyze_motor_steps_csv(steps_csv, dz_pos, dz_neg)

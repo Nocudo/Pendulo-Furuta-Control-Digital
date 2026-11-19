@@ -568,8 +568,11 @@ def plot_system_characterization_and_pid(sys_id, pid_opt, out_dir):
 
 
 def main():
-    out_dir = os.path.dirname(os.path.abspath(__file__))
-    sys_csv = os.path.join(out_dir, "ensayo_real_sistema_furuta_stm32.csv")
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(base_dir, "datos_experimentales")
+    out_dir = os.path.join(base_dir, "resultados")
+    os.makedirs(out_dir, exist_ok=True)
+    sys_csv = os.path.join(data_dir, "ensayo_real_sistema_furuta_stm32.csv")
     mot_json = os.path.join(out_dir, "caracterizacion_real_motor_resultados.json")
 
     sys_id = identify_pendulum_and_coupling(sys_csv, mot_json)

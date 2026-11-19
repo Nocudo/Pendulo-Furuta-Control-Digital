@@ -9,66 +9,75 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 ## 📂 Estructura del Repositorio
 
 ```
-├── cad/                              # Diseño CAD paramétrico (FreeCAD 1.1), ensamblajes, scripts y renders
-│   ├── 01_pendulo_furuta/            # Ensamblaje completo del péndulo
-│   │   ├── Pendulo_Furuta_Completo.FCStd
-│   │   ├── Pendulo_Furuta_Assembly.step / .stl
-│   │   ├── GUIA_FABRICACION_Y_CONTROL_FURUTA.md
-│   │   ├── scripts/                  # Scripts de construcción (build_furuta_complete.py) y renderizado (render_furuta_all.py)
-│   │   └── renders/                  # Vistas renderizadas
-│   ├── 02_motor_namiki_as5600/       # Motor Namiki 22CL + encoder AS5600
-│   │   ├── Motor_22CL_AS5600.FCStd
-│   │   ├── Motor_22CL_AS5600_Assembly.step / .stl
-│   │   ├── GUIA_MONTAJE_Y_FABRICACION.md
-│   │   ├── scripts/                  # Scripts (build_full_project.py, render_models.py)
-│   │   └── renders/
-│   ├── 03_caja_nucleo_f446re/        # Caja para STM32 Nucleo-F446RE
-│   │   ├── Caja_Nucleo_F401.FCStd / Caja_Nucleo_Completa_Assembly.step
-│   │   ├── NUCLEO-60-F401.STEP
-│   │   ├── GUIA_FABRICACION_CAJA_NUCLEO.md
-│   │   └── renders/
-│   ├── 04_caja_driver_l298n/         # Caja para driver L298N
-│   │   ├── Caja_L298N.FCStd / Caja_L298N_Completa_Assembly.step / Driver_L298N_Real.step
-│   │   ├── GUIA_FABRICACION_CAJA_L298N.md
-│   │   ├── scripts/
-│   │   └── renders/
-│   ├── 05_caja_esp32/                # Caja para ESP32 (expansión opcional)
-│   │   ├── Caja_ESP32_Expansion.FCStd / Caja_ESP32_Completa_Assembly.step
-│   │   ├── GUIA_FABRICACION_CAJA_ESP32.md / reporte_diseno_caja_esp32.md
-│   │   ├── components/
-│   │   ├── scripts/
-│   │   └── renders/
-│   └── referencias/                  # Modelos STEP de referencia (motor, rodamiento, tornillos)
+├── interfaz_matlab/                  # ★ Interfaz gráfica principal lista para presentación (MATLAB)
+│   └── app_telemetria_sistema_furuta_matlab.m   # Dashboard maximizado, telemetría en vivo y constantes
 │
-├── firmware_stm32/                   # Firmware C para STM32 Nucleo-F446RE y Caracterización
-│   ├── Core/
-│   │   ├── Inc/                      # Headers (main.h, as5600.h, l298n_motor.h, pid_controller.h, caracterizacion.h, furuta_control.h)
-│   │   └── Src/                      # Código C (main.c, as5600.c, l298n_motor.c, pid_controller.c, caracterizacion.c, furuta_control.c, stm32f4xx_it.c)
-│   └── caracterizacion_y_pid_pc/     # Scripts Python/MATLAB de identificación y aplicación de PID
-│       ├── caracterizacion_y_pid_sistema.py
-│       ├── caracterizacion_y_pid_matlab.m
-│       ├── resultados_caracterizacion_y_pid_furuta.png
-│       └── resumen_caracterizacion_y_pid.json
+├── firmware_stm32/                   # ★ Firmware C embebido (STM32 Nucleo-F446RE @ 180 MHz, 1 kHz)
+│   ├── platformio.ini                # Configuración de compilación y flasheo (PlatformIO / HAL)
+│   └── Core/
+│       ├── Inc/                      # main.h, as5600.h, l298n_motor.h, pid_controller.h, caracterizacion.h, furuta_control.h
+│       └── Src/                      # main.c, as5600.c, l298n_motor.c, pid_controller.c, caracterizacion.c, furuta_control.c, stm32f4xx_it.c
 │
-├── docs/                             # Documentación del proyecto
-│   ├── ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md        # Arquitectura mecánica y de control
-│   ├── ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md      # Arquitectura STM32, pinout, código y diagramas de bloques
+├── caracterizacion_y_validacion/     # ★ Identificación experimental real, ensayos CSV y gráficas
+│   ├── scripts/                      # Scripts reproducibles en Python y MATLAB
+│   │   ├── analizar_caracterizacion_real_motor.py
+│   │   ├── analizar_y_optimizar_sistema_furuta.py
+│   │   ├── caracterizacion_y_pid_sistema.py
+│   │   └── caracterizacion_y_pid_matlab.m
+│   ├── datos_experimentales/         # Registros CSV de banco STM32 (CHAR1..4, Swing-Up y Balance)
+│   └── resultados/                   # Gráficas PNG de validación y reportes JSON
+│
+├── docs/                             # ★ Documentación técnica del proyecto
+│   ├── ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md      # Pinout I2C, código C, controladores y filtros
+│   ├── ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md        # Arquitectura mecánica y modelo matemático
 │   └── Ricardo_ToroSantaMaria_2009.pdf               # Referencia académica
 │
-├── IMPRESION_3D/                     # Única fuente de piezas imprimibles (.stl/.step) y placas listas para Cura
-│   ├── 01_Caja_STM32_Nucleo/        # STL/STEP listos para Caja Nucleo (2 piezas)
-│   ├── 02_Pendulo_Furuta/            # STL/STEP listos para péndulo + acoplador motor/AS5600 (9 piezas)
-│   ├── 03_Caja_L298N/               # STL/STEP listos para Caja L298N (2 piezas)
-│   ├── 04_Caja_ESP32/               # STL/STEP listos para Caja ESP32 (2 piezas)
-│   ├── Placas_Cura_Listas/          # Placas de impresión preconfiguradas (7 placas)
-│   │   ├── Proyectos_3MF/           # Proyectos Cura (.3mf) con piezas posicionadas
-│   │   ├── GCode/                   # G-code listo para Anycubic Kobra 2 (Placas 1, 2, 4, 5, 6 y 7)
-│   │   └── Perfiles_Cura/           # Perfiles de impresión (.curaprofile)
-│   └── GUIA_IMPRESION_3D_CURA.md    # Guía completa de impresión paso a paso
+├── cad/                              # Diseño CAD paramétrico (FreeCAD 1.1), ensamblajes, scripts y renders
+│   ├── 01_pendulo_furuta/            # Ensamblaje completo del péndulo
+│   ├── 02_motor_namiki_as5600/       # Motor Namiki 22CL + encoder AS5600
+│   ├── 03_caja_nucleo_f446re/        # Caja para STM32 Nucleo-F446RE
+│   ├── 04_caja_driver_l298n/         # Caja para driver L298N
+│   ├── 05_caja_esp32/                # Caja para ESP32 (expansión opcional)
+│   └── referencias/                  # Modelos STEP de referencia (motor, rodamiento, tornillos)
+│
+├── IMPRESION_3D/                     # Piezas imprimibles (.stl/.step) y placas listas para Cura (SUP = 0)
+│   ├── 01_Caja_STM32_Nucleo/
+│   ├── 02_Pendulo_Furuta/
+│   ├── 03_Caja_L298N/
+│   ├── 04_Caja_ESP32/
+│   ├── Placas_Cura_Listas/           # Proyectos .3mf, perfiles .curaprofile y .gcode listos
+│   └── GUIA_IMPRESION_3D_CURA.md
 │
 ├── .gitignore
 └── README.md
 ```
+
+---
+
+## 🚀 Inicio Rápido para Presentación
+
+1. **Conectar la STM32 Nucleo-F446RE** por USB (`COM13`, `115200 bps`) y energizar la fuente de `12 V` del puente H `L298N`.
+2. **Abrir la interfaz gráfica en MATLAB** (inicia maximizada y auto-conecta a `COM13`):
+   ```matlab
+   run('interfaz_matlab/app_telemetria_sistema_furuta_matlab.m')
+   ```
+3. **Pulsar `CERO (0°)`** con el péndulo colgado en reposo y luego **`▶ INICIAR`** para levantamiento autónomo (`Swing-Up`) y estabilización invertida continua con auto-recuperación.
+
+---
+
+## 🎛️ Resumen de Controladores y Filtros (`Ts = 1 ms` · `PWM = 20 kHz`)
+
+| Bloque | Parámetros Activos en Firmware |
+| :--- | :--- |
+| **PD Péndulo (`pid_pend_alpha`)** | $K_p = 16.50\text{ V/rad}$, $K_i = 0.00$, $K_d = 1.72\text{ V}\cdot\text{s/rad}$ |
+| **PID Brazo (`pid_arm_theta`)** | $K_p = -1.65\text{ V/rad}$, $K_i = -0.85\text{ V/(rad}\cdot\text{s)}$, $K_d = -0.95\text{ V}\cdot\text{s/rad}$ (int. $\pm 1.6\text{ V}$, sat. $\pm 2.2\text{ V}$) |
+| **PID Servo 0° (`pid_motor_pos`)** | $K_p = 13.50$, $K_i = 65.00$, $K_d = 1.45$ + Clegg reset + freno activo `L298N_Brake` |
+| **PID Velocidad (`pid_motor_vel`)** | $K_p = 1.20$, $K_i = 20.00$, $K_d = 0.005$, Tustin $N = 40\text{ rad/s}$ |
+| **Swing-Up Resonante PD** | $K_p = 13.50$, $K_d = 1.20$, $\omega_n = 8.722\text{ rad/s}$ (captura en $\|\alpha_{\text{err}}\| < 20^\circ$) |
+| **Filtros de Velocidad (×2)** | Doble IIR de 1.er orden en cascada ($\tau = 6\text{ ms}$ c/u, $f_c \approx 15.8\text{ Hz}$) |
+| **Filtro Dual-Notch Biquad** | Notch 1 fijo $f_0 = 11.0\text{ Hz}$ ($Q = 1.2$) + Notch 2 adaptativo $f_0 = 6.2\text{ Hz}$ ($Q = 1.4$, $-6\text{ dB}$) |
+| **Slew-Rate / Saturación / L298N** | Adaptativo `0.10–0.40 V/ms`, `±6.5–8.5 V`; zona muerta suave `+7.0% / -11.5%` ($V_k = 0.55\text{ V}$) |
+| **Planta Identificada** | $K_{m,\text{brazo}} = 6.1694\text{ rad/(s}\cdot\text{V)}$, $\tau_m = 0.1381\text{ s}$, $\omega_n = 8.722\text{ rad/s}$, $\zeta = 0.0572$, $K_{\text{acople}} = 0.8808$ |
 
 ---
 

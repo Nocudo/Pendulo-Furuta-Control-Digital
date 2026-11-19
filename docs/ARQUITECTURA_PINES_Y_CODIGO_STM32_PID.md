@@ -21,35 +21,36 @@ El firmware está estructurado en **5 capas modulares** desacopladas para garant
 ```mermaid
 flowchart TD
     subgraph CAPA_5 ["CAPA 5: Superloop & Telemetría (Prioridad Fondo - main.c)"]
-        CLI["Intérprete de Comandos UART2 (115200 bps)<br/>ZERO | BALANCE | SWING | CHAR1..5 | PID_A/T/V"]
-        CSV["Streaming Telemetría CSV (200 Hz)<br/>t_ms, state, pwm, V, theta, omega, alpha, alpha_err, alpha_dot"]
+        CLI["Intérprete de Comandos UART2 (115200 bps, DMA Circular)<br/>START/SWING | STOPHOME | STOP | ZERO | BALANCE | CHAR1..5 | PID_A/T/V/P | SMOOTH"]
+        CSV["Streaming Telemetría CSV (100 Hz)<br/>t_ms, state, pwm, V, theta, omega, alpha, alpha_err, alpha_dot"]
         BTN["Botón Usuario B1 (PC13) & LED LD2 (PA5)"]
     end
 
     subgraph CAPA_4 ["CAPA 4: Máquina de Estados & Control Maestro (1 kHz ISR - furuta_control.c)"]
-        FSM["Máquina de Estados Finitos (FSM)<br/>IDLE | CALIBRATING | CHARACTERIZATION | MOTOR_PID | SWING_UP | BALANCE_PID | FAULT_STOP"]
-        WDG["Watchdog de Seguridad Angular<br/>Corte inmediato si |alpha_err| > 25°"]
-        SWING["Control No Lineal Swing-Up<br/>Bombeo de Energía de Lyapunov"]
+        FSM["Máquina de Estados Finitos (FSM)<br/>IDLE | CALIBRATING | CHARACTERIZATION | MOTOR_PID | SWING_UP | BALANCE_PID | RECOVER_HOME | STOP_HOME"]
+        WDG["Auto-Recuperación Continua<br/>Si |alpha_err| > 32° -> vuelve a 0°, calma y relanza Swing-Up"]
+        SWING["Levantamiento Resonante en Cuadratura<br/>PD (Kp=13.5, Kd=1.2, wn=8.72 rad/s) + modulación por energía"]
     end
 
-    subgraph CAPA_3 ["CAPA 3: Motores Matemáticos PID & Caracterización (pid_controller.c / caracterizacion.c)"]
-        PID_A["PID 3: Estabilizador Péndulo (PID_alpha)<br/>Kp=48.0, Ki=14.0, Kd=3.6, N=25"]
-        PID_T["PID 4: Regulador Brazo Furuta (PID_theta)<br/>Kp=-2.4, Ki=-0.35, Kd=-1.65, N=20"]
-        PID_M["PID 1 & 2: Velocidad y Posición Motor<br/>PID_vel (Kp=0.85, Ki=12.5) | PID_pos (Kp=9.5, Ki=3.2, Kd=0.72)"]
-        CHAR["Protocolos de Caracterización Experimental<br/>Ensayos 1..5 (Rampa Zona Muerta, Escalones, Oscilación Libre, Doblete)"]
+    subgraph CAPA_3 ["CAPA 3: Controladores PID/LQR5, Filtros Notch y Caracterización (pid_controller.c / furuta_control.c)"]
+        PID_A["PD Péndulo Invertido (pid_pend_alpha)<br/>Kp=16.50, Ki=0.00, Kd=1.72 + LPF IIR x2 (fc≈15.8 Hz)"]
+        PID_T["PID Regulador Brazo (pid_arm_theta)<br/>Kp=-1.65, Ki=-0.85, Kd=-0.95 (sat ±2.2 V, int ±1.6 V)"]
+        NOTCH["Filtro Dual-Notch Biquad Adaptativo + Slew<br/>Notch 11.0 Hz (Q=1.2) + -6 dB @ 6.2 Hz (Q=1.4) | 0.10→0.40 V/ms"]
+        PID_M["PID 1 & 2: Velocidad y Posición Motor<br/>PID_vel (1.20/20.0/0.005) | PID_pos (13.5/65.0/1.45 + Clegg + Freno)"]
+        CHAR["Protocolos de Caracterización Experimental<br/>Ensayos CHAR1..CHAR5B (Zona Muerta, Escalones, Oscilación Libre, Doblete)"]
     end
 
     subgraph CAPA_2 ["CAPA 2: Drivers de Dispositivos e Instrumentación (as5600.c / l298n_motor.c)"]
-        DRV_ENC["Driver Dual AS5600<br/>Unwrapping Multi-vuelta + Homing + Filtro IIR de Velocidad"]
-        DRV_MOT["Driver Puente H L298N<br/>Compensación Inversa de Zona Muerta (±14%) + Freno Activo"]
+        DRV_ENC["Driver Dual AS5600 (Soft-I2C ~450 kHz)<br/>Unwrapping Multi-vuelta (80:1 motor) + Homing + LPF IIR τ=6 ms"]
+        DRV_MOT["Driver Puente H L298N (20 kHz)<br/>Compensación Suave de Zona Muerta (+7.0% / -11.5%, Vk=0.55 V) + Freno Activo"]
     end
 
     subgraph CAPA_1 ["CAPA 1: Periféricos Hardware STM32F446RE (HAL / Registros @ 180 MHz)"]
         TIM6_HW["TIM6 ISR (1.0 kHz)<br/>Base de Tiempo Exacta"]
         TIM1_HW["TIM1_CH1 (PA8)<br/>PWM 20.0 kHz (ARR=899)"]
-        GPIO_HW["GPIOB (PB4, PB5)<br/>Dirección IN1 / IN2"]
-        I2C_HW["I2C1 (PB8/PB9) & I2C2 (PB10/PB11)<br/>Fast Mode 400 kHz"]
-        UART_HW["USART2 (PA2/PA3)<br/>ST-LINK Virtual COM"]
+        GPIO_HW["GPIOB/A (PB4, PB5, PA9/PA10)<br/>Dirección IN1 / IN2"]
+        I2C_HW["I2C1 (PB8/PB9) & I2C2 (PB10/PB3)<br/>Soft-I2C Auto-Polaridad ~450 kHz"]
+        UART_HW["USART2 (PA2/PA3)<br/>ST-LINK Virtual COM + DMA1_Stream5"]
     end
 
     CAPA_5 --> CAPA_4
@@ -169,29 +170,29 @@ En la función [`SystemClock_Config()`](../firmware_stm32/Core/Src/main.c#L139-L
 
 ### 3.1. Diagrama de Bloques de la Caracterización Experimental (Motor y Sistema)
 
-El firmware incluye en [`caracterizacion.c`](../firmware_stm32/Core/Src/caracterizacion.c) 5 protocolos automatizados que excitan el hardware y transmiten la respuesta por UART hacia los scripts de identificación [`caracterizacion_y_pid_sistema.py`](../firmware_stm32/caracterizacion_y_pid_pc/caracterizacion_y_pid_sistema.py) y [`caracterizacion_y_pid_matlab.m`](../firmware_stm32/caracterizacion_y_pid_pc/caracterizacion_y_pid_matlab.m):
+El firmware incluye en [`caracterizacion.c`](../firmware_stm32/Core/Src/caracterizacion.c) 5 protocolos automatizados que excitan el hardware y transmiten la respuesta por UART hacia los scripts de identificación en [`caracterizacion_y_validacion/scripts/`](../caracterizacion_y_validacion/scripts) ([`analizar_caracterizacion_real_motor.py`](../caracterizacion_y_validacion/scripts/analizar_caracterizacion_real_motor.py), [`analizar_y_optimizar_sistema_furuta.py`](../caracterizacion_y_validacion/scripts/analizar_y_optimizar_sistema_furuta.py) y [`caracterizacion_y_pid_matlab.m`](../caracterizacion_y_validacion/scripts/caracterizacion_y_pid_matlab.m)):
 
 ```mermaid
 flowchart LR
     subgraph STM32_EXP ["1. Ensayos en Firmware STM32 (caracterizacion.c)"]
         E1["CHAR1: Rampa PWM 0..50%<br/>(Detección Zona Muerta)"]
-        E2["CHAR2: Escalones Multinivel PWM<br/>(+30%, +45%, +60%, -30%, -45%)"]
+        E2["CHAR2: Escalones Multinivel PWM<br/>(±20%, ±25%, ±30%, ±35%)"]
         E3["CHAR3: Oscilación Libre Péndulo<br/>(Motor Frenado, soltar desde 20°)"]
-        E4["CHAR4: Doblete Bipolar PWM<br/>(+38% / -38% por 160 ms)"]
+        E4["CHAR4: Doblete Bipolar PWM<br/>(Acoplamiento Brazo -> Péndulo)"]
     end
 
-    subgraph ID_MODEL ["2. Identificación Paramétrica (Python / MATLAB)"]
-        M_DZ["Compensador Zona Muerta<br/>PWM_dz = ±14.0%"]
-        M_MOT["Planta Motor Identificada<br/>Gv(s) = Km / (tau_m·s + 1)<br/>Gp(s) = Km / (s·(tau_m·s + 1))"]
-        M_PEND["Parámetros Físicos Péndulo<br/>wn = 9.76 rad/s, zeta = 0.0114<br/>J1 = 3.62e-4 kg·m², b1 = 8.07e-5"]
-        M_INV["Mapeo al Equilibrio Invertido<br/>G_up(s) = (K_acople·s) / (s² + 2·zeta·wn·s - wn²)<br/>(Polo inestable en s = +wn)"]
+    subgraph ID_MODEL ["2. Identificación Experimental Real (Python / MATLAB)"]
+        M_DZ["Compensador Suave Zona Muerta<br/>+7.0% CCW / -11.5% CW (Vk=0.55 V)"]
+        M_MOT["Planta Motor/Brazo Identificada<br/>Gv(s) = 6.1694 / (0.1381·s + 1)<br/>R² = 0.9284 (reductor 80:1)"]
+        M_PEND["Parámetros Físicos Péndulo<br/>wn = 8.722 rad/s, zeta = 0.0572<br/>J1 = 2.104e-4 kg·m², K_ac = 0.8808"]
+        M_INV["Mapeo al Equilibrio Invertido<br/>G_up(s) = 0.8808 / (s² + 0.9980·s - 76.073)<br/>(Polo inestable en s = +8.24 rad/s)"]
     end
 
-    subgraph PID_SYNTH ["3. Controladores PID Aplicados (1 kHz Tustin)"]
-        C1["PID 1: Velocidad Motor<br/>Kp=0.85, Ki=12.5, Kd=0.005, N=40"]
-        C2["PID 2: Posición Motor/Brazo<br/>Kp=9.50, Ki=3.20, Kd=0.72, N=35"]
-        C3["PID 3: Péndulo Invertido (alpha)<br/>Kp=48.0, Ki=14.0, Kd=3.60, N=25"]
-        C4["PID 4: Regulador Brazo (theta)<br/>Kp=-2.40, Ki=-0.35, Kd=-1.65, N=20"]
+    subgraph PID_SYNTH ["3. Controladores + Filtros en Firmware (1 kHz)"]
+        C1["PID 1: Velocidad Motor (Tustin)<br/>Kp=1.20, Ki=20.0, Kd=0.005, N=40"]
+        C2["PID 2: Posición Servo 0° (Clegg)<br/>Kp=13.50, Ki=65.0, Kd=1.45"]
+        C3["PD 3: Péndulo Invertido (alpha)<br/>Kp=16.50, Ki=0.00, Kd=1.72 + LPF x2"]
+        C4["PID 4: Brazo Equilibrio (theta)<br/>Kp=-1.65, Ki=-0.85, Kd=-0.95 + Dual-Notch"]
     end
 
     E1 --> M_DZ
@@ -236,34 +237,34 @@ Para estabilizar simultáneamente la barra del péndulo en su equilibrio vertica
 
 ```mermaid
 flowchart LR
-    subgraph LAZO_ALPHA ["LAZO RÁPIDO PRINCIPAL: Estabilización del Péndulo Invertido (PID_alpha)"]
+    subgraph LAZO_ALPHA ["LAZO RÁPIDO PRINCIPAL: Estabilización del Péndulo Invertido (PD_alpha)"]
         REF_A["Referencia Vertical<br/>α_err_ref = 0.0 rad<br/>(α = 180° = π rad)"]
         SUM_A(("Σ"))
-        PID_A["PID Péndulo (pid_pend_alpha)<br/>Kp = 48.0, Ki = 14.0, Kd = 3.60<br/>Filtro Derivativo N = 25<br/>Anti-Windup Clamping ±12V"]
+        PID_A["PD Péndulo (pid_pend_alpha)<br/>Kp = 16.50, Ki = 0.00, Kd = 1.72<br/>Vel. filtrada IIR x2 (fc ≈ 15.8 Hz)"]
         REF_A -->|+| SUM_A
         SUM_A -->|e_α[k]| PID_A
     end
 
     subgraph LAZO_THETA ["LAZO LENTO SECUNDARIO: Centrado del Brazo Horizontal (PID_theta)"]
-        REF_T["Referencia Brazo<br/>θ_ref (rad)"]
+        REF_T["Referencia Brazo<br/>θ_ref = 0.0 rad"]
         SUM_T(("Σ"))
-        PID_T["PID Brazo (pid_arm_theta)<br/>Kp = -2.40, Ki = -0.35, Kd = -1.65<br/>Filtro Derivativo N = 20<br/>Saturación Parcial ±6V"]
+        PID_T["PID Brazo (pid_arm_theta)<br/>Kp = -1.65, Ki = -0.85, Kd = -0.95<br/>Int. condicional (<45°, ±1.6V) | Sat ±2.2V"]
         REF_T -->|+| SUM_T
         SUM_T -->|e_θ[k]| PID_T
     end
 
     SUM_U(("Σ"))
-    SAT["Saturador Global ±12.0 V<br/>+ Watchdog |α_err| < 25°"]
-    DZ["Compensación Zona Muerta<br/>L298N_SetVoltage()<br/>TIM1_CH1 (PA8) + PB4/PB5"]
-    PLANT["Planta No Lineal<br/>Péndulo de Furuta<br/>(Motor Namiki + Brazo + Péndulo)"]
+    NOTCH_F["Filtro Dual-Notch Biquad Adaptativo<br/>11.0 Hz (Q=1.2) + -6 dB @ 6.2 Hz (Q=1.4)<br/>+ Slew 0.10→0.40 V/ms | Sat ±6.5→±8.5 V"]
+    DZ["Compensación Suave Zona Muerta<br/>L298N_SetVoltage (+7.0%/-11.5%, Vk=0.55V)<br/>TIM1_CH1 (PA8) 20 kHz + PB4/PB5"]
+    PLANT["Planta No Lineal<br/>Péndulo de Furuta<br/>(Motor Namiki 80:1 + Brazo + Péndulo)"]
 
-    ENC2["AS5600 Distal (I2C2 - PB10/PB11)<br/>Mapeo α_err = wrapToPi(α - π)<br/>+ Filtro Velocidad τ = 4 ms"]
-    ENC1["AS5600 Base (I2C1 - PB8/PB9)<br/>Unwrapping Multi-Vuelta θ<br/>+ Filtro Velocidad τ = 6 ms"]
+    ENC2["AS5600 Distal (I2C2 - PB10/PB3)<br/>Mapeo α_err = wrapToPi(α - π)<br/>+ LPF IIR τ = 6 ms (x2 en balance)"]
+    ENC1["AS5600 Base (I2C1 - PB8/PB9)<br/>Unwrapping Multi-Vuelta θ (÷80)<br/>+ LPF IIR τ = 6 ms (x2 en balance)"]
 
     PID_A -->|"u_α[k] (V)"| SUM_U
     PID_T -->|"u_θ[k] (V)"| SUM_U
-    SUM_U -->|"u_total[k]"| SAT
-    SAT --> DZ
+    SUM_U -->|"u_raw[k]"| NOTCH_F
+    NOTCH_F --> DZ
     DZ -->|"PWM 20 kHz"| PLANT
     PLANT -->|"Ángulo Péndulo α(t)"| ENC2
     PLANT -->|"Ángulo Brazo θ(t)"| ENC1
@@ -361,41 +362,40 @@ Se activa enviando los comandos `CHAR1` a `CHAR5B` por el puerto serie `USART2`:
 
 ### 4.4. Controlador Maestro del Péndulo de Furuta ([`furuta_control.c`](../firmware_stm32/Core/Src/furuta_control.c))
 
-La función [`Furuta_ControlISR_1kHz()`](../firmware_stm32/Core/Src/furuta_control.c#L118-L246) es invocada cada **$1.000\text{ ms}$** por `TIM6_DAC_IRQHandler`:
+La función [`Furuta_ControlISR_1kHz()`](../firmware_stm32/Core/Src/furuta_control.c#L310-L667) es invocada cada **$1.000\text{ ms}$** por `TIM6_DAC_IRQHandler`:
 
-1. **Enganche Automático (*Auto-Catch*) y Swing-Up por Energía de Lyapunov:**
-   - Si el sistema está en `FURUTA_STATE_IDLE` y el usuario acerca manualmente el péndulo a menos de $\pm 12^\circ$ de la vertical superior con velocidad $|\dot{\alpha}| < 1.5\text{ rad/s}$, la máquina de estados engancha automáticamente `FURUTA_STATE_BALANCE_PID`.
-   - Si se envía el comando `SWING`, la función `Furuta_ComputeSwingUpVoltage()` calcula la energía mecánica normalizada respecto a la cúspide ($E_{\text{ref}} = 0\text{ J}$):
-     $$E(\tilde{\alpha}, \dot{\alpha}) = \frac{1}{2} J_{1,\text{piv}} \dot{\alpha}^2 + m_1 g l_1 (\cos\tilde{\alpha} - 1)$$
-     y aplica la ley de bombeo de Lyapunov $u_{\text{swing}} = k_E E \operatorname{sign}(\dot{\alpha}\cos\tilde{\alpha}) - k_{p,\theta}\theta - k_{d,\theta}\dot{\theta}$ hasta ingresar al cono lineal $|\tilde{\alpha}| < 18^\circ$, instante en que conmuta sin saltos (*bumpless transfer*) al control PID Dual.
-2. **Estabilización Invertida con Controlador PID Dual (`FURUTA_STATE_BALANCE_PID`):**
-   - **PID 3 (`pid_pend_alpha`):** Calcula la tensión necesaria para mantener $\tilde{\alpha} \to 0\text{ rad}$ ($K_p = 48.0, K_i = 14.0, K_d = 3.60, N = 25$).
-   - **PID 4 (`pid_arm_theta`):** Calcula la tensión correctiva suave para devolver el brazo horizontal a $\theta_{\text{ref}}$ ($K_p = -2.40, K_i = -0.35, K_d = -1.65, N = 20$).
-   - **Ley de Superposición:**
-     $$u_{\text{total}}[k] = \operatorname{sat}\left( u_\alpha[k] + u_\theta[k], -12.0\text{ V}, +12.0\text{ V} \right)$$
-3. **Watchdog de Seguridad Angular:**
-   - Si una perturbación extrema vence al actuador y $|\tilde{\alpha}| > 25^\circ$ ($0.436\text{ rad}$), la rutina desenergiza inmediatamente el puente H (`L298N_Coast`), limpia los acumuladores integrales de ambos PID (`PID_Reset`) y pasa a `FURUTA_STATE_FAULT_STOP`.
+1. **Levantamiento Resonante en Cuadratura (`FURUTA_STATE_SWING_UP`):**
+   - Calcula la energía normalizada $E_{\text{norm}} = \frac{1}{2}(\dot{\alpha}/\omega_n)^2 + (\cos\alpha_{\text{up}} - 1)$ con $\omega_n = 8.722\text{ rad/s}$ y modula la carrera del brazo ($\pm 50^\circ \to \pm 36^\circ \to \pm 22^\circ$) y el techo de tensión ($\pm 6.8\text{ V} \to \pm 5.2\text{ V}$) mediante un PD interno ($K_p = 13.50, K_d = 1.20$, slew $0.12\text{ V/ms}$).
+   - Al entrar en el cono lineal $|\tilde{\alpha}| < 20^\circ$ y $|\dot{\alpha}| < 4.8\text{ rad/s}$, conmuta sin saltos (*bumpless transfer*) a `FURUTA_STATE_BALANCE_PID`.
+2. **Estabilización Invertida Dual-Notch Adaptativa (`FURUTA_STATE_BALANCE_PID`):**
+   - **Velocidades suavizadas**: doble filtro pasa-bajos IIR en cascada ($\tau = 6\text{ ms}$ en encoder + $\tau = 6\text{ ms}$ en equilibrio, $f_c \approx 15.8\text{ Hz}$).
+   - **PD Péndulo (`pid_pend_alpha`):** $K_p = 16.50\text{ V/rad},\; K_i = 0.00,\; K_d = 1.72\text{ V}\cdot\text{s/rad}$.
+   - **PID Brazo (`pid_arm_theta`):** $K_p = -1.65\text{ V/rad},\; K_i = -0.85\text{ V/(rad}\cdot\text{s)},\; K_d = -0.95\text{ V}\cdot\text{s/rad}$ (integración condicional dentro de $\pm 45^\circ$ acotada a $\pm 1.6\text{ V}$, salida $u_\theta \in [-2.2, +2.2]\text{ V}$).
+   - **Filtrado Dual-Notch + Slew adaptativo:** Notch Biquad fijo a $11.0\text{ Hz}$ ($Q = 1.2$) + Notch parcial adaptativo $-6\text{ dB}$ a $6.2\text{ Hz}$ ($Q = 1.4$) ponderado por $\text{dist} = \min(1, \max(|\tilde{\alpha}|/4.5^\circ, |\dot{\alpha}|/2.5))$. En reposo usa slew $0.10\text{ V/ms}$ y techo $\pm 6.5\text{ V}$; ante perturbaciones abre instantáneamente a $0.40\text{ V/ms}$ y $\pm 8.5\text{ V}$.
+3. **Auto-Recuperación Continua (`FURUTA_STATE_RECOVER_HOME` y `FURUTA_STATE_STOP_HOME`):**
+   - Sin límite angular en el brazo durante el equilibrio; si una perturbación supera $|\tilde{\alpha}| > 32^\circ$, desenergiza brevemente (`300 ms`), retorna suavemente a $0^\circ$ con `pid_motor_pos` (Clegg reset + freno activo), espera calma del péndulo y relanza automáticamente `SWING_UP`.
+   - El comando `STOPHOME` detiene el ciclo autónomo, devuelve el brazo a $0^\circ$ y pasa a `IDLE`.
 
 ---
 
 ## 5. Resumen de Parámetros Caracterizados y Ganancias PID Sintonizadas (Validados en Hardware Real `COM13`)
 
-* **Subplanta Motor/Brazo (`CHAR1` + `CHAR2`):** $G_v(s) = \dfrac{6.1694}{0.1381 s + 1}$ ($R^2 = 0.9284$), zona muerta cinética compensada suavemente en firmware ($+7.0\% / -11.5\%\text{ PWM}$ con rampa continua `0.06..0.55 V`).
-* **Subplanta Péndulo + Acoplamiento (`CHAR4`, peso intermedio):** $\omega_n = 8.7220\text{ rad/s}$ ($f_n = 1.3881\text{ Hz}$, $T_d = 0.7216\text{ s}$), $\zeta = 0.05721$, $K_{\text{acople}} = 0.8808$, $J_{1,\text{piv}} = 2.104 \times 10^{-4}\text{ kg}\cdot\text{m}^2$, $b_1 = 2.099 \times 10^{-4}\text{ N}\cdot\text{m}\cdot\text{s/rad}$, $l_{1,\text{eff}} = 0.1289\text{ m}$:
-  $$G_{\alpha/\ddot{\theta}}^{\text{up}}(s) = \frac{0.8808}{s^2 + 0.9980\,s - 76.0733}$$
+* **Subplanta Motor/Brazo (`CHAR1` + `CHAR2`):** $G_v(s) = \dfrac{3.3720}{0.1175 s + 1}$ (**$R^2 = 0.9851$**, NRMSE $87.79\%$), zona muerta estática `+10.0% / -21.0%` (dinámica `±2.5%`) compensada suavemente en firmware (`+9.2% / -16.0% PWM` con rampa continua `0.06..0.65 V`).
+* **Subplanta Péndulo + Acoplamiento (`CHAR4`):** $\omega_n = 8.8484\text{ rad/s}$ ($f_n = 1.4083\text{ Hz}$, $T_d = 0.7116\text{ s}$), $\zeta = 0.06488$, $K_{\text{acople}} = 0.8737$, $J_{1,\text{piv}} = 2.044 \times 10^{-4}\text{ kg}\cdot\text{m}^2$, $b_1 = 2.347 \times 10^{-4}\text{ N}\cdot\text{m}\cdot\text{s/rad}$, $l_{1,\text{eff}} = 0.1253\text{ m}$:
+  $$G_{\alpha/\ddot{\theta}}^{\text{up}}(s) = \frac{0.8737}{s^2 + 1.1482\,s - 78.2942}$$
 
 | Controlador / Subsistema | Variable Controlada | Ganancia $K_p$ | Ganancia $K_i$ | Ganancia $K_d$ | Filtro $N$ | Saturación Segura |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1. PID Velocidad Motor** (`pid_motor_vel`) | $\omega = \dot{\theta}\text{ (rad/s)}$ | $1.20\text{ V/(rad/s)}$ | $20.00\text{ V/rad}$ | $0.005\text{ V}\cdot\text{s/rad}$ | $40.0\text{ s}^{-1}$ | $\pm 12.0\text{ V}$ |
+| **1. PID Velocidad Motor** (`pid_motor_vel`) | $\omega = \dot{\theta}\text{ (rad/s)}$ | $1.42\text{ V/(rad/s)}$ | $27.32\text{ V/rad}$ | $0.005\text{ V}\cdot\text{s/rad}$ | $40.0\text{ s}^{-1}$ | $\pm 12.0\text{ V}$ |
 | **2. PID Posición Servo** (`pid_motor_pos`) | $\theta\text{ (rad)}$ | $13.50\text{ V/rad}$ | $65.00\text{ V/(rad}\cdot\text{s)}$ | $1.450\text{ V}\cdot\text{s/rad}$ | $35.0\text{ s}^{-1}$ | $\pm 5.8\text{ V}$ + Freno Activo |
-| **3. PD Péndulo Invertido LQR5** (`pid_pend_alpha`) | $\tilde{\alpha} = \alpha - \pi\text{ (rad)}$ | $16.50\text{ V/rad}$ | $0.00\text{ V/(rad}\cdot\text{s)}$ | $1.720\text{ V}\cdot\text{s/rad}$ | $30.0\text{ s}^{-1}$ | Dual-Notch (`11 Hz` + `-6 dB @ 6.2 Hz`) adaptativo (`0.10→0.40 V/ms`, `±6.5→±8.5 V`) |
-| **4. PID Centrado Brazo LQR5** (`pid_arm_theta`) | $\theta\text{ (rad)}$ | $-1.65\text{ V/rad}$ | $-0.85\text{ V/(rad}\cdot\text{s)}$ | $-0.950\text{ V}\cdot\text{s/rad}$ | $20.0\text{ s}^{-1}$ | $\pm 2.2\text{ V}$ (Int $\pm 1.6\text{ V}$, sin límite angular) |
+| **3. PD Péndulo Invertido LQR5** (`pid_pend_alpha`) | $\tilde{\alpha} = \alpha - \pi\text{ (rad)}$ | $14.50\text{ V/rad}$ | $0.00\text{ V/(rad}\cdot\text{s)}$ | $1.500\text{ V}\cdot\text{s/rad}$ | $30.0\text{ s}^{-1}$ | Dual-Notch (`11 Hz` + `-6 dB @ 6.2 Hz`) adaptativo (`0.065→0.40 V/ms`, `±6.5→±8.5 V`) |
+| **4. PID Centrado Brazo LQR5** (`pid_arm_theta`) | $\theta\text{ (rad)}$ | $-1.45\text{ V/rad}$ | $-0.75\text{ V/(rad}\cdot\text{s)}$ | $-0.850\text{ V}\cdot\text{s/rad}$ | $20.0\text{ s}^{-1}$ | $\pm 2.2\text{ V}$ (Int $\pm 1.6\text{ V}$, sin límite angular) |
 
 ### Gráficas de Validación Experimental Real (Caracterización + Swing-Up y Equilibrio Continuo en STM32)
 
-![Caracterización Experimental del Sistema Furuta](../firmware_stm32/caracterizacion_y_pid_pc/caracterizacion_y_optimizacion_pid_sistema_furuta.png)
+![Caracterización Experimental del Sistema Furuta](../caracterizacion_y_validacion/resultados/caracterizacion_y_optimizacion_pid_sistema_furuta.png)
 
-![Validación Real Swing-Up y Equilibrio Continuo STM32](../firmware_stm32/caracterizacion_y_pid_pc/validacion_real_swingup_y_balance_stm32.png)
+![Validación Real Swing-Up y Equilibrio Continuo STM32](../caracterizacion_y_validacion/resultados/validacion_real_swingup_y_balance_stm32.png)
 
 ---
 

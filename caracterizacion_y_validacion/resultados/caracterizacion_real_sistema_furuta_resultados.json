@@ -1,24 +1,24 @@
 {
   "hardware": "STM32 Nucleo-F446RE (180 MHz, Ts = 1 ms) + L298N + Motor Namiki 22CL-3501PG (80:1) + 2x AS5600 I2C",
   "motor_and_arm_subplant": {
-    "Km_arm_eff_rad_s_per_V": 6.1694,
-    "tau_m_sec": 0.1381,
-    "deadzone_pos_pwm_pct": 7.0,
-    "deadzone_neg_pwm_pct": 18.0,
-    "Gv_brazo_s": "6.1694 / (0.1381 s + 1)",
-    "Gp_brazo_s": "6.1694 / (s * (0.1381 s + 1))"
+    "Km_arm_eff_rad_s_per_V": 3.372,
+    "tau_m_sec": 0.1175,
+    "deadzone_pos_pwm_pct": 10.0,
+    "deadzone_neg_pwm_pct": 21.0,
+    "Gv_brazo_s": "3.3720 / (0.1175 s + 1)",
+    "Gp_brazo_s": "3.3720 / (s * (0.1175 s + 1))"
   },
   "pendulum_and_coupling_identified": {
-    "wn_rad_s": 8.722,
-    "wd_rad_s": 8.7077,
-    "fn_hz": 1.3881,
-    "period_Td_sec": 0.7216,
-    "damping_ratio_zeta": 0.05721,
-    "K_acople_inertial": 0.8808,
-    "J1_pivot_kg_m2": 0.0002104,
-    "b1_viscous_Nms_rad": 0.0002099,
-    "l1_effective_m": 0.1289,
-    "G_alpha_ddtheta_upright_s": "0.8808 / (s^2 + 0.9980 s - 76.0733)"
+    "wn_rad_s": 8.8484,
+    "wd_rad_s": 8.8297,
+    "fn_hz": 1.4083,
+    "period_Td_sec": 0.7116,
+    "damping_ratio_zeta": 0.06488,
+    "K_acople_inertial": 0.8737,
+    "J1_pivot_kg_m2": 0.0002044,
+    "b1_viscous_Nms_rad": 0.0002347,
+    "l1_effective_m": 0.1253,
+    "G_alpha_ddtheta_upright_s": "0.8737 / (s^2 + 1.1482 s - 78.2942)"
   },
   "state_space_upright_linearized": {
     "state_vector": [
@@ -36,7 +36,7 @@
       ],
       [
         0.0,
-        -7.2411,
+        -8.5106,
         0.0,
         0.0
       ],
@@ -48,9 +48,9 @@
       ],
       [
         0.0,
-        -6.378,
-        76.073,
-        -0.9979
+        -7.4357,
+        78.2934,
+        -1.1481
       ]
     ],
     "B": [
@@ -58,39 +58,39 @@
         0.0
       ],
       [
-        44.6734
+        28.6979
       ],
       [
         0.0
       ],
       [
-        39.3484
+        25.0733
       ]
     ]
   },
   "optimized_pid_controllers_1khz": {
     "pid_motor_vel": {
-      "Kp": 0.94,
-      "Ki": 17.55,
+      "Kp": 1.42,
+      "Ki": 27.32,
       "Kd": 0.005,
       "N": 40.0
     },
     "pid_motor_pos": {
-      "Kp": 17.7,
-      "Ki": 77.56,
+      "Kp": 18.47,
+      "Ki": 77.96,
       "Kd": 3.0,
       "N": 35.0
     },
     "pid_pend_alpha": {
-      "Kp": 49.51,
-      "Ki": 17.71,
-      "Kd": 2.2,
+      "Kp": 52.01,
+      "Ki": 16.06,
+      "Kd": 2.23,
       "N": 28.0
     },
     "pid_arm_theta": {
-      "Kp": -2.85,
+      "Kp": -2.73,
       "Ki": -2.0,
-      "Kd": -2.46,
+      "Kd": -2.58,
       "N": 20.0
     }
   }

@@ -29,8 +29,13 @@ fprintf('==================================================================\n');
 fprintf(' 1. CARACTERIZACION DEL MOTOR NAMIKI 22CL + DRIVER L298N\n');
 fprintf('==================================================================\n');
 
-if isfile('datos_ensayo_escalon_motor.csv')
-    data_mot = readmatrix('datos_ensayo_escalon_motor.csv');
+base_dir = fileparts(fileparts(mfilename('fullpath')));
+data_dir = fullfile(base_dir, 'datos_experimentales');
+mot_csv  = fullfile(data_dir, 'datos_ensayo_escalon_motor.csv');
+pend_csv = fullfile(data_dir, 'datos_ensayo_oscilacion_libre_pendulo.csv');
+
+if isfile(mot_csv)
+    data_mot = readmatrix(mot_csv);
     t_mot    = data_mot(:, 1) / 1000.0;
     u_mot    = data_mot(:, 2);
     theta_m  = data_mot(:, 3);
@@ -97,8 +102,8 @@ fprintf('==================================================================\n');
 m1 = 0.0420; L0 = 0.0885; l1 = 0.0880; g = 9.80665; J0 = 0.00052; b0 = 0.0048;
 tau_k_v = 0.0062;
 
-if isfile('datos_ensayo_oscilacion_libre_pendulo.csv')
-    data_p = readmatrix('datos_ensayo_oscilacion_libre_pendulo.csv');
+if isfile(pend_csv)
+    data_p = readmatrix(pend_csv);
     t_p    = data_p(:, 1) / 1000.0;
     alpha_p = data_p(:, 2);
 

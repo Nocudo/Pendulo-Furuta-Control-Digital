@@ -34,7 +34,7 @@ extern "C" {
 /* Parámetros Físicos Identificados del Péndulo para el Bombeo (Swing-Up) ----*/
 #define FURUTA_M1_KG                0.024f                  /* Masa efectiva péndulo (kg) */
 #define FURUTA_L1_M                 0.068f                  /* Distancia al CM l1 (m) */
-#define FURUTA_J1_PIVOT             0.0002104f              /* Inercia en pivote medida con nuevo peso (kg·m^2) */
+#define FURUTA_J1_PIVOT             0.0002044f              /* Inercia en pivote medida (R²=98.5%, kg·m^2) */
 #define FURUTA_GRAVITY              9.80665f                /* Gravedad (m/s^2) */
 #define FURUTA_SWINGUP_KE           240.0f                  /* Ganancia bombeo Lyapunov */
 #define FURUTA_SWINGUP_KV_ARM       1.10f                   /* Amortiguamiento centrado brazo */

@@ -135,20 +135,20 @@ void L298N_SetVoltage(L298N_Handle_t *motor, float voltage_v)
     }
 
     /* 3. Cálculo del porcentaje PWM con compensación suave de zona muerta:
-     *    Rampa lineal continua entre 0.06 V y V_knee = 0.55 V (vence fricción sin
-     *    stick-slip lento ni salto de relé de 10 Hz en el cruce por cero). */
+     *    Rampa lineal continua entre 0.06 V y V_knee = 0.65 V ajustada a la zona
+     *    muerta dinámica real (±2.5% en CHAR2 R²=98.5%) sin saltos de relé. */
     float abs_v = fabsf(voltage_v);
     float pwm_out_pct = 0.0f;
 
     if (motor->enable_deadzone_comp) {
         float dz = (voltage_v > 0.0f) ? motor->deadzone_pos_pct : motor->deadzone_neg_pct;
-        const float v_knee = 0.55f;
+        const float v_knee = 0.65f;
         float mag_pct;
         if (abs_v < v_knee) {
-            /* Transición suave desde 0% hasta dz% en [0.06 V, 0.55 V] */
+            /* Transición suave desde 0% hasta dz% en [0.06 V, 0.65 V] */
             mag_pct = dz * ((abs_v - 0.06f) / (v_knee - 0.06f));
         } else {
-            /* Mapeo lineal desde dz% hasta 100% en [0.55 V, V_max] */
+            /* Mapeo lineal desde dz% hasta 100% en [0.65 V, V_max] */
             float norm_mag = (abs_v - v_knee) / (motor->v_supply_max - v_knee);
             mag_pct = dz + ((100.0f - dz) * norm_mag);
         }

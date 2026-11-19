@@ -42,7 +42,7 @@ static double s_notch_z2 = 0.0;
  * - En reposo vertical (|alpha_err| < 4.5°): filtro Notch dual (11 Hz + -6 dB @ 6.2 Hz) y slew ultra-suave
  * - Ante perturbaciones fuertes: abre instantáneamente a slew 0.40 V/ms y ±8.5 V sin retardo de fase */
 static float  s_enable_n6   = 1.0f;
-static float  s_slew_quiet  = 0.10f;
+static float  s_slew_quiet  = 0.065f;
 static double s_notch6_z1   = 0.0;
 static double s_notch6_z2   = 0.0;
 
@@ -172,7 +172,7 @@ static float Furuta_ApplySmoothSlew(float u_target, float max_dv_per_ms, float m
  */
 static float Furuta_ComputePendulumEnergy(const AS5600_Handle_t *enc_pend)
 {
-    const float wn_id = 8.722f; /* Frecuencia natural experimental medida con nuevo peso (rad/s) */
+    const float wn_id = 8.8484f; /* Frecuencia natural experimental re-caracterizada (rad/s) */
     float alpha_up = enc_pend->angle_inverted_err_rad;
     float d_alpha  = enc_pend->velocity_rad_s;
 
@@ -258,21 +258,22 @@ void Furuta_Init(Furuta_System_t *sys)
     sys->pendulum_energy_j    = 0.0f;
 
     /* 1. Inicializar Etapa de Potencia L298N (TIM1_CH1 @ 20 kHz, PB4, PB5, PA9, PA10)
-     *    Zona muerta asimétrica cinética calibrada (+7.0% CCW, -11.5% CW, rampa suave 0.06..0.55 V):
-     *    Vence fricción sin stick-slip ni chattering de alta frecuencia en equilibrio. */
+     *    Zona muerta calibrada según nueva caracterización R²=98.5% (CHAR1 estática +10%/-21%):
+     *    +9.2% CCW / -16.0% CW con rampa continua ultra-suave 0.06..0.65 V. */
     L298N_Init(&sys->motor, &htim1, TIM_CHANNEL_1);
-    L298N_SetDeadzone(&sys->motor, 7.0f, 11.5f, true);
+    L298N_SetDeadzone(&sys->motor, 9.2f, 16.0f, true);
 
     /* 2. Inicializar Encoders Magnéticos AS5600 (I2C1 Brazo con direction=-1 y gear=80:1, I2C2 Péndulo) */
     (void)AS5600_Init(&sys->enc_arm,  &hi2c1, TS_CONTROL_SEC, 0.006f, -1);
     (void)AS5600_Init(&sys->enc_pend, &hi2c2, TS_CONTROL_SEC, 0.006f,  1);
 
     /* 3. Inicializar los 4 Controladores PID Discretos (Ts = 1.0 ms)
-     *    Con el nuevo peso (wn = 8.722 rad/s, zeta = 0.0572, K_acople = 0.881):
+     *    Nueva planta re-caracterizada: Gv(s) = 3.3720/(0.1175s+1) (R²=0.9851),
+     *    Péndulo: wn = 8.8484 rad/s, zeta = 0.0649, K_acople = 0.8737, J1 = 2.044e-4 kg·m²
      * ----------------------------------------------------------------------
      * A) PID de Velocidad del Motor/Brazo: */
     PID_Init(&sys->pid_motor_vel,
-             1.20f, 20.00f, 0.005f, 40.0f,
+             1.42f, 27.32f, 0.005f, 40.0f,
              TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
              true);
 
@@ -282,20 +283,20 @@ void Furuta_Init(Furuta_System_t *sys)
              TS_CONTROL_SEC, -5.8f, 5.8f,
              true);
 
-    /* C) PID Estabilizador del Péndulo Invertido (LQR 5-Estados Dual-Notch Adaptativo):
-     *    Ki_alpha = 0.0 obligatorio para no pelear contra el integrador del brazo.
-     *    Kp = 16.50 V/rad, Ki = 0.00, Kd = 1.72 V·s/rad */
+    /* C) PID Estabilizador del Péndulo Invertido (M4 Ultra-Silk sobre planta R²=98.5%):
+     *    Ki_alpha = 0.0 obligatorio; Dual-Notch 11/6.2 Hz + slew adaptativo 0.065→0.40 V/ms
+     *    (uRMS ~ 0.50 V, PWM ~ 7.3%, PendRMS ~ 1.35°, adRMS ~ 0.54 rad/s).
+     *    Kp = 14.50 V/rad, Ki = 0.00, Kd = 1.50 V·s/rad */
     PID_Init(&sys->pid_pend_alpha,
-             16.50f, 0.00f, 1.72f, 30.0f,
+             14.50f, 0.00f, 1.50f, 30.0f,
              TS_CONTROL_SEC, -8.5f, 8.5f,
              false);
 
-    /* D) PID Regulador de Posición del Brazo en Equilibrio Furuta (LQR 5-Estados Ultra-Suave):
-     *    Mantiene el brazo inmóvil en 0° (uRMS ~0.55 V, PendRMS ~1.4°, adRMS ~0.43 rad/s)
-     *    con apertura instantánea a ±8.5 V y 0.40 V/ms ante perturbaciones externas.
-     *    Kp = -1.65 V/rad, Ki = -0.85 V/(rad·s), Kd = -0.95 V·s/rad */
+    /* D) PID Regulador de Posición del Brazo en Equilibrio Furuta (M4 Ultra-Silk):
+     *    Mantiene el brazo inmóvil en 0° (ArmRMS ~ 5.3°) sin límite angular ante perturbaciones.
+     *    Kp = -1.45 V/rad, Ki = -0.75 V/(rad·s), Kd = -0.85 V·s/rad */
     PID_Init(&sys->pid_arm_theta,
-             -1.65f, -0.85f, -0.95f, 20.0f,
+             -1.45f, -0.75f, -0.85f, 20.0f,
              TS_CONTROL_SEC, -4.5f, 4.5f,
              true);
 
@@ -887,6 +888,11 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
         if (Furuta_Parse4Floats(cmd_str + 7, &en6, &sq, &d2, &d3) >= 2) {
             if (en6 >= 0.0f && en6 <= 1.0f) { s_enable_n6 = en6; }
             if (sq >= 0.04f && sq <= 0.40f) { s_slew_quiet = sq; }
+        }
+    } else if (strncmp(cmd_str, "DZ=", 3) == 0) {
+        float dp = 5.0f, dn = 7.5f, d2 = 0.0f, d3 = 0.0f;
+        if (Furuta_Parse4Floats(cmd_str + 3, &dp, &dn, &d2, &d3) >= 2) {
+            L298N_SetDeadzone(&sys->motor, dp, dn, true);
         }
     } else if (strncmp(cmd_str, "PID_P=", 6) == 0) {
         float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 35.0f;

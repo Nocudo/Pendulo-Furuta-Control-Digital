@@ -563,13 +563,17 @@ def generate_plots(motor_res, pend_res, pid_res, out_dir: str):
 
 
 def main():
-    out_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_dir = os.path.join(base_dir, "datos_experimentales")
+    out_dir = os.path.join(base_dir, "resultados")
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
     params = FurutaPhysicalParams()
 
     print("==================================================================")
     print(" 1. EJECUTANDO CARACTERIZACIÓN EXPERIMENTAL DEL MOTOR NAMIKI 22CL")
     print("==================================================================")
-    motor_res = run_motor_characterization(params, out_dir)
+    motor_res = run_motor_characterization(params, data_dir)
     print(f" -> Zona muerta medida L298N: PWM_dz = ±{motor_res['deadzone_pct']:.1f} %")
     print(f" -> Ganancia estática del motor: Km = {motor_res['Km_rad_s_per_V']:.4f} (rad/s)/V")
     print(f" -> Constante de tiempo electromecánica: tau_m = {motor_res['tau_m_sec']*1000.0:.2f} ms")
@@ -579,7 +583,7 @@ def main():
     print("\n==================================================================")
     print(" 2. EJECUTANDO CARACTERIZACIÓN DEL SISTEMA PÉNDULO DE FURUTA")
     print("==================================================================")
-    pend_res = run_pendulum_characterization(params, out_dir)
+    pend_res = run_pendulum_characterization(params, data_dir)
     print(f" -> Frecuencia natural identificada: wn = {pend_res['wn_rad_s']:.4f} rad/s (T = {pend_res['period_sec']:.3f} s)")
     print(f" -> Factor de amortiguamiento: zeta = {pend_res['zeta']:.5f}")
     print(f" -> Inercia respecto al pivote: J1_piv = {pend_res['J1_pivot_kg_m2']:.6e} kg·m^2")
