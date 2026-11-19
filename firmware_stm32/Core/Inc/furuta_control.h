@@ -25,11 +25,11 @@ extern "C" {
 #include "pid_controller.h"
 #include "caracterizacion.h"
 
-/* Umbrales Físicos de Conmutación y Seguridad Suave -------------------------*/
+/* Umbrales Físicos de Conmutación y Recuperación Automática -----------------*/
 #define FURUTA_CAPTURE_ANGLE_RAD    (20.0f * DEG_TO_RAD)    /* Conmutación suave a PID: ±20° */
 #define FURUTA_CAPTURE_VEL_RAD_S    4.8f                    /* Velocidad máx suave de captura */
-#define FURUTA_WATCHDOG_ANGLE_RAD   (28.0f * DEG_TO_RAD)    /* Corte de seguridad péndulo: ±28° */
-#define FURUTA_MAX_ARM_ANGLE_RAD    (135.0f * DEG_TO_RAD)   /* Límite seguro de giro brazo: ±135° */
+#define FURUTA_WATCHDOG_ANGLE_RAD   (32.0f * DEG_TO_RAD)    /* Detección de caída péndulo: ±32° -> auto-recuperar */
+#define FURUTA_MAX_ARM_ANGLE_RAD    (135.0f * DEG_TO_RAD)   /* Referencia informativa (sin corte de servo) */
 
 /* Parámetros Físicos Identificados del Péndulo para el Bombeo (Swing-Up) ----*/
 #define FURUTA_M1_KG                0.024f                  /* Masa efectiva péndulo (kg) */
@@ -49,9 +49,11 @@ typedef enum {
     FURUTA_STATE_CHARACTERIZATION,  /* Ejecutando ensayo de caracterización 1..5 */
     FURUTA_STATE_MOTOR_PID_VEL,     /* Lazo cerrado PID de velocidad del motor solo */
     FURUTA_STATE_MOTOR_PID_POS,     /* Lazo cerrado PID de posición del brazo solo */
-    FURUTA_STATE_SWING_UP,          /* Levantamiento no lineal por energía (Lyapunov) */
-    FURUTA_STATE_BALANCE_PID,       /* Estabilización invertida mediante PID Dual */
-    FURUTA_STATE_FAULT_STOP         /* Parada de emergencia por Watchdog de seguridad */
+    FURUTA_STATE_SWING_UP,          /* Levantamiento no lineal por energía (siempre desde 0°) */
+    FURUTA_STATE_BALANCE_PID,       /* Estabilización invertida LQR5 + Notch 11 Hz (sin límite de ángulo) */
+    FURUTA_STATE_FAULT_STOP,        /* Parada de seguridad (reservado) */
+    FURUTA_STATE_RECOVER_HOME,      /* Auto-recuperación: vuelve a 0°, calma y relanza Swing-Up */
+    FURUTA_STATE_STOP_HOME          /* Parada ordenada solicitada por usuario: vuelve a 0° y apaga */
 } Furuta_State_t;
 
 /**

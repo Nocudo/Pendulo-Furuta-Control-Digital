@@ -53,8 +53,75 @@ static float Furuta_ApplyNotch11Hz(float x_in)
     s_notch_z2 = b2 * x - a2 * y;
     return (float)y;
 }
-/* Contador de fallos consecutivos de I2C2 para parada inmediata si se desconecta un cable */
+/* Contador de fallos consecutivos de I2C2 para protección ante desconexión de cable */
 static uint8_t s_i2c_pend_fail_streak = 0U;
+/* Estados internos de la secuencia de auto-recuperación y parada ordenada en 0° */
+static volatile uint8_t  s_recover_phase    = 0U;
+static volatile uint32_t s_recover_timer_ms = 0U;
+static volatile uint32_t s_calm_streak_ms   = 0U;
+
+static float Furuta_ApplySmoothSlew(float u_target, float max_dv_per_ms, float max_abs_v);
+
+/**
+ * @brief Mueve suavemente el brazo horizontal hacia 0.00° usando el PID servo de posición
+ *        con reinicio de Clegg y freno activo al llegar. Devuelve true al bloquearse en 0°.
+ */
+static bool Furuta_DriveArmToZero_1kHz(Furuta_System_t *sys, float theta_pos, float theta_vel)
+{
+    float pos_err = -theta_pos; /* Referencia exacta: 0.00 rad */
+    float abs_err = fabsf(pos_err);
+
+    if (s_pos_locked) {
+        if (abs_err > (0.14f * DEG_TO_RAD)) {
+            s_pos_locked = false;
+        } else {
+            sys->pid_motor_pos.i_term = 0.0f;
+            sys->pid_motor_pos.d_term = 0.0f;
+            sys->pid_motor_pos.prev_error = pos_err;
+            sys->u_total_volts = 0.0f;
+            L298N_Brake(&sys->motor);
+            return true;
+        }
+    }
+
+    if (abs_err <= (0.08f * DEG_TO_RAD) && fabsf(theta_vel) < 0.16f) {
+        s_pos_locked = true;
+        s_u_slewed_volts = 0.0f;
+        sys->pid_motor_pos.i_term = 0.0f;
+        sys->pid_motor_pos.d_term = 0.0f;
+        sys->pid_motor_pos.prev_error = pos_err;
+        sys->u_total_volts = 0.0f;
+        L298N_Brake(&sys->motor);
+        return true;
+    }
+
+    if ((pos_err * sys->pid_motor_pos.prev_error) < 0.0f) {
+        sys->pid_motor_pos.i_term = 0.0f;
+    }
+    if (abs_err > (5.0f * DEG_TO_RAD)) {
+        sys->pid_motor_pos.i_term = 0.0f;
+    } else {
+        sys->pid_motor_pos.i_term += sys->pid_motor_pos.Ki * TS_CONTROL_SEC * pos_err;
+        if (sys->pid_motor_pos.i_term > 6.5f) {
+            sys->pid_motor_pos.i_term = 6.5f;
+        } else if (sys->pid_motor_pos.i_term < -6.5f) {
+            sys->pid_motor_pos.i_term = -6.5f;
+        }
+    }
+
+    sys->pid_motor_pos.p_term = sys->pid_motor_pos.Kp * pos_err;
+    sys->pid_motor_pos.d_term = -sys->pid_motor_pos.Kd * theta_vel;
+    sys->pid_motor_pos.prev_error = pos_err;
+    sys->pid_motor_pos.prev_measurement = theta_pos;
+
+    float u_cmd = sys->pid_motor_pos.p_term
+                + sys->pid_motor_pos.i_term
+                + sys->pid_motor_pos.d_term;
+
+    sys->u_total_volts = Furuta_ApplySmoothSlew(u_cmd, 0.055f, 5.8f);
+    L298N_SetVoltage(&sys->motor, sys->u_total_volts);
+    return false;
+}
 
 static float Furuta_ApplySmoothSlew(float u_target, float max_dv_per_ms, float max_abs_v)
 {
@@ -249,21 +316,6 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
             sys->u_alpha_volts = 0.0f;
             sys->u_theta_volts = 0.0f;
             sys->u_total_volts = 0.0f;
-
-            /* Si el usuario levanta manualmente el péndulo dentro de ±12° desde IDLE,
-             * enganchar automáticamente el control PID estabilizador */
-            if (sys->state == FURUTA_STATE_IDLE &&
-                fabsf(alpha_err) < (12.0f * DEG_TO_RAD) &&
-                fabsf(alpha_vel) < 1.5f) {
-                PID_Reset(&sys->pid_pend_alpha);
-                PID_Reset(&sys->pid_arm_theta);
-                s_bal_alpha_vel_f = alpha_vel;
-                s_bal_theta_vel_f = theta_vel;
-                s_notch_z1 = 0.0;
-                s_notch_z2 = 0.0;
-                sys->theta_setpoint_rad = theta_pos;
-                sys->state = FURUTA_STATE_BALANCE_PID;
-            }
             break;
         }
 
@@ -360,13 +412,11 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
         }
 
         case FURUTA_STATE_SWING_UP: {
-            /* Corte inmediato de seguridad si falla I2C2 o si el brazo supera ±135° */
-            if (s_i2c_pend_fail_streak > 6U ||
-                fabsf(theta_pos - sys->theta_setpoint_rad) > FURUTA_MAX_ARM_ANGLE_RAD ||
-                fabsf(theta_pos) > (145.0f * DEG_TO_RAD)) {
+            /* Si hay un fallo momentáneo de lectura I2C2, esperar en rueda libre sin apagar el modo */
+            if (s_i2c_pend_fail_streak > 10U) {
                 L298N_Coast(&sys->motor);
                 s_u_slewed_volts = 0.0f;
-                sys->state = FURUTA_STATE_FAULT_STOP;
+                sys->u_total_volts = 0.0f;
                 break;
             }
 
@@ -380,7 +430,21 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
                 s_bal_theta_vel_f = theta_vel;
                 s_notch_z1 = 0.0;
                 s_notch_z2 = 0.0;
+                sys->theta_setpoint_rad = 0.0f;
                 sys->state = FURUTA_STATE_BALANCE_PID;
+                break;
+            }
+
+            /* Si tras 5.5 s no logró subir (p. ej. obstruido con la mano), regresar a 0° y reintentar */
+            if (s_swing_elapsed_ms > 5500U) {
+                L298N_Coast(&sys->motor);
+                s_pos_locked       = false;
+                s_u_slewed_volts   = 0.0f;
+                s_recover_phase    = 0U;
+                s_recover_timer_ms = 0U;
+                s_calm_streak_ms   = 0U;
+                sys->theta_setpoint_rad = 0.0f;
+                sys->state = FURUTA_STATE_RECOVER_HOME;
                 break;
             }
 
@@ -390,21 +454,36 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
         }
 
         case FURUTA_STATE_BALANCE_PID: {
-            /* 1. Watchdog de Seguridad Angular:
-             *    Corta inmediatamente si el péndulo cae más de ±28°, si el brazo gira más de ±135°,
-             *    o si el sensor I2C2 pierde lectura por más de 6 ms */
-            if (s_i2c_pend_fail_streak > 6U ||
-                fabsf(alpha_err) > FURUTA_WATCHDOG_ANGLE_RAD ||
-                fabsf(theta_pos - sys->theta_setpoint_rad) > FURUTA_MAX_ARM_ANGLE_RAD ||
-                fabsf(theta_pos) > (145.0f * DEG_TO_RAD)) {
+            /* 1. Sin límite angular en el brazo/servo: el motor jamás se desactiva por girar
+             *    más allá de un rango al rechazar perturbaciones. Si falla I2C2 momentáneamente,
+             *    mantiene rueda libre hasta recuperar lectura. */
+            if (s_i2c_pend_fail_streak > 10U) {
+                L298N_Coast(&sys->motor);
+                s_u_slewed_volts = 0.0f;
+                sys->u_total_volts = 0.0f;
+                break;
+            }
+
+            /* Si una perturbación fuerte tumba el péndulo (> ±32°), NO se apaga:
+             * vuelve suavemente a 0°, espera reposo y lo levanta de nuevo automáticamente. */
+            if (fabsf(alpha_err) > FURUTA_WATCHDOG_ANGLE_RAD) {
                 L298N_Coast(&sys->motor);
                 PID_Reset(&sys->pid_pend_alpha);
                 PID_Reset(&sys->pid_arm_theta);
+                s_pos_locked       = false;
                 s_u_slewed_volts   = 0.0f;
                 sys->u_alpha_volts = 0.0f;
                 sys->u_theta_volts = 0.0f;
                 sys->u_total_volts = 0.0f;
-                sys->state         = FURUTA_STATE_FAULT_STOP;
+                if (sys->enable_auto_swingup) {
+                    s_recover_phase    = 0U;
+                    s_recover_timer_ms = 0U;
+                    s_calm_streak_ms   = 0U;
+                    sys->theta_setpoint_rad = 0.0f;
+                    sys->state = FURUTA_STATE_RECOVER_HOME;
+                } else {
+                    sys->state = FURUTA_STATE_IDLE;
+                }
                 break;
             }
 
@@ -435,14 +514,18 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
                                + sys->pid_pend_alpha.i_term
                                + sys->pid_pend_alpha.d_term;
 
-            /* 4. Lazo Secundario: PID Regulador de Posición del Brazo (theta -> theta_setpoint_rad = 0°)
-             *    Suave y críticamente amortiguado (LQR 5-Estados, zeta = 0.97): */
+            /* 4. Lazo Secundario: PID Regulador de Posición del Brazo (theta -> 0°)
+             *    Autoridad acotada (±2.5 V, integración condicional dentro de ±45°) para que,
+             *    sin importar qué tan lejos gire el brazo ante una perturbación, siempre regrese
+             *    suavemente a 0° sin saturar ni tumbar el péndulo. */
             float arm_bal_err = sys->theta_setpoint_rad - theta_pos;
-            sys->pid_arm_theta.i_term += sys->pid_arm_theta.Ki * TS_CONTROL_SEC * arm_bal_err;
-            if (sys->pid_arm_theta.i_term > 3.5f) {
-                sys->pid_arm_theta.i_term = 3.5f;
-            } else if (sys->pid_arm_theta.i_term < -3.5f) {
-                sys->pid_arm_theta.i_term = -3.5f;
+            if (fabsf(arm_bal_err) < (45.0f * DEG_TO_RAD)) {
+                sys->pid_arm_theta.i_term += sys->pid_arm_theta.Ki * TS_CONTROL_SEC * arm_bal_err;
+                if (sys->pid_arm_theta.i_term > 1.6f) {
+                    sys->pid_arm_theta.i_term = 1.6f;
+                } else if (sys->pid_arm_theta.i_term < -1.6f) {
+                    sys->pid_arm_theta.i_term = -1.6f;
+                }
             }
             sys->pid_arm_theta.p_term = sys->pid_arm_theta.Kp * arm_bal_err;
             sys->pid_arm_theta.d_term = -sys->pid_arm_theta.Kd * s_bal_theta_vel_f;
@@ -450,10 +533,10 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
             sys->u_theta_volts = sys->pid_arm_theta.p_term
                                + sys->pid_arm_theta.i_term
                                + sys->pid_arm_theta.d_term;
-            if (sys->u_theta_volts > 4.5f) {
-                sys->u_theta_volts = 4.5f;
-            } else if (sys->u_theta_volts < -4.5f) {
-                sys->u_theta_volts = -4.5f;
+            if (sys->u_theta_volts > 2.2f) {
+                sys->u_theta_volts = 2.2f;
+            } else if (sys->u_theta_volts < -2.2f) {
+                sys->u_theta_volts = -2.2f;
             }
 
             /* 5. Superposición de Esfuerzos + Filtro Notch 11 Hz (elimina zumbido de reductor)
@@ -462,8 +545,77 @@ void Furuta_ControlISR_1kHz(Furuta_System_t *sys)
             float u_bal_quiet = Furuta_ApplyNotch11Hz(u_bal_raw);
             sys->u_total_volts = Furuta_ApplySmoothSlew(u_bal_quiet, 0.22f, 6.8f);
 
-            /* 5. Escritura al puente H L298N con compensación inversa de zona muerta */
+            /* 6. Escritura al puente H L298N con compensación inversa de zona muerta */
             L298N_SetVoltage(&sys->motor, sys->u_total_volts);
+            break;
+        }
+
+        case FURUTA_STATE_RECOVER_HOME: {
+            /* Auto-recuperación continua:
+             *   Fase 0 (300 ms): rueda libre breve tras caída
+             *   Fase 1: retorna suavemente el brazo a 0.00° (sin importar el ángulo previo)
+             *   Fase 2: mantiene freno activo en 0.00° hasta que el péndulo repose y relanza SWING_UP */
+            s_recover_timer_ms++;
+            float alpha_down = sys->enc_pend.angle_wrapped_rad;
+
+            if (s_recover_phase == 0U) {
+                L298N_Coast(&sys->motor);
+                s_u_slewed_volts = 0.0f;
+                sys->u_total_volts = 0.0f;
+                if (s_recover_timer_ms >= 300U) {
+                    s_recover_phase    = 1U;
+                    s_recover_timer_ms = 0U;
+                    s_pos_locked       = false;
+                    PID_Reset(&sys->pid_motor_pos);
+                }
+            } else if (s_recover_phase == 1U) {
+                bool at_zero = Furuta_DriveArmToZero_1kHz(sys, theta_pos, theta_vel);
+                if (at_zero || s_recover_timer_ms >= 3500U) {
+                    s_recover_phase    = 2U;
+                    s_recover_timer_ms = 0U;
+                    s_calm_streak_ms   = 0U;
+                }
+            } else {
+                /* Fase 2: sostener 0.00° con freno electromagnético mientras el péndulo se calma */
+                L298N_Brake(&sys->motor);
+                sys->u_total_volts = 0.0f;
+                if (fabsf(alpha_down) < (10.0f * DEG_TO_RAD) && fabsf(alpha_vel) < 0.65f) {
+                    s_calm_streak_ms++;
+                } else {
+                    s_calm_streak_ms = 0U;
+                }
+
+                if (s_calm_streak_ms >= 250U || s_recover_timer_ms >= 5500U) {
+                    PID_Reset(&sys->pid_pend_alpha);
+                    PID_Reset(&sys->pid_arm_theta);
+                    s_pos_locked            = false;
+                    s_u_slewed_volts        = 0.0f;
+                    s_swing_elapsed_ms      = 0U;
+                    sys->theta_setpoint_rad = 0.0f;
+                    sys->state              = FURUTA_STATE_SWING_UP;
+                }
+            }
+            break;
+        }
+
+        case FURUTA_STATE_STOP_HOME: {
+            /* Parada ordenada solicitada por el usuario: vuelve suavemente a 0.00° y apaga motor */
+            s_recover_timer_ms++;
+            bool at_zero = Furuta_DriveArmToZero_1kHz(sys, theta_pos, theta_vel);
+            if (at_zero) {
+                s_calm_streak_ms++;
+            } else {
+                s_calm_streak_ms = 0U;
+            }
+            if (s_calm_streak_ms >= 150U || s_recover_timer_ms >= 3500U) {
+                L298N_Coast(&sys->motor);
+                s_pos_locked       = false;
+                s_u_slewed_volts   = 0.0f;
+                sys->u_alpha_volts = 0.0f;
+                sys->u_theta_volts = 0.0f;
+                sys->u_total_volts = 0.0f;
+                sys->state         = FURUTA_STATE_IDLE;
+            }
             break;
         }
 
@@ -552,7 +704,21 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
         return;
     }
 
-    if (strncmp(cmd_str, "STOP", 4) == 0 || (cmd_str[0] == 'S' && cmd_str[1] == '\0')) {
+    if (strncmp(cmd_str, "STOPHOME", 8) == 0 || (cmd_str[0] == 'H' && cmd_str[1] == '\0')) {
+        sys->enable_auto_swingup = false;
+        if (sys->state != FURUTA_STATE_STOP_HOME && sys->state != FURUTA_STATE_IDLE) {
+            PID_Reset(&sys->pid_motor_pos);
+            PID_Reset(&sys->pid_pend_alpha);
+            PID_Reset(&sys->pid_arm_theta);
+            s_pos_locked            = false;
+            s_u_slewed_volts        = 0.0f;
+            s_recover_timer_ms      = 0U;
+            s_calm_streak_ms        = 0U;
+            sys->theta_setpoint_rad = 0.0f;
+            sys->state              = FURUTA_STATE_STOP_HOME;
+        }
+    } else if (strncmp(cmd_str, "STOP", 4) == 0 || (cmd_str[0] == 'S' && cmd_str[1] == '\0')) {
+        sys->enable_auto_swingup = false;
         s_pos_locked = false;
         sys->state = FURUTA_STATE_IDLE;
         L298N_Coast(&sys->motor);
@@ -566,6 +732,7 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
             (void)HAL_UART_Transmit(&huart2, (uint8_t *)dbuf, (uint16_t)n, 60U);
         }
     } else if (strncmp(cmd_str, "ZERO", 4) == 0 || (cmd_str[0] == 'Z' && cmd_str[1] == '\0')) {
+        sys->enable_auto_swingup = false;
         s_pos_locked = false;
         sys->state = FURUTA_STATE_CALIBRATING;
         L298N_Coast(&sys->motor);
@@ -581,18 +748,39 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
         s_bal_theta_vel_f         = sys->enc_arm.velocity_rad_s;
         s_notch_z1                = 0.0;
         s_notch_z2                = 0.0;
-        sys->theta_setpoint_rad   = sys->enc_arm.angle_rad;
+        sys->theta_setpoint_rad   = 0.0f;
         sys->enable_auto_swingup  = false;
         sys->state                = FURUTA_STATE_BALANCE_PID;
-    } else if (strncmp(cmd_str, "SWING", 5) == 0 || (cmd_str[0] == 'W' && cmd_str[1] == '\0')) {
-        PID_Reset(&sys->pid_pend_alpha);
-        PID_Reset(&sys->pid_arm_theta);
-        s_pos_locked              = false;
-        s_u_slewed_volts          = 0.0f;
-        s_swing_elapsed_ms        = 0U;
-        sys->theta_setpoint_rad   = sys->enc_arm.angle_rad;
-        sys->enable_auto_swingup  = true;
-        sys->state                = FURUTA_STATE_SWING_UP;
+    } else if (strncmp(cmd_str, "SWING", 5) == 0 || strncmp(cmd_str, "START", 5) == 0 ||
+               (cmd_str[0] == 'W' && cmd_str[1] == '\0')) {
+        /* Idempotente frente a ráfagas 3x de MATLAB: solo inicializa si estaba detenido */
+        if (!sys->enable_auto_swingup ||
+            sys->state == FURUTA_STATE_IDLE ||
+            sys->state == FURUTA_STATE_STOP_HOME ||
+            sys->state == FURUTA_STATE_FAULT_STOP) {
+            PID_Reset(&sys->pid_pend_alpha);
+            PID_Reset(&sys->pid_arm_theta);
+            PID_Reset(&sys->pid_motor_pos);
+            s_pos_locked            = false;
+            s_u_slewed_volts        = 0.0f;
+            s_swing_elapsed_ms      = 0U;
+            s_recover_timer_ms      = 0U;
+            s_calm_streak_ms        = 0U;
+            sys->theta_setpoint_rad = 0.0f;
+            sys->enable_auto_swingup = true;
+
+            /* Siempre iniciar el levantamiento desde 0° en reposo:
+             * si ya está en 0° y el péndulo quieto, arranca SWING_UP al instante (0 ms);
+             * si está desplazado o moviéndose, primero retorna a 0° y luego sube solo. */
+            if (fabsf(sys->enc_arm.angle_rad) < (2.5f * DEG_TO_RAD) &&
+                fabsf(sys->enc_pend.angle_wrapped_rad) < (12.0f * DEG_TO_RAD) &&
+                fabsf(sys->enc_pend.velocity_rad_s) < 0.85f) {
+                sys->state = FURUTA_STATE_SWING_UP;
+            } else {
+                s_recover_phase = 1U;
+                sys->state      = FURUTA_STATE_RECOVER_HOME;
+            }
+        }
     } else if (strncmp(cmd_str, "CHAR1", 5) == 0 || (cmd_str[0] == '1' && cmd_str[1] == '\0')) {
         Caracterizacion_StartMode(&sys->char_mgr, CHAR_MODE_DEADZONE_RAMP,
                                   &sys->motor, &sys->pid_motor_vel, &sys->pid_motor_pos);
