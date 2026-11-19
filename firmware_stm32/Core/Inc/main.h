@@ -42,41 +42,45 @@ extern "C" {
 #define TIM6_PRESCALER          89U                     /* 90 MHz / (89 + 1) = 1 MHz */
 #define TIM6_ARR_PERIOD         999U                    /* 1 MHz / (999 + 1) = 1000 Hz */
 
-/* Modo de Conexión del Módulo AS5600 (Ahorro de Jumpers) --------------------
- * 0 = MODO I2C (Recomendado: 4 jumpers por sensor -> VCC, GND, SCL, SDA;
- *               pines OUT, DIR y GPO quedan LIBRES sin conectar).
- * 1 = MODO ANALÓGICO 3 HILOS (Mínimo absoluto: 3 jumpers por sensor usando
- *               SOLO el cabezal izquierdo VCC, OUT, GND hacia PA0/A0 y PA1/A1;
- *               los 4 pines derechos DIR, SCL, SDA, GPO quedan LIBRES). */
-#define AS5600_USE_3WIRE_ANALOG_OUT     0U
+/* Mapeo de Pines Hardware STM32 Nucleo-F446RE (100% I2C, Cero Protoboard) ---
+ * Total del sistema: 12 jumpers 1-a-1 directos a los headers hembra Arduino
+ * (CN5, CN6, CN9) sin necesidad de protoboard ni empalmes en Y:
+ *   - 4 jumpers para SENSOR 1 (AS5600 del Motor / Brazo Theta -> Bus I2C1)
+ *   - 4 jumpers para SENSOR 2 (AS5600 del Péndulo Alfa        -> Bus I2C2)
+ *   - 4 jumpers para DRIVER L298N (ENA, IN1, IN2, GND)
+ * En ambos módulos AS5600 los pines OUT, DIR y GPO quedan LIBRES (sin jumper). */
 
-/* Mapeo de Pines Hardware STM32 Nucleo-F446RE (Agrupados en Headers Contiguos)*/
-/* 1. Puente H L298N — Todos agrupados juntos en el Header Arduino CN9 (D4, D5, D7) */
+/* 1. Puente H L298N — Agrupados en Header Arduino CN9 (D4, D5, D7) + GND en CN6-7 */
 #define MOTOR_PWM_TIM_PORT      GPIOA
-#define MOTOR_PWM_TIM_PIN       GPIO_PIN_8              /* PA8 (Arduino D7) -> TIM1_CH1 (L298N ENA) */
+#define MOTOR_PWM_TIM_PIN       GPIO_PIN_8              /* PA8 (Arduino D7, CN9-8) -> TIM1_CH1 (L298N ENA) */
 
 #define MOTOR_IN1_PORT          GPIOB
-#define MOTOR_IN1_PIN           GPIO_PIN_4              /* PB4 (Arduino D5) -> GPIO Out (L298N IN1) */
+#define MOTOR_IN1_PIN           GPIO_PIN_4              /* PB4 (Arduino D5, CN9-6) -> GPIO Out (L298N IN1) */
 
 #define MOTOR_IN2_PORT          GPIOB
-#define MOTOR_IN2_PIN           GPIO_PIN_5              /* PB5 (Arduino D4) -> GPIO Out (L298N IN2) */
+#define MOTOR_IN2_PIN           GPIO_PIN_5              /* PB5 (Arduino D4, CN9-5) -> GPIO Out (L298N IN2) */
 
-/* 2. Encoder Magnético 1: AS5600 Base (Brazo Theta) — Contiguos en CN5 (D14, D15) */
+/* 2. SENSOR 1: AS5600 DEL MOTOR / BRAZO (Mide ángulo horizontal Theta - Bus I2C1)
+ *    Ubicación física: Parte trasera del motor Namiki 22CL (dentro de la torre).
+ *    Conexión en Nucleo:
+ *      - SCL -> PB8 (Arduino D15 / SCL, CN5-10)
+ *      - SDA -> PB9 (Arduino D14 / SDA, CN5-9)
+ *      - GND -> GND (Arduino CN5-7, en la misma tira superior derecha)
+ *      - VCC -> 3V3 (Arduino CN6-4, tira izquierda Power) */
 #define ENC_ARM_I2C_PORT        GPIOB
-#define ENC_ARM_SCL_PIN         GPIO_PIN_8              /* PB8 (Arduino D15) -> I2C1_SCL (AF4) */
-#define ENC_ARM_SDA_PIN         GPIO_PIN_9              /* PB9 (Arduino D14) -> I2C1_SDA (AF4) */
+#define ENC_ARM_SCL_PIN         GPIO_PIN_8              /* PB8 (Arduino D15) -> I2C1_SCL (AF4_I2C1) */
+#define ENC_ARM_SDA_PIN         GPIO_PIN_9              /* PB9 (Arduino D14) -> I2C1_SDA (AF4_I2C1) */
 
-/* 3. Encoder Magnético 2: AS5600 Distal (Péndulo Alfa) — Contiguos en CN9 (D6, D3)
- *    En STM32F446RE, PB10 (D6) es I2C2_SCL y PB3 (D3) es I2C2_SDA (AF4_I2C2),
- *    quedando en la misma tira CN9 junto al driver L298N (D3, D4, D5, D6, D7). */
+/* 3. SENSOR 2: AS5600 DEL PÉNDULO (Mide ángulo vertical de la barra Alfa - Bus I2C2)
+ *    Ubicación física: Extremo distal (punta/codo) del brazo horizontal junto al rodamiento 608ZZ.
+ *    Conexión en Nucleo:
+ *      - SCL -> PB10 (Arduino D6, CN9-7)
+ *      - SDA -> PB3  (Arduino D3, CN9-4)
+ *      - GND -> GND  (Arduino CN6-6, tira izquierda Power)
+ *      - VCC -> IOREF/3V3 (Arduino CN6-2 = 3.3V directo, o Morpho CN7-16 = 3.3V) */
 #define ENC_PEND_I2C_PORT       GPIOB
-#define ENC_PEND_SCL_PIN        GPIO_PIN_10             /* PB10 (Arduino D6) -> I2C2_SCL (AF4) */
-#define ENC_PEND_SDA_PIN        GPIO_PIN_3              /* PB3  (Arduino D3) -> I2C2_SDA (AF4) */
-
-/* Alternativa Modo 3 Jumpers (Sólo cabezal izquierdo VCC, OUT, GND en CN8 A0/A1) */
-#define ENC_ANALOG_PORT         GPIOA
-#define ENC_ARM_OUT_ADC_PIN     GPIO_PIN_0              /* PA0 (Arduino A0) -> ADC1_IN0 (OUT Brazo) */
-#define ENC_PEND_OUT_ADC_PIN    GPIO_PIN_1              /* PA1 (Arduino A1) -> ADC1_IN1 (OUT Péndulo) */
+#define ENC_PEND_SCL_PIN        GPIO_PIN_10             /* PB10 (Arduino D6) -> I2C2_SCL (AF4_I2C2) */
+#define ENC_PEND_SDA_PIN        GPIO_PIN_3              /* PB3  (Arduino D3) -> I2C2_SDA (AF4_I2C2) */
 
 /* 4. Comunicación UART de Telemetría y Comandos (ST-LINK Virtual COM Port) */
 #define UART_TELEMETRY_PORT     GPIOA
