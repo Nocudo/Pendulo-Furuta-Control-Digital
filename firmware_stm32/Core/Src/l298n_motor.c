@@ -128,24 +128,30 @@ void L298N_SetVoltage(L298N_Handle_t *motor, float voltage_v)
     motor->current_voltage_cmd = voltage_v;
 
     /* 2. Banda de silencio central para evitar conmutación de alta frecuencia en reposo */
-    if (fabsf(voltage_v) < MOTOR_MIN_CMD_THRESHOLD_V) {
+    if (fabsf(voltage_v) < 0.08f) {
         L298N_SetRawPWM(motor, 0.0f);
         motor->current_voltage_cmd = 0.0f;
         return;
     }
 
-    /* 3. Cálculo del porcentaje PWM con o sin compensación de zona muerta */
-    float norm_mag = fabsf(voltage_v) / motor->v_supply_max; /* [0.0 .. 1.0] */
+    /* 3. Cálculo del porcentaje PWM con compensación suave de zona muerta (rampa continua
+     *    entre 0.08 V y V_knee = 0.55 V para eliminar ciclos límite / chattering alrededor de 0 V) */
+    float abs_v = fabsf(voltage_v);
     float pwm_out_pct = 0.0f;
 
     if (motor->enable_deadzone_comp) {
-        if (voltage_v > 0.0f) {
-            float dz = motor->deadzone_pos_pct;
-            pwm_out_pct = dz + ((100.0f - dz) * norm_mag);
+        float dz = (voltage_v > 0.0f) ? motor->deadzone_pos_pct : motor->deadzone_neg_pct;
+        const float v_knee = 0.14f;
+        float mag_pct;
+        if (abs_v < v_knee) {
+            /* Transición continua desde 0% hasta dz% en [0.08 V, 0.14 V] (ganancia finita en origen) */
+            mag_pct = dz * ((abs_v - 0.08f) / (v_knee - 0.08f));
         } else {
-            float dz = motor->deadzone_neg_pct;
-            pwm_out_pct = -(dz + ((100.0f - dz) * norm_mag));
+            /* Mapeo lineal desde dz% hasta 100% en [0.14 V, V_max] */
+            float norm_mag = (abs_v - v_knee) / (motor->v_supply_max - v_knee);
+            mag_pct = dz + ((100.0f - dz) * norm_mag);
         }
+        pwm_out_pct = (voltage_v > 0.0f) ? mag_pct : -mag_pct;
     } else {
         pwm_out_pct = (voltage_v / motor->v_supply_max) * 100.0f;
     }

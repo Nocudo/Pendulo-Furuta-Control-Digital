@@ -68,8 +68,8 @@ def analyze_motor_steps_csv(steps_csv_path, dz_pos, dz_neg):
     alpha_pend = data[:, 6]
     alpha_dot_pend = data[:, 8]
 
-    # Extraer cada uno de los 8 escalones (±20%, ±30%, ±40%, ±50% PWM)
-    step_levels = [20.0, -20.0, 30.0, -30.0, 40.0, -40.0, 50.0, -50.0]
+    # Extraer cada uno de los 8 escalones (±20%, ±25%, ±30%, ±35%, ±40%, ±50% PWM)
+    step_levels = [20.0, -20.0, 25.0, -25.0, 30.0, -30.0, 35.0, -35.0, 40.0, -40.0, 50.0, -50.0]
     step_metrics = []
 
     for lvl in step_levels:

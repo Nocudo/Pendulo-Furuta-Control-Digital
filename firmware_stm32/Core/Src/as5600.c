@@ -351,22 +351,8 @@ HAL_StatusTypeDef AS5600_Update(AS5600_Handle_t *dev)
         dev->is_initialized  = true;
     }
 
-    /* 1. Detección de cruce de vuelta completa (Rollover 0 <-> 4095) y rechazo de glitches I2C */
+    /* 1. Detección de cruce de vuelta completa (Rollover 0 <-> 4095) */
     int32_t delta_raw = (int32_t)new_raw - (int32_t)dev->prev_raw_counts;
-    int32_t circ_delta = delta_raw;
-    if (circ_delta < -AS5600_HALF_CPR) {
-        circ_delta += (int32_t)AS5600_CPR;
-    } else if (circ_delta > AS5600_HALF_CPR) {
-        circ_delta -= (int32_t)AS5600_CPR;
-    }
-
-    /* En el sensor 2 del péndulo (gear_ratio == 1.0), un salto > 160 cuentas en 1 ms (> 245 rad/s)
-     * corresponde a un bit corrupto por ruido capacitivo en el cable largo: descartar muestra */
-    if (dev->gear_ratio < 2.0f && (circ_delta > 160 || circ_delta < -160)) {
-        dev->i2c_error_count++;
-        return HAL_ERROR;
-    }
-
     if (delta_raw < -AS5600_HALF_CPR) {
         dev->full_turns++;
     } else if (delta_raw > AS5600_HALF_CPR) {

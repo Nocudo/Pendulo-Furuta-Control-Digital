@@ -124,47 +124,47 @@ void Caracterizacion_Update_1kHz(Characterization_Manager_t *mgr,
 
         /* ==================================================================
          * ENSAYO 2: IDENTIFICACIÓN DEL MOTOR POR ESCALONES BIDIRECCIONALES
-         *           SIMÉTRICOS IDA Y VUELTA (CERO ENREDO DE CABLES)
+         *           SUAVES Y SIMÉTRICOS IDA Y VUELTA (MÁX ±35% PWM, ±30° GIRO)
          * Aplica pares simétricos (+PWM para ir y -PWM para volver al centro)
-         * en niveles de ±20%, ±30%, ±40% y ±50% separados por pausas de 450 ms.
+         * en niveles de ±20%, ±25%, ±30% y ±35% separados por pausas de 450 ms.
          * ================================================================== */
         case CHAR_MODE_MOTOR_STEPS: {
             float pwm_cmd = 0.0f;
 
             if (t_ms < 300U) {
                 pwm_cmd = 0.0f;         /* 0.00 - 0.30 s: Reposo inicial */
-            } else if (t_ms < 520U) {
-                pwm_cmd = 20.0f;        /* 0.30 - 0.52 s: Escalón +20% PWM (220 ms) */
-            } else if (t_ms < 970U) {
-                pwm_cmd = 0.0f;         /* 0.52 - 0.97 s: Reposo */
-            } else if (t_ms < 1190U) {
-                pwm_cmd = -20.0f;       /* 0.97 - 1.19 s: Escalón -20% PWM (220 ms - regresa) */
-            } else if (t_ms < 1650U) {
-                pwm_cmd = 0.0f;         /* 1.19 - 1.65 s: Reposo */
-            } else if (t_ms < 1850U) {
-                pwm_cmd = 30.0f;        /* 1.65 - 1.85 s: Escalón +30% PWM (200 ms) */
-            } else if (t_ms < 2300U) {
-                pwm_cmd = 0.0f;         /* 1.85 - 2.30 s: Reposo */
-            } else if (t_ms < 2500U) {
-                pwm_cmd = -30.0f;       /* 2.30 - 2.50 s: Escalón -30% PWM (200 ms - regresa) */
-            } else if (t_ms < 2950U) {
-                pwm_cmd = 0.0f;         /* 2.50 - 2.95 s: Reposo */
-            } else if (t_ms < 3130U) {
-                pwm_cmd = 40.0f;        /* 2.95 - 3.13 s: Escalón +40% PWM (180 ms) */
-            } else if (t_ms < 3600U) {
-                pwm_cmd = 0.0f;         /* 3.13 - 3.60 s: Reposo */
-            } else if (t_ms < 3780U) {
-                pwm_cmd = -40.0f;       /* 3.60 - 3.78 s: Escalón -40% PWM (180 ms - regresa) */
-            } else if (t_ms < 4250U) {
-                pwm_cmd = 0.0f;         /* 3.78 - 4.25 s: Reposo */
-            } else if (t_ms < 4410U) {
-                pwm_cmd = 50.0f;        /* 4.25 - 4.41 s: Escalón +50% PWM (160 ms) */
-            } else if (t_ms < 4900U) {
-                pwm_cmd = 0.0f;         /* 4.41 - 4.90 s: Reposo */
-            } else if (t_ms < 5060U) {
-                pwm_cmd = -50.0f;       /* 4.90 - 5.06 s: Escalón -50% PWM (160 ms - regresa) */
-            } else if (t_ms < 5500U) {
-                pwm_cmd = 0.0f;         /* 5.06 - 5.50 s: Reposo final */
+            } else if (t_ms < 480U) {
+                pwm_cmd = 20.0f;        /* 0.30 - 0.48 s: Escalón +20% PWM (180 ms) */
+            } else if (t_ms < 930U) {
+                pwm_cmd = 0.0f;         /* 0.48 - 0.93 s: Reposo */
+            } else if (t_ms < 1110U) {
+                pwm_cmd = -20.0f;       /* 0.93 - 1.11 s: Escalón -20% PWM (180 ms - regresa) */
+            } else if (t_ms < 1560U) {
+                pwm_cmd = 0.0f;         /* 1.11 - 1.56 s: Reposo */
+            } else if (t_ms < 1730U) {
+                pwm_cmd = 25.0f;        /* 1.56 - 1.73 s: Escalón +25% PWM (170 ms) */
+            } else if (t_ms < 2180U) {
+                pwm_cmd = 0.0f;         /* 1.73 - 2.18 s: Reposo */
+            } else if (t_ms < 2350U) {
+                pwm_cmd = -25.0f;       /* 2.18 - 2.35 s: Escalón -25% PWM (170 ms - regresa) */
+            } else if (t_ms < 2800U) {
+                pwm_cmd = 0.0f;         /* 2.35 - 2.80 s: Reposo */
+            } else if (t_ms < 2960U) {
+                pwm_cmd = 30.0f;        /* 2.80 - 2.96 s: Escalón +30% PWM (160 ms) */
+            } else if (t_ms < 3410U) {
+                pwm_cmd = 0.0f;         /* 2.96 - 3.41 s: Reposo */
+            } else if (t_ms < 3570U) {
+                pwm_cmd = -30.0f;       /* 3.41 - 3.57 s: Escalón -30% PWM (160 ms - regresa) */
+            } else if (t_ms < 4020U) {
+                pwm_cmd = 0.0f;         /* 3.57 - 4.02 s: Reposo */
+            } else if (t_ms < 4170U) {
+                pwm_cmd = 35.0f;        /* 4.02 - 4.17 s: Escalón +35% PWM (150 ms) */
+            } else if (t_ms < 4620U) {
+                pwm_cmd = 0.0f;         /* 4.17 - 4.62 s: Reposo */
+            } else if (t_ms < 4770U) {
+                pwm_cmd = -35.0f;       /* 4.62 - 4.77 s: Escalón -35% PWM (150 ms - regresa) */
+            } else if (t_ms < 5200U) {
+                pwm_cmd = 0.0f;         /* 4.77 - 5.20 s: Reposo final */
             } else {
                 pwm_cmd = 0.0f;
                 mgr->test_finished = true;
@@ -201,29 +201,28 @@ void Caracterizacion_Update_1kHz(Characterization_Manager_t *mgr,
         }
 
         /* ==================================================================
-         * ENSAYO 4: CARACTERIZACIÓN COMPLETA DEL SISTEMA ACOPLADO
-         *           (DOBLETE BRAZO -> PÉNDULO + DECAY LIBRE CON FRENO ACTIVO)
-         * Aplica dos dobletes bipolares simétricos al motor (+45%/-45% por
-         * 180 ms y -55%/+55% por 200 ms) para excitar el péndulo por
-         * acoplamiento inercial y luego bloquea el brazo con L298N_Brake()
-         * para capturar la oscilación libre subamortiguada alpha(t) (wn, zeta,
-         * J1_piv, b1) y la ganancia cruzada K_acople en un solo ensayo de 7.5 s.
+         * ENSAYO 4: CARACTERIZACIÓN SUAVE DEL SISTEMA ACOPLADO SIN CONTRAPESO
+         *           (DOBLETE SUAVE BRAZO -> PÉNDULO + DECAY LIBRE CON FRENO)
+         * Aplica dos dobletes bipolares suaves al motor (+28%/-28% por 150 ms
+         * y -34%/+34% por 160 ms, excursión < ±35°) para excitar el péndulo
+         * ligero sin golpear la estructura y luego bloquea el brazo con
+         * L298N_Brake() para capturar 4.5 s de oscilación libre subamortiguada.
          * ================================================================== */
         case CHAR_MODE_COUPLED_DOUBLET: {
             if (t_ms < 400U) {
                 L298N_Brake(motor);
-            } else if (t_ms < 580U) {
-                L298N_SetRawPWM(motor, 45.0f);      /* Pulso +45% (180 ms) */
-            } else if (t_ms < 760U) {
-                L298N_SetRawPWM(motor, -45.0f);     /* Pulso -45% (180 ms - regresa a 0°) */
+            } else if (t_ms < 550U) {
+                L298N_SetRawPWM(motor, 28.0f);      /* Pulso suave +28% (150 ms) */
+            } else if (t_ms < 700U) {
+                L298N_SetRawPWM(motor, -28.0f);     /* Pulso suave -28% (150 ms - regresa a 0°) */
             } else if (t_ms < 2600U) {
-                L298N_Brake(motor);                 /* Brazo bloqueado: oscilación libre 1.84 s */
-            } else if (t_ms < 2800U) {
-                L298N_SetRawPWM(motor, -55.0f);     /* Pulso -55% (200 ms) */
-            } else if (t_ms < 3000U) {
-                L298N_SetRawPWM(motor, 55.0f);      /* Pulso +55% (200 ms - regresa a 0°) */
+                L298N_Brake(motor);                 /* Brazo bloqueado: oscilación libre 1.90 s */
+            } else if (t_ms < 2760U) {
+                L298N_SetRawPWM(motor, -34.0f);     /* Pulso suave -34% (160 ms) */
+            } else if (t_ms < 2920U) {
+                L298N_SetRawPWM(motor, 34.0f);      /* Pulso suave +34% (160 ms - regresa a 0°) */
             } else if (t_ms < 7500U) {
-                L298N_Brake(motor);                 /* Brazo bloqueado: decay libre 4.50 s */
+                L298N_Brake(motor);                 /* Brazo bloqueado: decay libre 4.58 s */
             } else {
                 L298N_Coast(motor);
                 mgr->test_finished = true;

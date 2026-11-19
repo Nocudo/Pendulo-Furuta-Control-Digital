@@ -25,20 +25,20 @@ extern "C" {
 #include "pid_controller.h"
 #include "caracterizacion.h"
 
-/* Umbrales Físicos de Conmutación y Seguridad -------------------------------*/
-#define FURUTA_CAPTURE_ANGLE_RAD    (18.0f * DEG_TO_RAD)    /* Conmutación a PID: ±18° */
-#define FURUTA_CAPTURE_VEL_RAD_S    3.2f                    /* Velocidad máx de captura */
-#define FURUTA_WATCHDOG_ANGLE_RAD   (25.0f * DEG_TO_RAD)    /* Corte de emergencia: ±25° */
-#define FURUTA_MAX_ARM_ANGLE_RAD    (150.0f * DEG_TO_RAD)   /* Límite suave de giro brazo */
+/* Umbrales Físicos de Conmutación y Seguridad Suave -------------------------*/
+#define FURUTA_CAPTURE_ANGLE_RAD    (19.0f * DEG_TO_RAD)    /* Conmutación suave a PID: ±19° */
+#define FURUTA_CAPTURE_VEL_RAD_S    4.2f                    /* Velocidad máx suave de captura */
+#define FURUTA_WATCHDOG_ANGLE_RAD   (26.0f * DEG_TO_RAD)    /* Corte de seguridad péndulo: ±26° */
+#define FURUTA_MAX_ARM_ANGLE_RAD    (85.0f * DEG_TO_RAD)    /* Límite estricto de giro brazo: ±85° */
 
-/* Parámetros Físicos del Péndulo para el Bombeo de Energía (Swing-Up) -------*/
-#define FURUTA_M1_KG                0.042f                  /* Masa efectiva péndulo (kg) */
-#define FURUTA_L1_M                 0.088f                  /* Distancia al CM l1 (m) */
-#define FURUTA_J1_PIVOT             0.00038f                /* Inercia en pivote (kg·m^2) */
+/* Parámetros Físicos Identificados del Péndulo para el Bombeo (Swing-Up) ----*/
+#define FURUTA_M1_KG                0.024f                  /* Masa efectiva péndulo (kg) */
+#define FURUTA_L1_M                 0.068f                  /* Distancia al CM l1 (m) */
+#define FURUTA_J1_PIVOT             0.0002609f              /* Inercia en pivote medida (kg·m^2) */
 #define FURUTA_GRAVITY              9.80665f                /* Gravedad (m/s^2) */
-#define FURUTA_SWINGUP_KE           18.5f                   /* Ganancia bombeo Lyapunov */
-#define FURUTA_SWINGUP_KV_ARM       1.2f                    /* Amortiguamiento centrado brazo */
-#define FURUTA_SWINGUP_KP_ARM       2.0f                    /* Rigidez centrado brazo */
+#define FURUTA_SWINGUP_KE           240.0f                  /* Ganancia bombeo Lyapunov */
+#define FURUTA_SWINGUP_KV_ARM       1.10f                   /* Amortiguamiento centrado brazo */
+#define FURUTA_SWINGUP_KP_ARM       2.80f                   /* Rigidez centrado brazo */
 
 /**
  * @brief Estados globales de operación del sistema Furuta
