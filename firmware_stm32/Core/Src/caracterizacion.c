@@ -201,34 +201,33 @@ void Caracterizacion_Update_1kHz(Characterization_Manager_t *mgr,
         }
 
         /* ==================================================================
-         * ENSAYO 4: DOBLETE DE ACOPLAMIENTO BRAZO -> PÉNDULO (ENSAYO B)
-         * Aplica un pulso bipolar simétrico de aceleración al motor (+38% por
-         * 160 ms, -38% por 160 ms, y luego 0%) con el péndulo colgado para
-         * identificar la ganancia cruzada de acoplamiento inercial K_acople.
+         * ENSAYO 4: CARACTERIZACIÓN COMPLETA DEL SISTEMA ACOPLADO
+         *           (DOBLETE BRAZO -> PÉNDULO + DECAY LIBRE CON FRENO ACTIVO)
+         * Aplica dos dobletes bipolares simétricos al motor (+45%/-45% por
+         * 180 ms y -55%/+55% por 200 ms) para excitar el péndulo por
+         * acoplamiento inercial y luego bloquea el brazo con L298N_Brake()
+         * para capturar la oscilación libre subamortiguada alpha(t) (wn, zeta,
+         * J1_piv, b1) y la ganancia cruzada K_acople en un solo ensayo de 7.5 s.
          * ================================================================== */
         case CHAR_MODE_COUPLED_DOUBLET: {
-            float pwm_cmd = 0.0f;
-
-            if (t_ms < 500U) {
-                pwm_cmd = 0.0f;
-            } else if (t_ms < 660U) {
-                pwm_cmd = 38.0f;        /* Pulso positivo 160 ms */
-            } else if (t_ms < 820U) {
-                pwm_cmd = -38.0f;       /* Pulso negativo 160 ms */
-            } else if (t_ms < 2500U) {
-                pwm_cmd = 0.0f;
-            } else if (t_ms < 2680U) {
-                pwm_cmd = -45.0f;       /* Segundo doblete inverso 180 ms */
-            } else if (t_ms < 2860U) {
-                pwm_cmd = 45.0f;
-            } else if (t_ms < 6000U) {
-                pwm_cmd = 0.0f;
+            if (t_ms < 400U) {
+                L298N_Brake(motor);
+            } else if (t_ms < 580U) {
+                L298N_SetRawPWM(motor, 45.0f);      /* Pulso +45% (180 ms) */
+            } else if (t_ms < 760U) {
+                L298N_SetRawPWM(motor, -45.0f);     /* Pulso -45% (180 ms - regresa a 0°) */
+            } else if (t_ms < 2600U) {
+                L298N_Brake(motor);                 /* Brazo bloqueado: oscilación libre 1.84 s */
+            } else if (t_ms < 2800U) {
+                L298N_SetRawPWM(motor, -55.0f);     /* Pulso -55% (200 ms) */
+            } else if (t_ms < 3000U) {
+                L298N_SetRawPWM(motor, 55.0f);      /* Pulso +55% (200 ms - regresa a 0°) */
+            } else if (t_ms < 7500U) {
+                L298N_Brake(motor);                 /* Brazo bloqueado: decay libre 4.50 s */
             } else {
-                pwm_cmd = 0.0f;
+                L298N_Coast(motor);
                 mgr->test_finished = true;
             }
-
-            L298N_SetRawPWM(motor, pwm_cmd);
             break;
         }
 

@@ -99,46 +99,47 @@ void Furuta_Init(Furuta_System_t *sys)
     sys->pendulum_energy_j    = 0.0f;
 
     /* 1. Inicializar Etapa de Potencia L298N (TIM1_CH1 @ 20 kHz, PB4, PB5, PA9, PA10)
-     *    Zona muerta asimétrica real medida en CHAR1: +7.0% PWM (antihorario), -10.0% PWM (horario) */
+     *    Zona muerta asimétrica real medida con base fija a la mesa (CHAR1):
+     *    +9.0% PWM (antihorario), -11.0% PWM (horario) */
     L298N_Init(&sys->motor, &htim1, TIM_CHANNEL_1);
-    L298N_SetDeadzone(&sys->motor, 7.0f, 10.0f, true);
+    L298N_SetDeadzone(&sys->motor, 9.0f, 11.0f, true);
 
     /* 2. Inicializar Encoders Magnéticos AS5600 (I2C1 Brazo con direction=-1 y gear=80:1, I2C2 Péndulo) */
     (void)AS5600_Init(&sys->enc_arm,  &hi2c1, TS_CONTROL_SEC, 0.006f, -1);
     (void)AS5600_Init(&sys->enc_pend, &hi2c2, TS_CONTROL_SEC, 0.004f,  1);
 
-    /* 3. Inicializar los 4 Controladores PID Discretos (Ts = 1.0 ms = 1 kHz)
-     *    Sintonizados a partir de la Planta Real Caracterizada (R^2 = 0.9837):
-     *      Gv_brazo(s) = 2.4917 / (0.1113 s + 1) [(rad/s)/V]
-     *      Gv_rotor(s) = 199.33 / (0.1113 s + 1) [(rad/s)/V]
+    /* 3. Inicializar los 4 Controladores PID Discretos Optimizados (Ts = 1.0 ms = 1 kHz)
+     *    Sintonizados a partir del Sistema Real Caracterizado con Base Fija:
+     *      Gv_brazo(s) = 2.5208 / (0.1135 s + 1) [(rad/s)/V] (R^2 = 0.9832)
+     *      G_pend(s)   = 0.8053 / (s^2 + 0.3238 s - 61.3402) (wn = 7.832 rad/s, zeta = 0.0207)
      * ----------------------------------------------------------------------
      * A) PID de Velocidad del Motor/Brazo:
-     *    Kp = 0.85 V/(rad/s), Ki = 12.50 V/rad, Kd = 0.005 V·s/rad, N = 40 */
+     *    Kp = 1.82 V/(rad/s), Ki = 35.30 V/rad, Kd = 0.005 V·s/rad, N = 40 */
     PID_Init(&sys->pid_motor_vel,
-             0.85f, 12.50f, 0.005f, 40.0f,
+             1.82f, 35.30f, 0.005f, 40.0f,
              TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
              true);
 
     /* B) PID de Posición del Motor/Brazo Solo (Servo de precisión con error 0.00°):
-     *    Kp = 18.00 V/rad, Ki = 75.00 V/(rad·s), Kd = 1.65 V·s/rad, N = 35
+     *    Kp = 18.13 V/rad, Ki = 77.38 V/(rad·s), Kd = 1.65 V·s/rad, N = 35
      *    Rango completo [-12.0 V, +12.0 V] con Clegg Reset en cruce por cero */
     PID_Init(&sys->pid_motor_pos,
-             18.00f, 75.00f, 1.65f, 35.0f,
+             18.13f, 77.38f, 1.65f, 35.0f,
              TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
              true);
 
     /* C) PID Estabilizador del Péndulo Invertido (Lazo Rápido Principal alpha):
-     *    Kp = 48.0 V/rad, Ki = 14.0 V/(rad·s), Kd = 3.60 V·s/rad, N = 25
+     *    Kp = 61.81 V/rad, Ki = 28.11 V/(rad·s), Kd = 2.29 V·s/rad, N = 28
      *    Nota: derivative_on_measurement = false (setpoint fijo en 0.0 rad) */
     PID_Init(&sys->pid_pend_alpha,
-             48.00f, 14.00f, 3.60f, 25.0f,
+             61.81f, 28.11f, 2.29f, 28.0f,
              TS_CONTROL_SEC, -MOTOR_NOMINAL_VOLTAGE, MOTOR_NOMINAL_VOLTAGE,
              false);
 
     /* D) PID Regulador de Posición del Brazo en Equilibrio Furuta (Lazo Lento theta):
-     *    Kp = -2.40 V/rad, Ki = -0.35 V/(rad·s), Kd = -1.65 V·s/rad, N = 20 */
+     *    Kp = -1.20 V/rad, Ki = -2.00 V/(rad·s), Kd = -0.80 V·s/rad, N = 20 */
     PID_Init(&sys->pid_arm_theta,
-             -2.40f, -0.35f, -1.65f, 20.0f,
+             -1.20f, -2.00f, -0.80f, 20.0f,
              TS_CONTROL_SEC, -6.0f, 6.0f,
              true);
 
@@ -507,6 +508,11 @@ void Furuta_ProcessCommand(Furuta_System_t *sys, const char *cmd_str)
         float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 40.0f;
         if (sscanf(cmd_str + 6, "%f,%f,%f,%f", &kp, &ki, &kd, &n) >= 3) {
             PID_SetGains(&sys->pid_motor_vel, kp, ki, kd, n);
+        }
+    } else if (strncmp(cmd_str, "PID_P=", 6) == 0) {
+        float kp = 0.0f, ki = 0.0f, kd = 0.0f, n = 35.0f;
+        if (sscanf(cmd_str + 6, "%f,%f,%f,%f", &kp, &ki, &kd, &n) >= 3) {
+            PID_SetGains(&sys->pid_motor_pos, kp, ki, kd, n);
         }
     }
 }
