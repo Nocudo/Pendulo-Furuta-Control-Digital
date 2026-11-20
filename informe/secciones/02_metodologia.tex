@@ -63,12 +63,14 @@ Desde \texttt{caracterizacion.c} se capturaron $3\,726$ muestras reales en banco
 \subsubsection{Zona Muerta y Compensador L298N (CHAR1)}
 La rampa en lazo abierto ($918$ muestras, \qty{9.17}{\second}, Fig.~\ref{fig:exp_zona_muerta}) detectó fricción asimétrica en $+10.0\%$~CCW ($\qty{+1.20}{\volt}$) y $-21.0\%$~CW ($\qty{-2.52}{\volt}$). Para evitar ciclos límite por conmutación tipo relé, \texttt{l298n\_motor.c} aplica polaridad $\operatorname{sgn}(u)$ y magnitud lineal continua por tramos ($\text{dz}^+=9.2\%$, $\text{dz}^-=16.0\%$, rodilla $V_k=\qty{0.65}{\volt}$, $V_{\max}=\qty{12}{\volt}$):
 \begin{equation}
+\resizebox{0.96\columnwidth}{!}{$\displaystyle
     |\mathrm{PWM}(u)| =
     \begin{cases}
-        0, & |u| < \qty{0.06}{\volt}, \\
-        \mathrm{dz}^{\pm}\dfrac{|u| - 0.06}{V_k - 0.06}, & \qty{0.06}{\volt} \le |u| < V_k, \\
+        0, & |u| < \qty{0.06}{\volt}, \\[3pt]
+        \mathrm{dz}^{\pm}\dfrac{|u| - 0.06}{V_k - 0.06}, & \qty{0.06}{\volt} \le |u| < V_k, \\[6pt]
         \mathrm{dz}^{\pm} + (100 - \mathrm{dz}^{\pm})\dfrac{|u| - V_k}{V_{\max} - V_k}, & V_k \le |u| \le V_{\max}.
     \end{cases}
+$}
     \label{eq:comp_l298n}
 \end{equation}
 
@@ -100,8 +102,8 @@ Mediante dobletes bipolares ($+28\%/-28\%$ y $-34\%/+34\%$) seguidos de freno ac
     \label{eq:friccion_mixta}
 \end{equation}
 se ajustaron $\zeta_v=0.0185$ y $c_c=\qty{0.6179}{\radian\per\second\squared}$ ($R^2=99.64\%$). Discretizando~\eqref{eq:matriz_ac}--\eqref{eq:matrices_bc_cc} por retenedor de orden cero (ZOH) a $T_s=\qty{1.0}{\milli\second}$~\cite{Franklin2015}:
-{\small
 \begin{equation}
+\resizebox{0.96\columnwidth}{!}{$\displaystyle
     \begin{aligned}
         \mathbf{\Phi} &=
         \setlength{\arraycolsep}{3.5pt}
@@ -113,9 +115,9 @@ se ajustaron $\zeta_v=0.0185$ y $c_c=\qty{0.6179}{\radian\per\second\squared}$ (
         \end{bmatrix}, \\
         \mathbf{\Gamma} &= \begin{bmatrix} 0.000014 & 0.028576 & -0.000012 & -0.024953 \end{bmatrix}^T,
     \end{aligned}
+$}
     \label{eq:zoh_discreto}
 \end{equation}
-}
 con valores propios $\lambda(\mathbf{\Phi})=\{1.000000,\, 0.991525,\, 0.990603,\, 1.008327\}$.
 
 \begin{figure*}[!t]
@@ -141,16 +143,17 @@ Los lazos auxiliares emplean la transformada bilineal de Tustin \cite{Astrom1997
     \label{eq:pid_tustin}
 \end{equation}
 con $\Delta_{\text{in}}[k]=-(y[k]-y[k-1])$ sobre medición (o $e[k]-e[k-1]$ en \texttt{pid\_pend\_alpha}). En retorno a $\qty{0}{\degree}$ (\texttt{pid\_motor\_pos}), la acción integral restringida a $|e_\theta|\le\qty{5}{\degree}$ incorpora reinicio de Clegg \cite{clegg1958} y freno activo \texttt{L298N\_Brake}:
-{\small
 \begin{equation}
+\resizebox{0.92\columnwidth}{!}{$\displaystyle
     I_p[k] =
     \begin{cases}
-        0, & |e_\theta[k]| > \qty{5}{\degree}\ \text{o}\ e_\theta[k]e_\theta[k-1] \le 0, \\
-        \mathrm{sat}_{\pm 6.5}\!\bigl(I_p[k-1] + K_i T_s e_\theta[k]\bigr), & \text{resto}.
+        0, & |e_\theta[k]| > \qty{5}{\degree}, \\
+        0, & e_\theta[k]e_\theta[k-1] \le 0, \\[2pt]
+        \mathrm{sat}_{\pm 6.5}\!\bigl(I_p[k-1] + K_i T_s e_\theta[k]\bigr), & \text{en otro caso}.
     \end{cases}
+$}
     \label{eq:clegg_pos}
 \end{equation}
-}
 
 \subsubsection{Swing-Up Resonante y Lazo Dual M4 Ultra-Silk}
 El levantamiento evalúa la energía normalizada \cite{astrom2000,spong1995}:

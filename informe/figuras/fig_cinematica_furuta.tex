@@ -44,7 +44,7 @@
     \def\Htower{3.70}       % H = 160 mm
     \def\Zpiv{4.23}         % Z_piv = 182.8 mm
     \def\Zhub{3.88}         % Centro del cubo del brazo horizontal
-    \def\Lzero{5.40}        % L0 = 88.5 mm (esquematico claro)
+    \def\Lzero{7.20}        % L0 = 88.5 mm (longitud clara desahogada)
     \def\Lone{3.53}         % L1 = 155 mm (despeje 30 mm sobre Z=0)
     \def\loneFrac{0.58}     % Posicion relativa del centro de masa l1
     \def\alphaDeg{130}      % Posicion inclinada superior (cerca de 180 deg)
@@ -88,8 +88,8 @@
     % =========================================================================
     % Extensiones calculadas por construccion para albergar X0 y cota Despeje sin cruces
     \coordinate (Tfl) at ($(O0) + ({3.45*\Xx - 1.65*\Yx}, {3.45*\Xy - 1.65*\Yy})$);
-    \coordinate (Tfr) at ($(O0) + ({3.45*\Xx + 6.75*\Yx}, {3.45*\Xy + 6.75*\Yy})$);
-    \coordinate (Tbr) at ($(O0) + ({-1.85*\Xx + 6.75*\Yx}, {-1.85*\Xy + 6.75*\Yy})$);
+    \coordinate (Tfr) at ($(O0) + ({3.45*\Xx + 8.40*\Yx}, {3.45*\Xy + 8.40*\Yy})$);
+    \coordinate (Tbr) at ($(O0) + ({-1.85*\Xx + 8.40*\Yx}, {-1.85*\Xy + 8.40*\Yy})$);
     \coordinate (Tbl) at ($(O0) + ({-1.85*\Xx - 1.65*\Yx}, {-1.85*\Xy - 1.65*\Yy})$);
     \coordinate (TflBot) at ($(Tfl) + (0, -\slabH)$);
     \coordinate (TfrBot) at ($(Tfr) + (0, -\slabH)$);
@@ -350,16 +350,16 @@
         ($(Ptip) + ({\dLtot*\nxP}, {\dLtot*\nyP})$);
 
     % Arco 3D exacto del angulo completo alpha(t) anclado en (Ppiv)
-    \def\rAlpha{0.94}
+    \def\rAlpha{0.72}
     \begin{scope}[shift={(Ppiv)}]
         \draw[->, >={Stealth[length=4.5pt, width=3pt]}, semithick, furutaOrange!85]
             plot[domain=3:{\alphaDeg-2}, samples=48, smooth]
             ({ \rAlpha*(sin(\x)*\Xt - cos(\x)*\Zx) },
              { \rAlpha*(sin(\x)*\Yt - cos(\x)*\Zy) });
     \end{scope}
-    % Etiqueta alpha(t) fuera del arco a alpha = 28 deg, totalmente libre de la cota L1
+    % Etiqueta alpha(t) fuera del arco a alpha = 32 deg, totalmente libre de cotas y llamadas
     \node[anchor=west, font=\footnotesize\bfseries, text=furutaOrange, fill=white, inner sep=1pt]
-        at ($(Ppiv) + ({1.08*(sin(28)*\Xt - cos(28)*\Zx)}, {1.08*(sin(28)*\Yt - cos(28)*\Zy)})$)
+        at ($(Ppiv) + ({0.88*(sin(32)*\Xt - cos(32)*\Zx)}, {0.88*(sin(32)*\Yt - cos(32)*\Zy)})$)
         {$\alpha(t)$};
 
     % Barra fisica del pendulo
@@ -424,19 +424,22 @@
     % 12. LLAMADAS TECNICAS DE SUBSISTEMAS (ANCLADAS POR CONSTRUCCION)
     % =========================================================================
     % Motor Namiki 22CL (80:1) anclado respecto a MotorBody
-    \node[callout=furutaBlue, right=0.76cm of MotorBody.east, yshift=0.04cm, anchor=west] (lblMotor)
+    \node[callout=furutaBlue, right=0.40cm of MotorBody.east, yshift=0.10cm, anchor=west] (lblMotor)
         {\textbf{Motor DC Namiki 22CL}\\Reductor planetario 80:1};
     \draw[leader=furutaBlue] (lblMotor.west) -- (MotorBody.east |- lblMotor.west);
 
     % AS5600 Base (I2C1) apilado bajo lblMotor y apuntando a EncBasePCB
-    \node[callout=furutaGreen, below=0.28cm of lblMotor.south west, anchor=north west] (lblEncBase)
+    \node[callout=furutaGreen, below=0.22cm of lblMotor.south west, anchor=north west] (lblEncBase)
         {\textbf{AS5600 Base} ($\text{I}^2\text{C}_1$)\\Encoder magn\'etico rotor};
     \draw[leader=furutaGreen] (lblEncBase.west) -- (EncBasePCB.east);
 
-    % Articulacion distal F1 anclada bajo y a la derecha de DistalHousing
-    \node[callout=furutaGreen, below right=0.90cm and 0.14cm of DistalHousing.south east, anchor=north west] (lblDistal)
-        {\textbf{Articulaci\'on distal ($\mathcal{F}_1$)}\\Rodamiento 608ZZ\\AS5600 Distal ($\text{I}^2\text{C}_2$)};
-    \draw[leader=furutaGreen] (lblDistal.north west) -- (DistalHousing.south east);
+    % Articulacion distal F1 colocada a la derecha de la linea vertical, bajo el pendulo inclinado
+    \node[callout=furutaGreen, anchor=north west] (lblDistal)
+        at ($(Ppiv) + (0.85, -1.35)$)
+        {\textbf{Articulaci\'on distal ($\mathcal{F}_1$)}\\
+         Rodamiento 608ZZ\\
+         AS5600 Distal ($\text{I}^2\text{C}_2$)};
+    \draw[leader=furutaGreen] (lblDistal.north west) to[out=140, in=-40] ($(DistalHousing.south east) + (0.08, -0.05)$);
 
     % =========================================================================
     % 13. VECTOR DE GRAVEDAD g Y CUADRO COMPACTO DE COTAS (FIT BY CONSTRUCTION)
