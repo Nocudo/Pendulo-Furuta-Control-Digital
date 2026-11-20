@@ -12,6 +12,13 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 ├── GUIA_EXPOSICION_PROYECTO.md       # ★ Guía completa de sustentación (filtros, controladores, física y Q&A)
 ├── README.md                         # Portada ejecutiva e inicio rápido del proyecto
 │
+├── informe/                          # ★ Artículo científico / Informe final IEEEtran (13 págs, certificado 0 warnings)
+│   ├── plantilla.pdf                 # Documento PDF final listo para entrega y sustentación
+│   ├── plantilla.tex                 # Código fuente principal LaTeX (IEEEtran conference)
+│   ├── plantilla.bib                 # Base de datos bibliográfica BibTeX
+│   ├── secciones/                    # Secciones modulares (01_introduccion a 05_conclusiones)
+│   └── figuras/                      # Diagramas vectoriales TikZ (relativos) y figuras experimentales
+│
 ├── interfaz_matlab/                  # ★ Interfaz gráfica principal lista para presentación (MATLAB)
 │   └── app_telemetria_sistema_furuta_matlab.m   # Dashboard maximizado, telemetría en vivo y constantes
 │
