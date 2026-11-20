@@ -1,0 +1,21 @@
+% ==============================================================================
+% SECCION 5: CONCLUSIONES Y TRABAJO FUTURO
+% ==============================================================================
+\section{Conclusiones y Trabajo Futuro}
+\label{sec:conclusiones}
+
+\subsection{Conclusiones}
+\begin{enumerate}
+    \item \textbf{Validación estructural DfAM e instrumentación isócrona:} La estructura manufacturada sin soportes ($\text{SUP}=0$, \qty{247.97}{\gram} de PLA en 6~placas principales y $0/23$ interferencias) junto con el firmware sobre STM32F446RE (\qty{180}{\mega\hertz}, lazo a \qty{1.0}{\kilo\hertz}, PWM a \qty{20.0}{\kilo\hertz} y doble Soft-$\text{I}^2\text{C}$ a $\sim\qty{450}{\kilo\hertz}$) validó la integración mecatrónica determinista en tiempo real.
+    \item \textbf{Identificación experimental caja negra:} El modelado empírico reprodujo con alta fidelidad la dinámica del actuador ($G_v(s)$ con $R^2=98.51\%$, $\mathrm{NRMSE}=87.79\%$), el sistema pendular ($\omega_n=\qty{8.8484}{\radian\per\second}$) y la fricción mixta de Coulomb ($R^2=99.64\%$), demostrando la necesidad de compensación suave asimétrica para el puente H L298N ($+9.2\%/-16.0\%$, $V_k=\qty{0.65}{\volt}$).
+    \item \textbf{Eficacia de la arquitectura de control:} El esquema \texttt{M4 Ultra-Silk} aseguró estabilidad asintótica ($\rho(\mathbf{A}_{cl})\to |z|\le 0.99934 < 1$) y filtrado \textit{Dual-Notch} (\qty{11.0}{\hertz}/\qty{6.2}{\hertz}) con apenas $-12.87^\circ$ de fase en $f_n$, logrando \textit{Swing-Up} en \qty{0.98}{\second}, balance continuo de \qty{14.02}{\second} con $0$~caídas ($\mathrm{RMS}(\tilde{\alpha})=\qty{1.99}{\degree}$, $u_{\mathrm{RMS}}=\qty{0.73}{\volt}$) y retorno \texttt{STOPHOME} en \qty{-0.25}{\degree}.
+    \item \textbf{Supervisión con gemelo digital 3D:} El enlace por DMA1 circular (\qty{115200}{\baudios}) acopló la planta física con un gemelo digital 3D en MATLAB, sosteniendo telemetría CSV a \qty{100}{\hertz} y animación cinemática en tiempo real a \qty{50}{\hertz}.
+\end{enumerate}
+
+\subsection{Trabajo Futuro}
+\begin{itemize}
+    \item Sustitución del puente H BJT L298N por driver MOSFET sincrónico ($R_{DS,\text{on}}<\qty{10}{\milli\ohm}$) para suprimir caídas de tensión de \qty{2}{\volt} y asimetrías de zona muerta.
+    \item Encoders ópticos en cuadratura por hardware (\texttt{TIM2}/\texttt{TIM5}) para cuadruplicar la resolución angular distal y reducir el ruido derivativo.
+    \item Control Predictivo No Lineal (NMPC) en tiempo real aprovechando la FPU Cortex-M4F para unificar \textit{Swing-Up} y balance bajo restricciones de carrera y tensión.
+    \item Observador por Filtro de Kalman Extendido (EKF) para estimar estados y pares parásitos del cableado y la caja reductora.
+\end{itemize}

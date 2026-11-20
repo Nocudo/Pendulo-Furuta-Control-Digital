@@ -1,0 +1,651 @@
+% ==============================================================================
+% Figura 2: Esquemático Electrónico e Interconexión Pin a Pin
+% Sistema: Péndulo Invertido Rotacional de Furuta (STM32 Nucleo-F446RE)
+% Construido por restricciones geométricas relativas (positioning, calc, fit)
+% ==============================================================================
+\begin{figure*}[!t]
+\centering
+% Paleta técnica local
+\definecolor{mcuBorder}{HTML}{1B3A6B}
+\definecolor{mcuFill}{HTML}{F2F6FC}
+\definecolor{mcuHead}{HTML}{1B3A6B}
+\definecolor{pwrBorder}{HTML}{9E2A2B}
+\definecolor{pwrFill}{HTML}{FDF4F4}
+\definecolor{pwrHead}{HTML}{9E2A2B}
+\definecolor{motBorder}{HTML}{B45309}
+\definecolor{motFill}{HTML}{FFFBF0}
+\definecolor{motHead}{HTML}{B45309}
+\definecolor{senBorder}{HTML}{0F766E}
+\definecolor{senFill}{HTML}{F0FDFA}
+\definecolor{senHead}{HTML}{0F766E}
+\definecolor{telBorder}{HTML}{3730A3}
+\definecolor{telFill}{HTML}{F1F3FF}
+\definecolor{telHead}{HTML}{3730A3}
+\definecolor{wirePwr}{HTML}{B91C1C}
+\definecolor{wireVcc}{HTML}{DC2626}
+\definecolor{wireGnd}{HTML}{1F2937}
+\definecolor{wirePwm}{HTML}{C2410C}
+\definecolor{wireGpio}{HTML}{1D4ED8}
+\definecolor{wireScl}{HTML}{0F766E}
+\definecolor{wireSda}{HTML}{15803D}
+\definecolor{wireUart}{HTML}{3730A3}
+\definecolor{wireMech}{HTML}{78350F}
+\definecolor{mutedTxt}{HTML}{4B5563}
+\definecolor{ncColor}{HTML}{9CA3AF}
+%
+\resizebox{\textwidth}{!}{%
+\begin{circuitikz}[
+    >=Stealth,
+    font=\sffamily,
+    % --- Parámetros de ritmo geométrico (fuente única de verdad) ---
+    /tikz/hdrnode/.style={
+        rectangle,
+        minimum width=#1,
+        text width=\dimexpr #1 - 14pt\relax,
+        align=center,
+        text=white,
+        inner xsep=7pt,
+        inner ysep=5pt
+    },
+    pinlbl/.style={font=\scriptsize\ttfamily\bfseries, inner sep=1pt},
+    pinsub/.style={font=\scriptsize\sffamily, text=mutedTxt, inner sep=0.5pt},
+    wirelbl/.style={font=\scriptsize\sffamily\bfseries, inner sep=1.5pt},
+    bushead/.style={
+        font=\scriptsize\sffamily\bfseries, fill=white,
+        draw=senBorder!55, rounded corners=2pt, inner xsep=5pt, inner ysep=2pt
+    },
+    pinport/.style={circle, fill=white, draw=black!75, line width=0.65pt, inner sep=1.35pt},
+    solder/.style={circle, fill=black!85, inner sep=1.35pt},
+    ncmark/.style={font=\scriptsize\bfseries, text=pwrBorder!80!black, inner sep=0pt}
+]
+% Dimensiones paramétricas globales
+\def\mcuW{8.4cm}
+\def\leftW{5.4cm}
+\def\senW{5.8cm}
+\def\uiW{4.0cm}
+\def\stW{6.2cm}
+\def\gapLeft{3.4cm}
+\def\gapRight{4.0cm}
+\def\rowGap{0.95cm}
+\def\pinPitch{0.86cm}
+\def\botGap{1.35cm}
+
+% ==============================================================================
+% 1. NODO RAÍZ: ENCABEZADO STM32 NUCLEO-F446RE
+% ==============================================================================
+\node[hdrnode=\mcuW, anchor=north] (mcu_hdr) at (0,0) {%
+    {\small\bfseries STM32 Nucleo-F446RE}\\[1.5pt]
+    {\scriptsize Cortex-M4F @ \qty{180}{\mega\hertz} \;|\; TIM6 \qty{1}{\kilo\hertz} ($T_s=\qty{1.0}{\milli\second}$)}%
+};
+
+% ==============================================================================
+% 2. COLUMNA DERECHA: SENSORES AS5600 BASE (I2C1) Y DISTAL (I2C2)
+% ==============================================================================
+\node[hdrnode=\senW, right=\gapRight of mcu_hdr.north east, anchor=north west] (as1_hdr) {%
+    {\footnotesize\bfseries Sensor 1: AS5600 Base ($\theta$)}\\[1pt]
+    {\scriptsize Dir.\ \texttt{0x36} \,|\, 12 bits \,|\, Eje rotor 80:1}%
+};
+
+% Pines Sensor 1 (derivados por paso vertical relativo)
+\coordinate (as1_scl) at ($(as1_hdr.south west)+(0,-0.56cm)$);
+\coordinate (as1_vcc) at ($(as1_scl)+(0,-\pinPitch)$);
+\coordinate (as1_sda) at ($(as1_vcc)+(0,-\pinPitch)$);
+\coordinate (as1_gnd) at ($(as1_sda)+(0,-\pinPitch)$);
+\coordinate (as1_bot) at ($(as1_gnd)+(0,-0.46cm)$);
+
+\node[draw=none, fill=none, inner sep=0pt, fit=(as1_hdr)(as1_bot)] (as1) {};
+
+% Contenido interno AS5600 Base (construcción con positioning + fit)
+\node[pinlbl, anchor=west, text=wireScl] (as1_l_scl) at ($(as1_scl)+(5pt,0)$) {SCL};
+\node[pinlbl, anchor=west, text=wireVcc] (as1_l_vcc) at ($(as1_vcc)+(5pt,0)$) {VCC};
+\node[pinlbl, anchor=west, text=wireSda] (as1_l_sda) at ($(as1_sda)+(5pt,0)$) {SDA};
+\node[pinlbl, anchor=west, text=wireGnd] (as1_l_gnd) at ($(as1_gnd)+(5pt,0)$) {GND};
+\node[draw=none, fill=none, inner sep=0pt, fit=(as1_l_scl)(as1_l_vcc)(as1_l_sda)(as1_l_gnd)] (as1_lcol) {};
+
+\node[font=\scriptsize\bfseries, text=mutedTxt, anchor=north east]
+    (as1_nc_hdr) at ($(as1_hdr.south east)+(-0.14cm,-0.14cm)$) {Libres (NC)};
+\coordinate (as1_nc1_y) at ($(as1_scl)!0.22!(as1_gnd)$);
+\coordinate (as1_nc2_y) at ($(as1_scl)!0.58!(as1_gnd)$);
+\coordinate (as1_nc3_y) at ($(as1_scl)!0.94!(as1_gnd)$);
+\coordinate (as1_OUT) at (as1.east |- as1_nc1_y);
+\coordinate (as1_DIR) at (as1.east |- as1_nc2_y);
+\coordinate (as1_GPO) at (as1.east |- as1_nc3_y);
+\node[pinlbl, anchor=east, text=mutedTxt] (as1_l_OUT) at ($(as1_OUT)+(-5pt,0)$) {OUT};
+\node[pinlbl, anchor=east, text=mutedTxt] (as1_l_DIR) at ($(as1_DIR)+(-5pt,0)$) {DIR};
+\node[pinlbl, anchor=east, text=mutedTxt] (as1_l_GPO) at ($(as1_GPO)+(-5pt,0)$) {GPO};
+\node[draw=none, fill=none, inner sep=0pt, fit=(as1_nc_hdr)(as1_l_OUT)(as1_l_DIR)(as1_l_GPO)] (as1_rcol) {};
+
+\coordinate (as1_div_x) at ($(as1_rcol.west)+(-0.14cm,0)$);
+\coordinate (as1_div_t) at ($(as1_hdr.south)+(0,-0.10cm)$);
+\coordinate (as1_div_b) at ($(as1.south)+(0,0.12cm)$);
+\draw[senBorder!35, densely dotted, line width=0.65pt]
+    (as1_div_x |- as1_div_t) -- (as1_div_x |- as1_div_b);
+
+\coordinate (as1_info_r) at (as1_div_x |- as1_lcol.center);
+\node[align=center, font=\scriptsize, text=senHead!85!black, text width=2.25cm]
+    (as1_info) at ($(as1_lcol.east)!0.5!(as1_info_r)$)
+    {Hall Magnético\\$4096\text{ c/rev}$\\\qty{3.3}{\volt} lógico};
+
+\foreach \p in {OUT, DIR, GPO} {
+    \draw[ncColor, line width=0.8pt] (as1_\p) -- ++(0.32cm,0) coordinate (as1_\p_end);
+    \node[ncmark] at (as1_\p_end) {$\times$};
+    \node[pinport, draw=ncColor] at (as1_\p) {};
+}
+
+% Sensor 2 (debajo de Sensor 1 con separación paramétrica \rowGap)
+\node[hdrnode=\senW, below=\rowGap of as1.south west, anchor=north west] (as2_hdr) {%
+    {\footnotesize\bfseries Sensor 2: AS5600 Distal ($\alpha$)}\\[1pt]
+    {\scriptsize Dir.\ \texttt{0x36} \,|\, 12 bits \,|\, Eje 608ZZ}%
+};
+
+\coordinate (as2_scl) at ($(as2_hdr.south west)+(0,-0.56cm)$);
+\coordinate (as2_vcc) at ($(as2_scl)+(0,-\pinPitch)$);
+\coordinate (as2_sda) at ($(as2_vcc)+(0,-\pinPitch)$);
+\coordinate (as2_gnd) at ($(as2_sda)+(0,-\pinPitch)$);
+\coordinate (as2_bot) at ($(as2_gnd)+(0,-0.46cm)$);
+
+\node[draw=none, fill=none, inner sep=0pt, fit=(as2_hdr)(as2_bot)] (as2) {};
+
+\node[pinlbl, anchor=west, text=wireScl] (as2_l_scl) at ($(as2_scl)+(5pt,0)$) {SCL};
+\node[pinlbl, anchor=west, text=wireVcc] (as2_l_vcc) at ($(as2_vcc)+(5pt,0)$) {VCC};
+\node[pinlbl, anchor=west, text=wireSda] (as2_l_sda) at ($(as2_sda)+(5pt,0)$) {SDA};
+\node[pinlbl, anchor=west, text=wireGnd] (as2_l_gnd) at ($(as2_gnd)+(5pt,0)$) {GND};
+\node[draw=none, fill=none, inner sep=0pt, fit=(as2_l_scl)(as2_l_vcc)(as2_l_sda)(as2_l_gnd)] (as2_lcol) {};
+
+\node[font=\scriptsize\bfseries, text=mutedTxt, anchor=north east]
+    (as2_nc_hdr) at ($(as2_hdr.south east)+(-0.14cm,-0.14cm)$) {Libres (NC)};
+\coordinate (as2_nc1_y) at ($(as2_scl)!0.22!(as2_gnd)$);
+\coordinate (as2_nc2_y) at ($(as2_scl)!0.58!(as2_gnd)$);
+\coordinate (as2_nc3_y) at ($(as2_scl)!0.94!(as2_gnd)$);
+\coordinate (as2_OUT) at (as2.east |- as2_nc1_y);
+\coordinate (as2_DIR) at (as2.east |- as2_nc2_y);
+\coordinate (as2_GPO) at (as2.east |- as2_nc3_y);
+\node[pinlbl, anchor=east, text=mutedTxt] (as2_l_OUT) at ($(as2_OUT)+(-5pt,0)$) {OUT};
+\node[pinlbl, anchor=east, text=mutedTxt] (as2_l_DIR) at ($(as2_DIR)+(-5pt,0)$) {DIR};
+\node[pinlbl, anchor=east, text=mutedTxt] (as2_l_GPO) at ($(as2_GPO)+(-5pt,0)$) {GPO};
+\node[draw=none, fill=none, inner sep=0pt, fit=(as2_nc_hdr)(as2_l_OUT)(as2_l_DIR)(as2_l_GPO)] (as2_rcol) {};
+
+\coordinate (as2_div_x) at ($(as2_rcol.west)+(-0.14cm,0)$);
+\coordinate (as2_div_t) at ($(as2_hdr.south)+(0,-0.10cm)$);
+\coordinate (as2_div_b) at ($(as2.south)+(0,0.12cm)$);
+\draw[senBorder!35, densely dotted, line width=0.65pt]
+    (as2_div_x |- as2_div_t) -- (as2_div_x |- as2_div_b);
+
+\coordinate (as2_info_r) at (as2_div_x |- as2_lcol.center);
+\node[align=center, font=\scriptsize, text=senHead!85!black, text width=2.25cm]
+    (as2_info) at ($(as2_lcol.east)!0.5!(as2_info_r)$)
+    {Hall Magnético\\$4096\text{ c/rev}$\\Brazo distal};
+
+\foreach \p in {OUT, DIR, GPO} {
+    \draw[ncColor, line width=0.8pt] (as2_\p) -- ++(0.32cm,0) coordinate (as2_\p_end);
+    \node[ncmark] at (as2_\p_end) {$\times$};
+    \node[pinport, draw=ncColor] at (as2_\p) {};
+}
+
+% ==============================================================================
+% 3. COLUMNA IZQUIERDA: MOTOR DC, DRIVER PUENTE H L298N Y FUENTE 12V DC
+% ==============================================================================
+\node[hdrnode=\leftW, left=\gapLeft of mcu_hdr.north west, anchor=north east] (motor_hdr) {%
+    {\footnotesize\bfseries Motor Namiki 22CL-3501PG}\\[1pt]
+    {\scriptsize Reductor 80:1 \;|\; \qty{12}{\volt} nom.}%
+};
+
+\node[elmech, scale=0.64, fill=white, draw=motBorder, line width=0.9pt,
+      below=0.38cm of motor_hdr.south] (m_sym) {M};
+\coordinate (motor_bot) at ($(m_sym.south)+(0,-0.46cm)$);
+\node[draw=none, fill=none, inner sep=0pt, fit=(motor_hdr)(motor_bot)] (motor) {};
+
+% Polaridad sobre los terminales horizontales (sin tocar el cable)
+\node[font=\scriptsize\bfseries, text=motHead, anchor=south east] at ($(m_sym.left)+(-3pt,2pt)$) {$+$};
+\node[font=\scriptsize\bfseries, text=motHead, anchor=south west] at ($(m_sym.right)+(3pt,2pt)$) {$-$};
+
+\coordinate (mot_out1) at ($(motor.south west)!0.26!(motor.south east)$);
+\coordinate (mot_out2) at ($(motor.south west)!0.74!(motor.south east)$);
+\draw[motBorder, line width=0.95pt] (m_sym.left)  -| (mot_out1);
+\draw[motBorder, line width=0.95pt] (m_sym.right) -| (mot_out2);
+
+% Driver Puente H L298N
+\node[hdrnode=\leftW, below=\rowGap of motor.south west, anchor=north west] (l298_hdr) {%
+    {\footnotesize\bfseries Driver Puente H L298N}\\[1pt]
+    {\scriptsize Puente Darlington \;|\; TTL \qty{5}{\volt}}%
+};
+
+\coordinate (l298_ena) at ($(l298_hdr.south east)+(0,-0.50cm)$);
+\coordinate (l298_in1) at ($(l298_ena)+(0,-\pinPitch)$);
+\coordinate (l298_in2) at ($(l298_in1)+(0,-\pinPitch)$);
+\coordinate (l298_gnd) at ($(l298_in2)+(0,-\pinPitch)$);
+\coordinate (l298_bot) at ($(l298_gnd)+(0,-0.64cm)$);
+\node[draw=none, fill=none, inner sep=0pt, fit=(l298_hdr)(l298_bot)] (l298n) {};
+
+\coordinate (l298_out1) at (l298n.north -| mot_out1);
+\coordinate (l298_out2) at (l298n.north -| mot_out2);
+\draw[wirePwr, line width=1.25pt, ->] (l298_out1) -- (mot_out1);
+\draw[wirePwr, line width=1.25pt, ->] (l298_out2) -- (mot_out2);
+\node[wirelbl, text=wirePwr, anchor=east] at ($(l298_out1)!0.5!(mot_out1)+(-3pt,0)$) {OUT1};
+\node[wirelbl, text=wirePwr, anchor=west] at ($(l298_out2)!0.5!(mot_out2)+( 3pt,0)$) {OUT2};
+
+\node[pinlbl, anchor=east, text=wirePwm]  (l298_l_ena) at ($(l298_ena)+(-5pt,0)$) {ENA};
+\node[pinlbl, anchor=east, text=wireGpio] (l298_l_in1) at ($(l298_in1)+(-5pt,0)$) {IN1};
+\node[pinlbl, anchor=east, text=wireGpio] (l298_l_in2) at ($(l298_in2)+(-5pt,0)$) {IN2};
+\node[pinlbl, anchor=east, text=wireGnd]  (l298_l_gnd) at ($(l298_gnd)+(-5pt,0)$) {GND};
+
+\coordinate (l298_info_y) at ($(l298_ena)!0.50!(l298_in2)$);
+\coordinate (l298_info_w) at (l298n.west |- l298_info_y);
+\node[align=left, font=\scriptsize, text=pwrHead!85!black, text width=2.95cm, anchor=west]
+    at ($(l298_info_w)+(0.22cm,0)$) {%
+    \textbf{Etapa Potencia}\\
+    $\bullet$ Jumper \texttt{ENA} off\\
+    $\bullet$ Reg.\ \qty{5}{\volt} ON\\
+    $\bullet$ $V_{\text{sat}}\!\approx\!\qty{2.0}{\volt}$
+};
+
+\coordinate (l298_vms)  at ($(l298n.south west)!0.18!(l298n.south east)$);
+\coordinate (l298_pgnd) at ($(l298n.south west)!0.84!(l298n.south east)$);
+\node[pinlbl, text=wirePwr, anchor=south] at ($(l298_vms)+(0,3pt)$)  {VMS};
+\node[pinlbl, text=wireGnd, anchor=south] at ($(l298_pgnd)+(0,3pt)$) {GND};
+
+% Fuente Externa 12V DC (cables en bordes sin atravesar texto; +12V interno)
+\coordinate (psu_nw) at ($(l298n.south west)+(0,-\rowGap)$);
+\coordinate (psu_ne) at ($(l298n.south east)+(0,-\rowGap)$);
+\coordinate (psu_in_vms)  at (l298_vms |- psu_nw);
+\coordinate (psu_in_gnd)  at (l298_pgnd |- psu_nw);
+\coordinate (psu_src_top) at ($(psu_in_vms)+(0,-0.45cm)$);
+\coordinate (psu_src_bot) at ($(psu_src_top)+(0,-1.85cm)$);
+\coordinate (psu_gnd_cor) at (psu_in_gnd |- psu_src_bot);
+\coordinate (psu_ne_bot)  at (psu_ne |- psu_src_bot);
+\coordinate (psu_se)      at ($(psu_ne_bot)+(0,-0.45cm)$);
+
+\node[draw=none, fill=none, inner sep=0pt, fit=(psu_nw)(psu_se)] (psu) {};
+
+\draw[wirePwr, line width=1.25pt] (l298_vms) -- (psu_in_vms);
+\node[wirelbl, text=wirePwr, anchor=west]
+    at ($(l298_vms)!0.48!(psu_in_vms)+(3pt,0)$) {+\qty{12}{\volt}};
+
+\draw[wirePwr, line width=1.10pt] (psu_in_vms) -- (psu_src_top);
+\draw[wirePwr, line width=1.10pt]
+    (psu_src_top) to[vsource, american, l={\scriptsize\textbf{+\qty{12}{\volt}}}] (psu_src_bot);
+\draw[wireGnd, line width=1.15pt]
+    (psu_src_bot) -- (psu_gnd_cor) -- (psu_in_gnd) -- (l298_pgnd);
+
+\node[font=\footnotesize\bfseries, text=pwrHead, align=center, text width=2.25cm]
+    at ($(psu_src_top)!0.50!(psu_gnd_cor)+(0.68cm,0.12cm)$) {%
+    Fuente Externa\\\qty{12}{\volt} DC\\[3pt]
+    {\normalfont\scriptsize\color{mutedTxt}Capacidad:\\\qty{2}{\ampere}--\qty{5}{\ampere}}%
+};
+
+% ==============================================================================
+% 4. CAJA MCU CENTRAL Y TERMINALES CONECTADOS POR RESTRICCIONES ORTOGONALES
+% ==============================================================================
+\coordinate (mcu_bot_y)   at ($(as2.south)+(0,-0.32cm)$);
+\coordinate (mcu_bot_ref) at (mcu_hdr.south |- mcu_bot_y);
+\node[draw=none, fill=none, inner sep=0pt, fit=(mcu_hdr)(mcu_bot_ref)] (mcu) {};
+
+% Proyección ortogonal de pines hacia bordes de MCU
+\coordinate (mcu_scl1)  at (mcu.east |- as1_scl);
+\coordinate (mcu_3v3)   at (mcu.east |- as1_vcc);
+\coordinate (mcu_sda1)  at (mcu.east |- as1_sda);
+\coordinate (mcu_gnd1)  at (mcu.east |- as1_gnd);
+
+\coordinate (mcu_scl2)  at (mcu.east |- as2_scl);
+\coordinate (mcu_ioref) at (mcu.east |- as2_vcc);
+\coordinate (mcu_sda2)  at (mcu.east |- as2_sda);
+\coordinate (mcu_gnd2)  at (mcu.east |- as2_gnd);
+
+\coordinate (mcu_ena)   at (mcu.west |- l298_ena);
+\coordinate (mcu_in1)   at (mcu.west |- l298_in1);
+\coordinate (mcu_in2)   at (mcu.west |- l298_in2);
+\coordinate (mcu_gnd0)  at (mcu.west |- l298_gnd);
+
+% Etiquetas internas de pines en MCU (Derecha)
+\node[pinlbl, anchor=east, text=wireScl] (mr1a) at ($(mcu_scl1)+(-5pt, 4pt)$)  {PB8 (D15)};
+\node[pinsub, anchor=east]               (mr1b) at ($(mcu_scl1)+(-5pt,-4.5pt)$) {CN5-10};
+
+\node[pinlbl, anchor=east, text=wireVcc] (mr2a) at ($(mcu_3v3)+(-5pt, 4pt)$)   {3V3};
+\node[pinsub, anchor=east]               (mr2b) at ($(mcu_3v3)+(-5pt,-4.5pt)$)  {CN6-4};
+
+\node[pinlbl, anchor=east, text=wireSda] (mr3a) at ($(mcu_sda1)+(-5pt, 4pt)$)  {PB9 (D14)};
+\node[pinsub, anchor=east]               (mr3b) at ($(mcu_sda1)+(-5pt,-4.5pt)$) {CN5-9};
+
+\node[pinlbl, anchor=east, text=wireGnd] (mr4a) at ($(mcu_gnd1)+(-5pt, 4pt)$)  {GND};
+\node[pinsub, anchor=east]               (mr4b) at ($(mcu_gnd1)+(-5pt,-4.5pt)$) {CN5-7};
+
+\node[pinlbl, anchor=east, text=wireScl] (mr5a) at ($(mcu_scl2)+(-5pt, 4pt)$)  {PB10 (D6)};
+\node[pinsub, anchor=east]               (mr5b) at ($(mcu_scl2)+(-5pt,-4.5pt)$) {CN9-7};
+
+\node[pinlbl, anchor=east, text=wireVcc] (mr6a) at ($(mcu_ioref)+(-5pt, 4pt)$) {IOREF 3.3V};
+\node[pinsub, anchor=east]               (mr6b) at ($(mcu_ioref)+(-5pt,-4.5pt)$){CN6-2};
+
+\node[pinlbl, anchor=east, text=wireSda] (mr7a) at ($(mcu_sda2)+(-5pt, 4pt)$)  {PB3 (D3)};
+\node[pinsub, anchor=east]               (mr7b) at ($(mcu_sda2)+(-5pt,-4.5pt)$) {CN9-4};
+
+\node[pinlbl, anchor=east, text=wireGnd] (mr8a) at ($(mcu_gnd2)+(-5pt, 4pt)$)  {GND};
+\node[pinsub, anchor=east]               (mr8b) at ($(mcu_gnd2)+(-5pt,-4.5pt)$) {CN6-6};
+
+% Etiquetas internas de pines en MCU (Izquierda)
+\node[pinlbl, anchor=west, text=wirePwm]  (ml1a) at ($(mcu_ena)+(5pt, 4pt)$)   {PA8 (D7)};
+\node[pinsub, anchor=west]                (ml1b) at ($(mcu_ena)+(5pt,-4.5pt)$)  {TIM1\_CH1 · CN9-8};
+
+\node[pinlbl, anchor=west, text=wireGpio] (ml2a) at ($(mcu_in1)+(5pt, 4pt)$)   {PB4 (D5)};
+\node[pinsub, anchor=west]                (ml2b) at ($(mcu_in1)+(5pt,-4.5pt)$)  {GPIO Out · CN9-6};
+
+\node[pinlbl, anchor=west, text=wireGpio] (ml3a) at ($(mcu_in2)+(5pt, 4pt)$)   {PB5 (D4)};
+\node[pinsub, anchor=west]                (ml3b) at ($(mcu_in2)+(5pt,-4.5pt)$)  {CN9-5 (+PA9/PA10)};
+
+\node[pinlbl, anchor=west, text=wireGnd]  (ml4a) at ($(mcu_gnd0)+(5pt, 4pt)$)  {GND};
+\node[pinsub, anchor=west]                (ml4b) at ($(mcu_gnd0)+(5pt,-4.5pt)$) {CN6-7 (común)};
+
+% Cajas envolventes de columnas de pines para centrar mcu_core sin colisiones
+\node[draw=none, fill=none, inner sep=0pt,
+      fit=(ml1a)(ml1b)(ml2a)(ml2b)(ml3a)(ml3b)(ml4a)(ml4b)] (mcu_lcol) {};
+\node[draw=none, fill=none, inner sep=0pt,
+      fit=(mr1a)(mr1b)(mr2a)(mr2b)(mr3a)(mr3b)(mr4a)(mr4b)(mr5a)(mr5b)(mr6a)(mr6b)(mr7a)(mr7b)(mr8a)(mr8b)] (mcu_rcol) {};
+
+\coordinate (mcu_lmid) at (mcu_lcol.east |- mcu.center);
+\coordinate (mcu_rmid) at (mcu_rcol.west |- mcu.center);
+\node[
+    rectangle, rounded corners=3pt,
+    draw=mcuBorder!45, fill=white, line width=0.75pt,
+    text width=2.25cm, align=center, inner sep=4.5pt,
+    font=\scriptsize
+] (mcu_core) at ($(mcu_lmid)!0.5!(mcu_rmid)$) {%
+    \textbf{\color{mcuHead}Periféricos}\\[3.5pt]
+    \texttt{TIM1\_CH1}\\PWM \qty{20}{\kilo\hertz}\\[4pt]
+    \texttt{I2C1 / I2C2}\\Soft-$\text{I}^2\text{C}$\\$\sim\qty{450}{\kilo\hertz}$\\[4pt]
+    \texttt{USART2}\\DMA1\_S5\\[4pt]
+    \textit{\color{mutedTxt}12 jumpers\\1-a-1 directos}
+};
+
+% ==============================================================================
+% 5. BUSES DERECHOS (I2C1, I2C2) Y BUSES IZQUIERDOS (PWM/GPIO/MASA COMÚN)
+% ==============================================================================
+\node[bushead] at ($(mcu_scl1)!0.50!(as1_scl)+(0,0.42cm)$)
+    {Bus $\text{I}^2\text{C}_1$ (Soft-$\text{I}^2\text{C}$)};
+\node[bushead] at ($(mcu_scl2)!0.50!(as2_scl)+(0,0.42cm)$)
+    {Bus $\text{I}^2\text{C}_2$ (Soft-$\text{I}^2\text{C}$)};
+
+\draw[wireScl, line width=0.95pt, ->]   (mcu_scl1) -- (as1_scl);
+\draw[wireVcc, line width=1.05pt]       (mcu_3v3)  -- (as1_vcc);
+\draw[wireSda, line width=0.95pt, <->]  (mcu_sda1) -- (as1_sda);
+\draw[wireGnd, line width=1.05pt]       (mcu_gnd1) -- (as1_gnd);
+
+\node[wirelbl, text=wireScl, above=2pt] at ($(mcu_scl1)!0.22!(as1_scl)$) {SCL1};
+\node[wirelbl, text=wireVcc, above=2pt] at ($(mcu_3v3)!0.22!(as1_vcc)$)  {\qty{3.3}{\volt}};
+\node[wirelbl, text=wireSda, above=2pt] at ($(mcu_sda1)!0.22!(as1_sda)$) {SDA1};
+\node[wirelbl, text=wireGnd, above=2pt] at ($(mcu_gnd1)!0.22!(as1_gnd)$) {GND};
+
+% Pull-ups I2C1
+\coordinate (pu1_scl_t) at ($(mcu_scl1)!0.54!(as1_scl)$);
+\coordinate (pu1_scl_b) at ($(mcu_3v3)!0.54!(as1_vcc)$);
+\coordinate (pu1_sda_t) at ($(mcu_3v3)!0.82!(as1_vcc)$);
+\coordinate (pu1_sda_b) at ($(mcu_sda1)!0.82!(as1_sda)$);
+\draw[senBorder!85!black, line width=0.75pt]
+    (pu1_scl_t) to[R, resistors/scale=0.40] (pu1_scl_b);
+\draw[senBorder!85!black, line width=0.75pt]
+    (pu1_sda_t) to[R, resistors/scale=0.40] (pu1_sda_b);
+\node[solder, fill=wireScl] at (pu1_scl_t) {};
+\node[solder, fill=wireVcc] at (pu1_scl_b) {};
+\node[solder, fill=wireVcc] at (pu1_sda_t) {};
+\node[solder, fill=wireSda] at (pu1_sda_b) {};
+\node[font=\scriptsize, text=senHead, anchor=west] at ($(pu1_scl_t)!0.5!(pu1_scl_b)+(4pt,0)$) {$R_{\text{pu}}$};
+\node[font=\scriptsize, text=senHead, anchor=east] at ($(pu1_sda_t)!0.5!(pu1_sda_b)+(-4pt,0)$) {$R_{\text{pu}}$};
+\node[font=\scriptsize\itshape, text=mutedTxt, below=6pt] at ($(mcu_gnd1)!0.68!(as1_gnd)$) {Pull-ups int./bus};
+
+% Bus I2C2
+\draw[wireScl, line width=0.95pt, ->]   (mcu_scl2)  -- (as2_scl);
+\draw[wireVcc, line width=1.05pt]       (mcu_ioref) -- (as2_vcc);
+\draw[wireSda, line width=0.95pt, <->]  (mcu_sda2)  -- (as2_sda);
+\draw[wireGnd, line width=1.05pt]       (mcu_gnd2)  -- (as2_gnd);
+
+\node[wirelbl, text=wireScl, above=2pt] at ($(mcu_scl2)!0.22!(as2_scl)$)  {SCL2};
+\node[wirelbl, text=wireVcc, above=2pt] at ($(mcu_ioref)!0.22!(as2_vcc)$) {\qty{3.3}{\volt}};
+\node[wirelbl, text=wireSda, above=2pt] at ($(mcu_sda2)!0.22!(as2_sda)$)  {SDA2};
+\node[wirelbl, text=wireGnd, above=2pt] at ($(mcu_gnd2)!0.22!(as2_gnd)$)  {GND};
+
+% Pull-ups I2C2
+\coordinate (pu2_scl_t) at ($(mcu_scl2)!0.54!(as2_scl)$);
+\coordinate (pu2_scl_b) at ($(mcu_ioref)!0.54!(as2_vcc)$);
+\coordinate (pu2_sda_t) at ($(mcu_ioref)!0.82!(as2_vcc)$);
+\coordinate (pu2_sda_b) at ($(mcu_sda2)!0.82!(as2_sda)$);
+\draw[senBorder!85!black, line width=0.75pt]
+    (pu2_scl_t) to[R, resistors/scale=0.40] (pu2_scl_b);
+\draw[senBorder!85!black, line width=0.75pt]
+    (pu2_sda_t) to[R, resistors/scale=0.40] (pu2_sda_b);
+\node[solder, fill=wireScl] at (pu2_scl_t) {};
+\node[solder, fill=wireVcc] at (pu2_scl_b) {};
+\node[solder, fill=wireVcc] at (pu2_sda_t) {};
+\node[solder, fill=wireSda] at (pu2_sda_b) {};
+\node[font=\scriptsize, text=senHead, anchor=west] at ($(pu2_scl_t)!0.5!(pu2_scl_b)+(4pt,0)$) {$R_{\text{pu}}$};
+\node[font=\scriptsize, text=senHead, anchor=east] at ($(pu2_sda_t)!0.5!(pu2_sda_b)+(-4pt,0)$) {$R_{\text{pu}}$};
+\node[font=\scriptsize\itshape, text=mutedTxt, below=6pt] at ($(mcu_gnd2)!0.68!(as2_gnd)$) {Pull-ups int./bus};
+
+% Buses L298N <-> MCU
+\draw[wirePwm,  line width=1.15pt, ->] (mcu_ena)  -- (l298_ena);
+\draw[wireGpio, line width=0.95pt, ->] (mcu_in1)  -- (l298_in1);
+\draw[wireGpio, line width=0.95pt, ->] (mcu_in2)  -- (l298_in2);
+\draw[wireGnd,  line width=1.15pt]     (mcu_gnd0) -- (l298_gnd);
+
+\node[wirelbl, text=wirePwm,  above=2pt] at ($(mcu_ena)!0.50!(l298_ena)$)  {PWM \qty{20}{\kilo\hertz}};
+\node[wirelbl, text=wireGpio, above=2pt] at ($(mcu_in1)!0.50!(l298_in1)$)  {IN1 (Dir.\ A)};
+\node[wirelbl, text=wireGpio, above=2pt] at ($(mcu_in2)!0.50!(l298_in2)$)  {IN2 (Dir.\ B)};
+\node[wirelbl, text=wireGnd,  above=2pt] at ($(l298_gnd)!0.72!(mcu_gnd0)$) {GND};
+
+% Masa Común (estrella limpia separada de la etiqueta GND)
+\coordinate (gnd_star_top) at ($(l298_gnd)!0.32!(mcu_gnd0)$);
+\coordinate (gnd_psu_tap)  at ($(l298_pgnd)!0.50!(psu_in_gnd)$);
+\coordinate (gnd_star_mid) at (gnd_star_top |- gnd_psu_tap);
+
+\draw[wireGnd, line width=1.15pt] (gnd_star_top) -- (gnd_star_mid) -- (gnd_psu_tap);
+\draw[wireGnd, line width=1.15pt] (gnd_star_mid) -- ++(0,-0.62cm) node[ground] (gnd_sym) {};
+\node[solder, fill=wireGnd] at (gnd_star_top) {};
+\node[solder, fill=wireGnd] at (gnd_psu_tap)  {};
+\node[solder, fill=wireGnd] at (gnd_star_mid) {};
+\node[font=\scriptsize\bfseries, text=wireGnd, align=center, below=2pt]
+    at (gnd_sym.south) {Masa Común\\(GND único)};
+
+% ==============================================================================
+% 6. CORREDOR SUPERIOR: ACOPLE MECÁNICO ROTOR -> AS5600 BASE
+% ==============================================================================
+\coordinate (mech_start) at (motor.north);
+\coordinate (mech_end)   at (as1.north);
+\coordinate (mech_top_l) at ($(mech_start)+(0,0.92cm)$);
+\coordinate (mech_top_r) at ($(mech_end)+(0,0.92cm)$);
+
+\draw[wireMech, line width=1.25pt, densely dashed, ->, rounded corners=4pt]
+    (mech_start) -- (mech_top_l) -- (mech_top_r) -- (mech_end);
+\node[
+    rectangle, rounded corners=2.5pt,
+    draw=wireMech!70, fill=motFill, line width=0.8pt,
+    font=\scriptsize\bfseries, text=wireMech, inner xsep=7pt, inner ysep=2.5pt
+] at ($(mech_top_l)!0.50!(mech_top_r)$)
+    {Acople Mecánico: Eje trasero rotor ($\varnothing\,\qty{2}{\milli\meter}$, 80:1) $\rightarrow$ Imán diametral AS5600 Base ($\theta$)};
+
+% ==============================================================================
+% 7. FILA INFERIOR: INTERFAZ NUCLEO, ST-LINK VCP Y LEYENDA
+% ==============================================================================
+% Bloques inferiores alineados debajo de MCU y columna derecha
+\coordinate (uiblk_nw) at ($(mcu.south west)+(0,-\botGap)$);
+\node[draw=none, fill=none, minimum width=\uiW, minimum height=2.25cm,
+      inner sep=0pt, anchor=north west] (uiblk) at (uiblk_nw) {};
+
+\node[hdrnode=\stW, right=0.55cm of uiblk.north east, anchor=north west] (stlink_hdr) {%
+    {\footnotesize\bfseries ST-LINK VCP / PC MATLAB}%
+};
+\node[align=center, font=\scriptsize, text=telHead!90!black,
+      text width=\dimexpr \stW - 10pt\relax,
+      below=0.22cm of stlink_hdr.south] (stlink_body) {%
+    UART \qty{115200}{bps} (8N1) \,|\, \texttt{USART2} + \texttt{DMA1\_S5}\\[3pt]
+    Telemetría CSV (\qty{100}{\hertz}) $\leftrightarrow$ Comandos CLI/GUI%
+};
+\coordinate (stlink_bot_ref) at (stlink_hdr.north |- uiblk.south);
+\node[draw=none, fill=none, inner sep=0pt, fit=(stlink_hdr)(stlink_body)(stlink_bot_ref)] (stlink) {};
+
+% Interfaz Placa Nucleo: título en barra inferior para que los cables PC13/PA5 no crucen texto
+\node[hdrnode=\uiW, anchor=south west] (uiblk_ftr) at (uiblk.south west) {%
+    {\scriptsize\bfseries Interfaz Placa Nucleo}%
+};
+
+\coordinate (uiblk_b1_top)  at ($(uiblk.north west)!0.30!(uiblk.north east)$);
+\coordinate (uiblk_ld2_top) at ($(uiblk.north west)!0.63!(uiblk.north east)$);
+
+\coordinate (mcu_pc13) at (mcu.south -| uiblk_b1_top);
+\coordinate (mcu_pa5)  at (mcu.south -| uiblk_ld2_top);
+
+\node[pinlbl, text=telBorder, anchor=south] at ($(mcu_pc13)+(0,4pt)$) {PC13};
+\node[pinlbl, text=telBorder, anchor=south] at ($(mcu_pa5)+(0,4pt)$)  {PA5};
+
+\coordinate (b1_s1) at ($(uiblk_b1_top)+(0,-0.25cm)$);
+\coordinate (b1_s2) at ($(uiblk_b1_top)+(0,-1.12cm)$);
+\draw[telBorder, line width=0.95pt, <-] (mcu_pc13) -- (uiblk_b1_top);
+\draw[telBorder, line width=0.85pt]    (uiblk_b1_top) -- (b1_s1)
+    to[push button, switches/scale=0.52] (b1_s2) node[ground, scale=0.55] {};
+\node[font=\scriptsize\bfseries, text=telHead, align=center, anchor=east]
+    at ($(b1_s1)!0.48!(b1_s2)+(-7pt,0)$) {B1\\[-1pt]\normalfont\scriptsize(BTN)};
+
+\coordinate (ld2_s1) at ($(uiblk_ld2_top)+(0,-0.25cm)$);
+\coordinate (ld2_s2) at ($(uiblk_ld2_top)+(0,-1.12cm)$);
+\draw[telBorder, line width=0.95pt, ->] (mcu_pa5) -- (uiblk_ld2_top);
+\draw[telBorder, line width=0.85pt]    (uiblk_ld2_top) -- (ld2_s1)
+    to[leD, diodes/scale=0.50, color=wireSda] (ld2_s2) node[ground, scale=0.55] {};
+\node[font=\scriptsize\bfseries, text=wireSda, align=center, anchor=west]
+    at ($(ld2_s1)!0.48!(ld2_s2)+(14pt,0)$) {LD2\\[-1pt]\normalfont\scriptsize(LED)};
+
+% Pines PA2 / PA3 y cables TX / RX (DMA) con aire holgado respecto a uiblk y stlink
+\coordinate (st_tx)   at ($(stlink.north west)+(0.85cm,0)$);
+\coordinate (st_rx)   at ($(st_tx)+(1.80cm,0)$);
+\coordinate (mcu_pa2) at (mcu.south -| st_tx);
+\coordinate (mcu_pa3) at (mcu.south -| st_rx);
+
+\node[pinlbl, text=wireUart, anchor=south] at ($(mcu_pa2)+(0,4pt)$) {PA2 (TX)};
+\node[pinlbl, text=wireUart, anchor=south] at ($(mcu_pa3)+(0,4pt)$) {PA3 (RX)};
+
+\draw[wireUart, line width=1.0pt, ->] (mcu_pa2) -- (st_tx);
+\draw[wireUart, line width=1.0pt, <-] (mcu_pa3) -- (st_rx);
+\node[wirelbl, text=wireUart, anchor=east] at ($(mcu_pa2)!0.50!(st_tx)+(-4pt,0)$) {TX};
+\node[wirelbl, text=wireUart, anchor=west] at ($(mcu_pa3)!0.50!(st_rx)+( 4pt,0)$) {RX (DMA)};
+
+% Leyenda de Buses y Señales (2 columnas construidas con positioning + fit: 0 solapes)
+\coordinate (lg_origin) at (as2.west |- uiblk.north);
+\coordinate (lg_top_e)  at (as2.east |- uiblk.north);
+\node[font=\scriptsize\bfseries, text=black!85, anchor=north]
+    (lg_title) at ($(lg_origin)!0.5!(lg_top_e)+(0,-0.12cm)$) {Convención de Buses y Señales};
+
+% Columna 1 de la leyenda
+\coordinate (lg_c1_r1) at ($(lg_origin)+(0.36cm,-0.62cm)$);
+\draw[wirePwr, line width=1.3pt] (lg_c1_r1) -- ++(0.42cm,0) coordinate (lg_c1_e1);
+\node[right=4pt, font=\scriptsize, text=black!85] (lg_t1) at (lg_c1_e1) {Potencia \qty{12}{\volt} DC};
+
+\coordinate (lg_c1_r2) at ($(lg_c1_r1)+(0,-0.36cm)$);
+\draw[wireVcc, line width=1.05pt] (lg_c1_r2) -- ++(0.42cm,0) coordinate (lg_c1_e2);
+\node[right=4pt, font=\scriptsize, text=black!85] (lg_t2) at (lg_c1_e2) {Riel lógico \qty{3.3}{\volt}};
+
+\coordinate (lg_c1_r3) at ($(lg_c1_r2)+(0,-0.36cm)$);
+\draw[wireGnd, line width=1.15pt] (lg_c1_r3) -- ++(0.42cm,0) coordinate (lg_c1_e3);
+\node[right=4pt, font=\scriptsize, text=black!85] (lg_t3) at (lg_c1_e3) {Masa común (GND)};
+
+\coordinate (lg_c1_r4) at ($(lg_c1_r3)+(0,-0.36cm)$);
+\draw[wireMech, line width=1.15pt, densely dashed, ->] (lg_c1_r4) -- ++(0.42cm,0) coordinate (lg_c1_e4);
+\node[right=4pt, font=\scriptsize, text=black!85] (lg_t4) at (lg_c1_e4) {Acople eje};
+
+\node[draw=none, fill=none, inner sep=0pt, fit=(lg_c1_r1)(lg_t1)(lg_t2)(lg_t3)(lg_t4)] (lg_col1) {};
+
+% Columna 2 de la leyenda colocada dinámicamente a la derecha de lg_col1
+\coordinate (lg_c2_anchor) at (lg_col1.east |- lg_c1_r1);
+\coordinate (lg_c2_r1) at ($(lg_c2_anchor)+(0.46cm,0)$);
+\draw[wirePwm, line width=1.15pt, ->] (lg_c2_r1) -- ++(0.42cm,0) coordinate (lg_c2_e1);
+\node[right=4pt, font=\scriptsize, text=black!85] (lg_t5) at (lg_c2_e1) {PWM \qty{20}{\kilo\hertz}};
+
+\coordinate (lg_c2_r2) at ($(lg_c2_r1)+(0,-0.36cm)$);
+\draw[wireGpio, line width=0.95pt, ->] (lg_c2_r2) -- ++(0.42cm,0) coordinate (lg_c2_e2);
+\node[right=4pt, font=\scriptsize, text=black!85] (lg_t6) at (lg_c2_e2) {GPIO / Control};
+
+\coordinate (lg_c2_r3) at ($(lg_c2_r2)+(0,-0.36cm)$);
+\draw[wireScl, line width=0.95pt, <->] (lg_c2_r3) -- ++(0.42cm,0) coordinate (lg_c2_e3);
+\node[right=4pt, font=\scriptsize, text=black!85] (lg_t7) at (lg_c2_e3) {Soft-$\text{I}^2\text{C}$};
+
+\coordinate (lg_c2_r4) at ($(lg_c2_r3)+(0,-0.36cm)$);
+\draw[wireUart, line width=1.0pt, <->] (lg_c2_r4) -- ++(0.42cm,0) coordinate (lg_c2_e4);
+\node[right=4pt, font=\scriptsize, text=black!85] (lg_t8) at (lg_c2_e4) {UART / Interfaz};
+
+\node[draw=none, fill=none, inner sep=0pt, fit=(lg_c2_r1)(lg_t5)(lg_t6)(lg_t7)(lg_t8)] (lg_col2) {};
+\coordinate (lg_se_pad) at ($(lg_col2.south east)+(0.26cm,-0.20cm)$);
+\coordinate (lg_bot_ref) at (as2.east |- uiblk.south);
+\node[draw=none, fill=none, inner sep=0pt, fit=(lg_origin)(lg_title)(lg_col1)(lg_col2)(lg_se_pad)(lg_bot_ref)] (legend) {};
+
+% ==============================================================================
+% 8. CAPA DE FONDO Y MARCOS (dibujados por ajuste exacto tras resolver geometría)
+% ==============================================================================
+\begin{scope}[on background layer]
+    % MCU
+    \path[fill=mcuFill, rounded corners=4pt] (mcu.north west) rectangle (mcu.south east);
+    \coordinate (mcu_hb_w) at (mcu.west |- mcu_hdr.south);
+    \coordinate (mcu_hb_e) at (mcu.east |- mcu_hdr.south);
+    \fill[mcuHead, rounded corners=4pt] (mcu.north west) rectangle (mcu_hb_e);
+    \fill[mcuHead] ($(mcu_hb_w)+(0,5pt)$) rectangle (mcu_hb_e);
+    \draw[mcuBorder, rounded corners=4pt, line width=1.4pt] (mcu.north west) rectangle (mcu.south east);
+
+    % Sensores AS5600 1 y 2
+    \foreach \s in {as1, as2} {
+        \path[fill=senFill, rounded corners=3.5pt] (\s.north west) rectangle (\s.south east);
+        \coordinate (\s_hb_w) at (\s.west |- \s_hdr.south);
+        \coordinate (\s_hb_e) at (\s.east |- \s_hdr.south);
+        \fill[senHead, rounded corners=3.5pt] (\s.north west) rectangle (\s_hb_e);
+        \fill[senHead] ($(\s_hb_w)+(0,5pt)$) rectangle (\s_hb_e);
+        \draw[senBorder, rounded corners=3.5pt, line width=1.2pt] (\s.north west) rectangle (\s.south east);
+    }
+
+    % Motor Namiki
+    \path[fill=motFill, rounded corners=3.5pt] (motor.north west) rectangle (motor.south east);
+    \coordinate (mot_hb_w) at (motor.west |- motor_hdr.south);
+    \coordinate (mot_hb_e) at (motor.east |- motor_hdr.south);
+    \fill[motHead, rounded corners=3.5pt] (motor.north west) rectangle (mot_hb_e);
+    \fill[motHead] ($(mot_hb_w)+(0,5pt)$) rectangle (mot_hb_e);
+    \draw[motBorder, rounded corners=3.5pt, line width=1.2pt] (motor.north west) rectangle (motor.south east);
+
+    % Driver L298N
+    \path[fill=pwrFill, rounded corners=3.5pt] (l298n.north west) rectangle (l298n.south east);
+    \coordinate (l298_hb_w) at (l298n.west |- l298_hdr.south);
+    \coordinate (l298_hb_e) at (l298n.east |- l298_hdr.south);
+    \fill[pwrHead, rounded corners=3.5pt] (l298n.north west) rectangle (l298_hb_e);
+    \fill[pwrHead] ($(l298_hb_w)+(0,5pt)$) rectangle (l298_hb_e);
+    \draw[pwrBorder, rounded corners=3.5pt, line width=1.2pt] (l298n.north west) rectangle (l298n.south east);
+
+    % Fuente 12V DC
+    \path[fill=pwrFill!65!white, rounded corners=3.5pt] (psu.north west) rectangle (psu.south east);
+    \draw[pwrBorder, dashed, rounded corners=3.5pt, line width=1.0pt] (psu.north west) rectangle (psu.south east);
+
+    % Interfaz Placa Nucleo (banda inferior oscura para aislar el texto de los cables)
+    \path[fill=telFill!60!white, rounded corners=3.5pt] (uiblk.north west) rectangle (uiblk.south east);
+    \coordinate (ui_ft_w) at (uiblk.west |- uiblk_ftr.north);
+    \coordinate (ui_ft_e) at (uiblk.east |- uiblk_ftr.north);
+    \fill[telHead!88!black, rounded corners=3.5pt] (ui_ft_w) rectangle (uiblk.south east);
+    \fill[telHead!88!black] (ui_ft_w) rectangle ($(ui_ft_e)+(0,-5pt)$);
+    \draw[telBorder!80!black, rounded corners=3.5pt, line width=0.95pt] (uiblk.north west) rectangle (uiblk.south east);
+
+    % ST-LINK VCP / PC MATLAB
+    \path[fill=telFill, rounded corners=3.5pt] (stlink.north west) rectangle (stlink.south east);
+    \coordinate (st_hb_w) at (stlink.west |- stlink_hdr.south);
+    \coordinate (st_hb_e) at (stlink.east |- stlink_hdr.south);
+    \fill[telHead, rounded corners=3.5pt] (stlink.north west) rectangle (st_hb_e);
+    \fill[telHead] ($(st_hb_w)+(0,5pt)$) rectangle (st_hb_e);
+    \draw[telBorder, rounded corners=3.5pt, line width=1.1pt] (stlink.north west) rectangle (stlink.south east);
+
+    % Leyenda
+    \path[fill=gray!5, rounded corners=3pt] (legend.north west) rectangle (legend.south east);
+    \draw[gray!65, rounded corners=3pt, line width=0.8pt] (legend.north west) rectangle (legend.south east);
+\end{scope}
+
+% Puertos de conexión circulares sobre los bordes (capa principal)
+\foreach \p in {
+    mcu_scl1, mcu_3v3, mcu_sda1, mcu_gnd1, as1_scl, as1_vcc, as1_sda, as1_gnd,
+    mcu_scl2, mcu_ioref, mcu_sda2, mcu_gnd2, as2_scl, as2_vcc, as2_sda, as2_gnd,
+    mot_out1, mot_out2, l298_out1, l298_out2, l298_vms, l298_pgnd, psu_in_vms, psu_in_gnd,
+    l298_ena, l298_in1, l298_in2, l298_gnd, mcu_ena, mcu_in1, mcu_in2, mcu_gnd0,
+    mcu_pc13, mcu_pa5, mcu_pa2, mcu_pa3, uiblk_b1_top, uiblk_ld2_top, st_tx, st_rx} {
+    \node[pinport] at (\p) {};
+}
+
+\end{circuitikz}%
+}%
+\caption{Diagrama esquemático electrónico e interconexión pin a pin en la STM32 Nucleo-F446RE (12 conexiones sin protoboard): puente H L298N (\texttt{PA8} PWM \qty{20}{\kilo\hertz}, \texttt{PB4}/\texttt{PB5} con espejos \texttt{PA9}/\texttt{PA10} en \texttt{IN2}), doble bus Soft-$\text{I}^2\text{C}$ ($\sim\qty{450}{\kilo\hertz}$) para encoders AS5600 (\texttt{0x36}) y telemetría \texttt{USART2}/\texttt{DMA1\_S5}.}
+\label{fig:esquematico_electronico}
+\end{figure*}

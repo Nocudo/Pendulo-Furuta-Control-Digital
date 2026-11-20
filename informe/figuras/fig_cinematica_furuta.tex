@@ -1,0 +1,483 @@
+\begin{figure*}[!t]
+\centering
+% Paleta cromatica armonica de ingenieria (local a la figura)
+\definecolor{furutaBlue}{HTML}{1557B0}
+\definecolor{furutaOrange}{HTML}{D95F02}
+\definecolor{furutaGreen}{HTML}{0D8A47}
+\definecolor{furutaSlate}{HTML}{2C3E50}
+\definecolor{furutaMuted}{HTML}{64748B}
+\definecolor{furutaCardBg}{HTML}{F8FAFC}
+\definecolor{furutaTableBg}{HTML}{EBF0F5}
+%
+\resizebox{0.84\textwidth}{!}{%
+\begin{tikzpicture}[
+    >=Stealth,
+    line cap=round,
+    line join=round,
+    font=\small,
+    % Estilos semanticos unificados
+    axis0/.style={->, >=Stealth, thick, furutaSlate},
+    axis1/.style={->, >=Stealth, semithick, furutaGreen!85!black},
+    dimline/.style={<->, >={Stealth[length=4.5pt, width=3.2pt]}, thin, furutaSlate!85},
+    dimext/.style={thin, furutaSlate!50},
+    dimlbl/.style={font=\scriptsize, text=furutaSlate, fill=white, inner sep=1.8pt},
+    refline/.style={dashed, semithick, furutaMuted},
+    callout/.style={
+        rectangle, rounded corners=2.5pt, draw=#1!75, fill=#1!7,
+        line width=0.55pt, inner sep=3.2pt, align=left, font=\scriptsize,
+        text=furutaSlate
+    },
+    leader/.style={-{Stealth[length=4pt, width=2.8pt]}, thin, #1!85}
+]
+    % =========================================================================
+    % 1. PARAMETROS MAESTROS DE PROYECCION 3D ORTOGRAFICA (Layout by Construction)
+    %    Camara: azimut phi_c = 22 deg, elevacion psi_c = 16 deg, brazo theta = 68 deg
+    % =========================================================================
+    % Base inercial F0 = {X0, Y0, Z0}
+    \def\Xx{-0.3746}\def\Xy{-0.2556}
+    \def\Yx{0.9272}\def\Yy{-0.1033}
+    \def\Zx{0.0000}\def\Zy{0.9613}
+    % Marco rotativo distal F1 = {X1 (radial brazo), Y1 (plano pendulo), Z1}
+    \def\Xr{0.7193}\def\Yr{-0.1915}
+    \def\Xt{0.6947}\def\Yt{0.1983}
+    % Dimensiones cinematicas parametrizadas
+    \def\Htower{3.70}       % H = 160 mm
+    \def\Zpiv{4.23}         % Z_piv = 182.8 mm
+    \def\Zhub{3.88}         % Centro del cubo del brazo horizontal
+    \def\Lzero{5.40}        % L0 = 88.5 mm (esquematico claro)
+    \def\Lone{3.53}         % L1 = 155 mm (despeje 30 mm sobre Z=0)
+    \def\loneFrac{0.58}     % Posicion relativa del centro de masa l1
+    \def\alphaDeg{130}      % Posicion inclinada superior (cerca de 180 deg)
+    % Semianchos estructurales de torre y pedestal
+    \def\towerR{0.54}
+    \def\baseR{1.00}
+    \def\pedH{0.14}
+    \def\slabH{0.20}
+
+    % =========================================================================
+    % 2. COORDENADAS ANCLA DERIVADAS POR CONSTRUCCION DESDE (O0)
+    % =========================================================================
+    \coordinate (O0)       at (0, 0);
+    \coordinate (TowerBot) at ($(O0) + (0, \pedH)$);
+    \coordinate (Otop)     at ($(O0) + ({\Htower*\Zx}, {\Htower*\Zy})$);
+    \coordinate (Ohub)     at ($(O0) + ({\Zhub*\Zx},   {\Zhub*\Zy})$);
+    \coordinate (OpivAxis) at ($(O0) + ({\Zpiv*\Zx},   {\Zpiv*\Zy})$);
+    \coordinate (TauCenter) at ($(OpivAxis) + ({\Zx*1.12}, {\Zy*1.12})$);
+    \coordinate (Z0top)     at ($(TauCenter) + ({\Zx*0.86}, {\Zy*0.86})$);
+
+    % Articulacion distal F1 y proyecciones verticales
+    \coordinate (Ppiv)    at ($(OpivAxis) + ({\Lzero*\Xr}, {\Lzero*\Yr})$);
+    \coordinate (Pfloor)  at ($(O0)       + ({\Lzero*\Xr}, {\Lzero*\Yr})$);
+    \coordinate (Pdown)   at ($(Ppiv)     - ({\Lone*\Zx},  {\Lone*\Zy})$);
+    \coordinate (Pup)     at ($(Ppiv)     + ({\Lone*\Zx},  {\Lone*\Zy})$);
+    \coordinate (PcmDown) at ($(Ppiv)     - ({\loneFrac*\Lone*\Zx}, {\loneFrac*\Lone*\Zy})$);
+
+    % Pendulo inclinado (plano Y1-Z1): p(a) = sin(a)*Y1 - cos(a)*Z1
+    \pgfmathsetmacro{\uxP}{sin(\alphaDeg)*\Xt - cos(\alphaDeg)*\Zx}
+    \pgfmathsetmacro{\uyP}{sin(\alphaDeg)*\Yt - cos(\alphaDeg)*\Zy}
+    \pgfmathsetmacro{\plen}{sqrt(\uxP*\uxP + \uyP*\uyP)}
+    % Vector unitario perpendicular hacia la derecha del pendulo inclinado (para cotas)
+    \pgfmathsetmacro{\nxP}{\uyP/\plen}
+    \pgfmathsetmacro{\nyP}{-\uxP/\plen}
+
+    \coordinate (Pcm)  at ($(Ppiv) + ({\loneFrac*\Lone*\uxP}, {\loneFrac*\Lone*\uyP})$);
+    \coordinate (Ptip) at ($(Ppiv) + ({\Lone*\uxP},           {\Lone*\uyP})$);
+
+    % =========================================================================
+    % 3. MESA DE TRABAJO SOMBREADA (PLANO Z = 0)
+    % =========================================================================
+    % Extensiones calculadas por construccion para albergar X0 y cota Despeje sin cruces
+    \coordinate (Tfl) at ($(O0) + ({3.45*\Xx - 1.65*\Yx}, {3.45*\Xy - 1.65*\Yy})$);
+    \coordinate (Tfr) at ($(O0) + ({3.45*\Xx + 6.75*\Yx}, {3.45*\Xy + 6.75*\Yy})$);
+    \coordinate (Tbr) at ($(O0) + ({-1.85*\Xx + 6.75*\Yx}, {-1.85*\Xy + 6.75*\Yy})$);
+    \coordinate (Tbl) at ($(O0) + ({-1.85*\Xx - 1.65*\Yx}, {-1.85*\Xy - 1.65*\Yy})$);
+    \coordinate (TflBot) at ($(Tfl) + (0, -\slabH)$);
+    \coordinate (TfrBot) at ($(Tfr) + (0, -\slabH)$);
+    \coordinate (TbrBot) at ($(Tbr) + (0, -\slabH)$);
+
+    % Espesor frontal y lateral de la mesa
+    \fill[furutaSlate!18, draw=furutaSlate!55, line width=0.5pt]
+        (Tfl) -- (Tfr) -- (TfrBot) -- (TflBot) -- cycle;
+    \fill[furutaSlate!28, draw=furutaSlate!55, line width=0.5pt]
+        (Tfr) -- (Tbr) -- (TbrBot) -- (TfrBot) -- cycle;
+    % Superficie superior de la mesa
+    \fill[furutaTableBg, draw=furutaSlate!65, line width=0.65pt]
+        (Tfl) -- (Tfr) -- (Tbr) -- (Tbl) -- cycle;
+
+    % Achurado de tierra bajo el borde frontal (construido desde TflBot--TfrBot)
+    \begin{scope}
+        \clip (TflBot) -- (TfrBot) --
+              ($(TfrBot)+(0, -0.22)$) -- ($(TflBot)+(0, -0.22)$) -- cycle;
+        \foreach \t in {-0.04,-0.005,...,1.04} {
+            \coordinate (Hpt) at ($(TflBot)!\t!(TfrBot)$);
+            \draw[furutaSlate!40, very thin] (Hpt) -- ++(-0.18, -0.26);
+        }
+    \end{scope}
+
+    % Etiqueta de la mesa en esquina inferior derecha bajo TfrBot, lejos de X0
+    \node[anchor=north east, font=\scriptsize\itshape, text=furutaSlate!85]
+        at ($(TfrBot) + (-0.15, -0.26)$) {Mesa de trabajo ($Z = \qty{0}{\milli\meter}$)};
+
+    % Proyeccion sobre la mesa bajo el pivote distal
+    \draw[furutaSlate!35, densely dotted, semithick] (O0) -- (Pfloor);
+    \fill[furutaSlate!18] (Pfloor) ellipse (0.28cm and 0.10cm);
+    \draw[furutaSlate!55, thin] ($(Pfloor)+(-0.14,0)$) -- ($(Pfloor)+(0.14,0)$);
+    \draw[furutaSlate!55, thin] ($(Pfloor)+(0,-0.07)$) -- ($(Pfloor)+(0,0.07)$);
+
+    % =========================================================================
+    % 4. TORRE SOPORTE (H = 160 mm) CON CORTE ESQUEMATICO: MOTOR NAMIKI + AS5600
+    % =========================================================================
+    % Placa base pedestal en Z = 0
+    \coordinate (Bfl) at ($(O0) + ({0.88*\Xx - 0.85*\Yx}, {0.88*\Xy - 0.85*\Yy})$);
+    \coordinate (Bfr) at ($(O0) + ({0.88*\Xx + 0.85*\Yx}, {0.88*\Xy + 0.85*\Yy})$);
+    \coordinate (Bbr) at ($(O0) + ({-0.88*\Xx + 0.85*\Yx}, {-0.88*\Xy + 0.85*\Yy})$);
+    \coordinate (Bbl) at ($(O0) + ({-0.88*\Xx - 0.85*\Yx}, {-0.88*\Xy - 0.85*\Yy})$);
+
+    \fill[furutaSlate!28, draw=furutaSlate, line width=0.7pt]
+        (Bfl) -- (Bfr) -- (Bbr) -- (Bbl) -- cycle;
+    \fill[furutaSlate!42, draw=furutaSlate, line width=0.6pt]
+        (Bfl) -- (Bfr) -- ($(Bfr)+(0,\pedH)$) -- ($(Bfl)+(0,\pedH)$) -- cycle;
+
+    % Aletas triangulares de refuerzo laterales
+    \fill[furutaSlate!32, draw=furutaSlate, line width=0.65pt]
+        ($(TowerBot)+(-\towerR, 0)$) -- ($(TowerBot)+(-\baseR, 0)$) -- ($(TowerBot)+(-\towerR, 1.21)$) -- cycle;
+    \fill[furutaSlate!32, draw=furutaSlate, line width=0.65pt]
+        ($(TowerBot)+(\towerR, 0)$)  -- ($(TowerBot)+(\baseR, 0)$)  -- ($(TowerBot)+(\towerR, 1.21)$)  -- cycle;
+
+    % Estructura exterior de la torre (corte frontal)
+    \fill[furutaSlate!12, draw=furutaSlate, line width=0.8pt]
+        ($(TowerBot)+(-\towerR, 0)$) rectangle ($(Otop)+(\towerR, -0.14)$);
+    % Columnas laterales gruesas
+    \fill[furutaSlate!35, draw=furutaSlate, line width=0.65pt]
+        ($(TowerBot)+(-\towerR, 0)$) rectangle ($(Otop)+({-\towerR+0.13}, -0.14)$);
+    \fill[furutaSlate!35, draw=furutaSlate, line width=0.65pt]
+        ($(TowerBot)+({\towerR-0.13}, 0)$) rectangle ($(Otop)+(\towerR, -0.14)$);
+    % Cavidad interior limpia
+    \fill[white]
+        ($(TowerBot)+({-\towerR+0.14}, 0.41)$) rectangle ($(Otop)+({\towerR-0.14}, -0.18)$);
+
+    % Placa superior de la torre (tapa a Z = H = 160 mm)
+    \node[
+        draw=furutaSlate, fill=furutaSlate!48, line width=0.8pt,
+        minimum width=1.24cm, minimum height=0.16cm, inner sep=0pt,
+        anchor=north
+    ] (TopPlate) at (Otop) {};
+
+    % Subsistemas internos apilados por construccion desde TopPlate.south
+    \node[
+        draw=furutaBlue!90!black, fill=furutaBlue!22, line width=0.65pt,
+        minimum width=0.54cm, minimum height=0.54cm, inner sep=0pt,
+        anchor=north
+    ] (Gearbox) at ($(TopPlate.south) + (0, -0.02)$) {};
+
+    \node[
+        draw=furutaBlue!90!black, fill=furutaBlue!38, line width=0.7pt,
+        minimum width=0.54cm, minimum height=0.96cm, inner sep=0pt,
+        anchor=north
+    ] (MotorBody) at (Gearbox.south) {};
+
+    \node[fit=(Gearbox)(MotorBody), inner sep=0pt] (MotorGroup) {};
+
+    \node[
+        draw=furutaSlate, fill=furutaSlate!55, thin,
+        minimum width=0.11cm, minimum height=0.30cm, inner sep=0pt,
+        anchor=north
+    ] (MotorShaft) at (MotorBody.south) {};
+
+    \node[
+        draw=furutaSlate, fill=furutaOrange!70, thin,
+        minimum width=0.22cm, minimum height=0.11cm, inner sep=0pt,
+        anchor=north
+    ] (Coupler) at ($(MotorShaft.south) + (0, 0.04)$) {};
+
+    \node[
+        draw=furutaGreen!85!black, fill=furutaGreen!30, line width=0.7pt, rounded corners=1pt,
+        minimum width=0.60cm, minimum height=0.25cm, inner sep=0pt,
+        anchor=north
+    ] (EncBasePCB) at ($(Coupler.south) + (0, -0.05)$) {};
+
+    % =========================================================================
+    % 5. SISTEMA DE REFERENCIA INERCIAL BASE F0 = {X0, Y0, Z0}
+    % =========================================================================
+    \draw[furutaSlate!55, dash pattern=on 4pt off 2pt on 1pt off 2pt, semithick]
+        (O0) -- (Otop);
+    \draw[axis0] (Ohub) -- (Z0top)
+        node[above, font=\small\bfseries, text=furutaSlate] {$Z_0$};
+    % Eje X0 completamente dentro de la superficie despejada de la mesa
+    \draw[axis0] (O0) -- ++({1.85*\Xx}, {1.85*\Xy})
+        node[below left=-2pt and 0pt, font=\small\bfseries, text=furutaSlate] {$X_0$};
+    % Eje Y0
+    \draw[axis0] (O0) -- ++({2.15*\Yx}, {2.15*\Yy})
+        node[right=1pt, font=\small\bfseries, text=furutaSlate] {$Y_0$};
+    % Origen O0 y etiqueta F0 despejada sobre el tablero frente al pedestal
+    \fill[furutaSlate] (O0) circle (1.6pt);
+    \coordinate (F0anchor) at ($(O0) + ({1.32*\Xx - 0.36*\Yx}, {1.32*\Xy - 0.36*\Yy})$);
+    \node[anchor=east, font=\footnotesize\bfseries, text=furutaSlate]
+        at (F0anchor) {$\mathcal{F}_0$};
+
+    % =========================================================================
+    % 6. EJE MOTRIZ VERTICAL, ROTACION theta(t) Y PAR MOTOR tau_0
+    % =========================================================================
+    \fill[furutaSlate!30, draw=furutaSlate, line width=0.65pt]
+        ($(Otop) + (-0.085, 0)$) rectangle ($(Ohub) + (0.085, 0.10)$);
+
+    % Linea auxiliar paralela a X0 elevada al nivel del cubo
+    \draw[furutaBlue!65, dashed, thin]
+        (Ohub) -- ++({1.95*\Xx}, {1.95*\Xy})
+        coordinate (X0lift);
+    \node[anchor=north east, font=\scriptsize, text=furutaBlue!85!black]
+        at ($(X0lift) + (0.08, 0.04)$) {$X_0'$};
+
+    % Arco 3D exacto del angulo theta(t) anclado en (Ohub)
+    \def\rTheta{1.35}
+    \begin{scope}[shift={(Ohub)}]
+        \draw[->, >={Stealth[length=4.5pt, width=3.2pt]}, thick, furutaBlue]
+            plot[domain=4:65, samples=30, smooth]
+            ({ \rTheta*(cos(\x)*\Xx + sin(\x)*\Yx) },
+             { \rTheta*(cos(\x)*\Xy + sin(\x)*\Yy) });
+    \end{scope}
+    \node[font=\footnotesize\bfseries, text=furutaBlue, fill=white, rounded corners=1pt, inner sep=1pt]
+        at ($(Ohub) + ({1.58*(cos(32)*\Xx + sin(32)*\Yx)}, {1.58*(cos(32)*\Xy + sin(32)*\Yy) - 0.08})$)
+        {$\theta(t)$};
+
+    % Flecha curva de par motor tau_0 anclada en (TauCenter) por encima de la cota L0
+    \def\rTau{0.58}
+    \begin{scope}[shift={(TauCenter)}]
+        \draw[->, >={Stealth[length=5pt, width=3.5pt]}, very thick, furutaBlue]
+            plot[domain=-25:210, samples=36, smooth]
+            ({ \rTau*(cos(\x)*\Xx + sin(\x)*\Yx) },
+             { \rTau*(cos(\x)*\Xy + sin(\x)*\Yy) });
+    \end{scope}
+    \node[anchor=south east, font=\footnotesize\bfseries, text=furutaBlue]
+        at ($(TauCenter) + (-0.52, 0.12)$) {$\tau_0$};
+
+    % =========================================================================
+    % 7. BRAZO HORIZONTAL MONOLITICO (L0 = 88.5 mm) Y CAJA DISTAL
+    % =========================================================================
+    \coordinate (ArmEnd) at ($(Ohub) + ({(\Lzero-0.42)*\Xr}, {(\Lzero-0.42)*\Yr})$);
+    % Cubo central sobre eje motriz
+    \node[
+        draw=furutaBlue!90!black, fill=furutaBlue!28, line width=0.8pt,
+        rounded corners=1.5pt, minimum width=0.52cm, minimum height=0.27cm, inner sep=0pt
+    ] (ArmHub) at (Ohub) {};
+    % Cuerpo monolitico del brazo
+    \fill[furutaBlue!24, draw=furutaBlue!90!black, line width=0.85pt]
+        ($(Ohub)+(0, -0.10)$) -- ($(ArmEnd)+(0, -0.10)$) --
+        ($(ArmEnd)+(0, 0.11)$) -- ($(Ohub)+(0, 0.11)$) -- cycle;
+    % Linea central del brazo hasta el pivote
+    \draw[furutaBlue!80!black, dash pattern=on 3pt off 2pt, thin]
+        (OpivAxis) -- (Ppiv);
+
+    % Caja distal monolitica (alberga rodamiento 608ZZ a Z_piv = 182.8 mm)
+    \coordinate (HousBL) at ($(Ppiv) + (-0.34, -0.44)$);
+    \coordinate (HousTR) at ($(Ppiv) + (0.34,  0.38)$);
+    \fill[furutaBlue!18, draw=furutaBlue!90!black, line width=0.85pt, rounded corners=2pt]
+        (HousBL) rectangle (HousTR);
+    \node[fit=(HousBL)(HousTR), inner sep=0pt] (DistalHousing) {};
+    % PCB AS5600 Distal (I2C2)
+    \fill[furutaGreen!35, draw=furutaGreen!85!black, line width=0.65pt]
+        ($(Ppiv)+(-0.34, -0.26)$) rectangle ($(Ppiv)+(-0.20, 0.26)$);
+    % Rodamiento 608ZZ concentrico en Ppiv
+    \fill[furutaSlate!28, draw=furutaSlate, line width=0.7pt] (Ppiv) circle (0.23cm);
+    \fill[white, draw=furutaSlate!80, line width=0.55pt] (Ppiv) circle (0.12cm);
+    \fill[furutaOrange] (Ppiv) circle (0.045cm);
+
+    % =========================================================================
+    % 8. MARCO LOCAL DISTAL F1 = {X1, Y1, Z1}
+    % =========================================================================
+    \draw[axis1] (Ppiv) -- ++({0.98*\Xr}, {0.98*\Yr})
+        node[above right=-2pt and 0pt, font=\scriptsize\bfseries, text=furutaGreen!85!black] {$X_1$};
+    \draw[axis1] (Ppiv) -- ++({1.15*\Xt}, {1.15*\Yt})
+        node[right=-1pt, font=\scriptsize\bfseries, text=furutaGreen!85!black] {$Y_1$};
+    \draw[axis1] (Ppiv) -- ++(0, 1.05)
+        node[left=1pt, font=\scriptsize\bfseries, text=furutaGreen!85!black] {$Z_1$};
+
+    % Cuadradito de perpendicularidad 3D entre brazo (X1) y plano pendulo (Y1)
+    \draw[furutaGreen!75!black, very thin]
+        ($(Ppiv) + ({0.36*\Xr}, {0.36*\Yr})$) --
+        ($(Ppiv) + ({0.36*\Xr + 0.36*\Xt}, {0.36*\Yr + 0.36*\Yt})$) --
+        ($(Ppiv) + ({0.36*\Xt}, {0.36*\Yt})$);
+
+    % =========================================================================
+    % 9. REFERENCIAS VERTICALES (alpha = 180 deg Y alpha = 0 deg COLGADO)
+    % =========================================================================
+    % Linea punteada de referencia vertical superior (equilibrio invertido)
+    \draw[refline] ($(Ppiv)+(0, 1.05)$) -- (Pup);
+    \draw[furutaMuted, fill=white, line width=0.7pt] (Pup) circle (2.2pt);
+    \node[anchor=south, align=center, font=\scriptsize, text=furutaSlate]
+        at ($(Pup) + (0, 0.12)$)
+        {\textbf{$\alpha = \qty{180}{\degree}$} ($\pi$)\\[-1pt]{\scriptsize\color{furutaMuted}Equilibrio invertido}};
+
+    % Linea punteada + silueta fantasma del pendulo colgado (alpha = 0 deg)
+    \draw[refline] (Ppiv) -- (Pfloor);
+    \draw[furutaOrange!45, dashed, line width=2.4pt] ($(Ppiv)+(0, -0.25)$) -- (Pdown);
+    \draw[furutaOrange!55, dashed, fill=furutaOrange!8, semithick]
+        (PcmDown) circle (0.14cm);
+    \fill[furutaOrange!55] (Pdown) circle (1.8pt);
+
+    % Etiqueta posicion colgada, despejada a la izquierda de la varilla fantasma y sobre el borde trasero
+    \node[anchor=east, align=right, font=\scriptsize, text=furutaSlate]
+        at ($(PcmDown)!0.30!(Pdown) + (-0.24, 0)$)
+        {\textbf{$\alpha = \qty{0}{\degree}$}\\[-1pt]{\scriptsize\color{furutaMuted}(colgado)}};
+
+    % Cota de despeje de 30 mm sobre la mesa
+    \draw[dimext] (Pdown)  -- ++(0.58, 0);
+    \draw[dimext] (Pfloor) -- ++(0.58, 0);
+    \draw[dimline] ($(Pdown)+(0.42, 0)$) -- ($(Pfloor)+(0.42, 0)$);
+    \node[anchor=west, font=\scriptsize, text=furutaSlate, align=left]
+        at ($(Pdown)!0.5!(Pfloor) + (0.52, 0)$)
+        {Despeje\\[-1pt]\textbf{\qty{30}{\milli\meter}}};
+
+    % =========================================================================
+    % 10. BARRA ACTIVA DEL PENDULO (L1 = 155 mm), CM (m1, J1) Y ANGULOS
+    % =========================================================================
+    % Cotas paralelas a lo largo de la barra (dibujadas primero para orden visual limpio)
+    \def\dLone{0.46}
+    \def\dLtot{1.08}
+    \coordinate (L1TipExt) at ($(Ptip) + ({(\dLtot + 0.12)*\nxP}, {(\dLtot + 0.12)*\nyP})$);
+    \draw[dimext] ($(Ppiv) + ({0.26*\nxP}, {0.26*\nyP})$) -- ($(Ppiv) + ({(\dLtot + 0.12)*\nxP}, {(\dLtot + 0.12)*\nyP})$);
+    \draw[dimext] (Pcm)  -- ($(Pcm)  + ({(\dLone + 0.12)*\nxP}, {(\dLone + 0.12)*\nyP})$);
+    \draw[dimext] (Ptip) -- (L1TipExt);
+    % Linea de cota l1
+    \draw[dimline]
+        ($(Ppiv) + ({\dLone*\nxP}, {\dLone*\nyP})$) --
+        node[dimlbl, midway, sloped] {$l_1$}
+        ($(Pcm)  + ({\dLone*\nxP}, {\dLone*\nyP})$);
+    % Linea de cota L1 = 155 mm
+    \draw[dimline]
+        ($(Ppiv) + ({\dLtot*\nxP}, {\dLtot*\nyP})$) --
+        node[dimlbl, midway, sloped] {$L_1 = \qty{155}{\milli\meter}$}
+        ($(Ptip) + ({\dLtot*\nxP}, {\dLtot*\nyP})$);
+
+    % Arco 3D exacto del angulo completo alpha(t) anclado en (Ppiv)
+    \def\rAlpha{0.94}
+    \begin{scope}[shift={(Ppiv)}]
+        \draw[->, >={Stealth[length=4.5pt, width=3pt]}, semithick, furutaOrange!85]
+            plot[domain=3:{\alphaDeg-2}, samples=48, smooth]
+            ({ \rAlpha*(sin(\x)*\Xt - cos(\x)*\Zx) },
+             { \rAlpha*(sin(\x)*\Yt - cos(\x)*\Zy) });
+    \end{scope}
+    % Etiqueta alpha(t) fuera del arco a alpha = 28 deg, totalmente libre de la cota L1
+    \node[anchor=west, font=\footnotesize\bfseries, text=furutaOrange, fill=white, inner sep=1pt]
+        at ($(Ppiv) + ({1.08*(sin(28)*\Xt - cos(28)*\Zx)}, {1.08*(sin(28)*\Yt - cos(28)*\Zy)})$)
+        {$\alpha(t)$};
+
+    % Barra fisica del pendulo
+    \draw[furutaOrange!90!black, line width=4.6pt, line cap=round] (Ppiv) -- (Ptip);
+    \draw[furutaOrange!30,       line width=2.8pt, line cap=round] (Ppiv) -- (Ptip);
+    \fill[furutaSlate] (Ppiv) circle (0.075cm);
+
+    % Centro de masa (m1, J1) con simbolo estandar de CG
+    \def\rCM{0.18}
+    \fill[white, draw=furutaOrange!90!black, line width=0.8pt] (Pcm) circle (\rCM cm);
+    \fill[furutaOrange!90!black] (Pcm) -- ++(0:\rCM cm) arc (0:90:\rCM cm) -- cycle;
+    \fill[furutaOrange!90!black] (Pcm) -- ++(180:\rCM cm) arc (180:270:\rCM cm) -- cycle;
+    \coordinate (PcmAnchor) at ($(Pcm) + ({\rCM*1.08}, 0.06)$);
+
+    % Arco 3D exacto de la desviacion angular alpha_tilde = alpha - pi anclado en (Ppiv)
+    \def\rTilde{2.82}
+    \begin{scope}[shift={(Ppiv)}]
+        \draw[<->, >={Stealth[length=4.2pt, width=3pt]}, thick, furutaOrange]
+            plot[domain={\alphaDeg+1.5}:178.5, samples=24, smooth]
+            ({ \rTilde*(sin(\x)*\Xt - cos(\x)*\Zx) },
+             { \rTilde*(sin(\x)*\Yt - cos(\x)*\Zy) });
+    \end{scope}
+    % Etiqueta compacta centrada dentro del sector angular sin tocar la linea vertical ni la barra
+    \pgfmathsetmacro{\aMidTilde}{0.5*(\alphaDeg + 180)}
+    \node[anchor=center, align=center, font=\scriptsize\bfseries, text=furutaOrange, inner sep=1pt]
+        at ($(Ppiv) + ({2.36*(sin(\aMidTilde)*\Xt - cos(\aMidTilde)*\Zx)}, {2.36*(sin(\aMidTilde)*\Yt - cos(\aMidTilde)*\Zy)})$)
+        {$\tilde{\alpha}$\\[-2pt]{\scriptsize$= \alpha - \pi$}};
+
+    % Etiqueta del centro de masa anclada fuera del extremo de cota L1
+    \node[callout=furutaOrange, anchor=west] (lblCM)
+        at ($(L1TipExt) + (0.18, 0.22)$)
+        {\textbf{Centro de masa}\\$m_1,\; J_1$ (a dist. $l_1$)};
+    \draw[leader=furutaOrange] (lblCM.west) -- ++(-0.18, 0) -- (PcmAnchor);
+
+    % =========================================================================
+    % 11. COTAS PRINCIPALES DE LA TORRE Y BRAZO (H, Z_piv, L0)
+    % =========================================================================
+    % Cota H = 160 mm (izquierda de la torre)
+    \coordinate (DimHref) at ($(O0) + ({-\baseR - 0.38}, 0)$);
+    \draw[dimext] ($(O0) + (-\baseR, 0)$) -- ($(DimHref) + (-0.12, 0)$);
+    \draw[dimext] (TopPlate.north west) -- (DimHref |- TopPlate.north west) -- ++(-0.12, 0);
+    \draw[dimline] (DimHref) -- (DimHref |- TopPlate.north)
+        node[dimlbl, midway, rotate=90] {$H = \qty{160}{\milli\meter}$};
+
+    % Cota Z_piv = 182.8 mm (exterior izquierda)
+    \coordinate (DimZref) at ($(DimHref) + (-0.80, 0)$);
+    \draw[dimext] ($(DimHref) + (-0.12, 0)$) -- ($(DimZref) + (-0.12, 0)$);
+    \draw[dimext] (OpivAxis) -- (DimZref |- OpivAxis) -- ++(-0.12, 0);
+    \draw[dimline] (DimZref) -- (DimZref |- OpivAxis)
+        node[dimlbl, midway, rotate=90] {$Z_{\text{piv}} = \qty{182.8}{\milli\meter}$};
+
+    % Cota L0 = 88.5 mm paralela sobre el brazo horizontal
+    \def\dArm{0.62}
+    \draw[dimext] (OpivAxis) -- ($(OpivAxis) + (0, {\dArm + 0.12})$);
+    \draw[dimext] (Ppiv)     -- ($(Ppiv)     + (0, {\dArm + 0.12})$);
+    \draw[dimline]
+        ($(OpivAxis) + (0, \dArm)$) --
+        node[dimlbl, midway, sloped] {$L_0 = \qty{88.5}{\milli\meter}$}
+        ($(Ppiv) + (0, \dArm)$);
+
+    % =========================================================================
+    % 12. LLAMADAS TECNICAS DE SUBSISTEMAS (ANCLADAS POR CONSTRUCCION)
+    % =========================================================================
+    % Motor Namiki 22CL (80:1) anclado respecto a MotorBody
+    \node[callout=furutaBlue, right=0.76cm of MotorBody.east, yshift=0.04cm, anchor=west] (lblMotor)
+        {\textbf{Motor DC Namiki 22CL}\\Reductor planetario 80:1};
+    \draw[leader=furutaBlue] (lblMotor.west) -- (MotorBody.east |- lblMotor.west);
+
+    % AS5600 Base (I2C1) apilado bajo lblMotor y apuntando a EncBasePCB
+    \node[callout=furutaGreen, below=0.28cm of lblMotor.south west, anchor=north west] (lblEncBase)
+        {\textbf{AS5600 Base} ($\text{I}^2\text{C}_1$)\\Encoder magn\'etico rotor};
+    \draw[leader=furutaGreen] (lblEncBase.west) -- (EncBasePCB.east);
+
+    % Articulacion distal F1 anclada bajo y a la derecha de DistalHousing
+    \node[callout=furutaGreen, below right=0.90cm and 0.14cm of DistalHousing.south east, anchor=north west] (lblDistal)
+        {\textbf{Articulaci\'on distal ($\mathcal{F}_1$)}\\Rodamiento 608ZZ\\AS5600 Distal ($\text{I}^2\text{C}_2$)};
+    \draw[leader=furutaGreen] (lblDistal.north west) -- (DistalHousing.south east);
+
+    % =========================================================================
+    % 13. VECTOR DE GRAVEDAD g Y CUADRO COMPACTO DE COTAS (FIT BY CONSTRUCTION)
+    % =========================================================================
+    % Envolvente de todos los elementos extremos a la derecha para garantizar cero solapes
+    \node[fit=(Tbr)(Ptip)(L1TipExt)(lblCM)(lblDistal), inner sep=0pt] (MainRightScope) {};
+
+    % Cuadro compacto de cotas clave a la derecha de toda la escena
+    \node[
+        rectangle, rounded corners=3.5pt,
+        draw=furutaSlate!65, fill=furutaCardBg, line width=0.7pt,
+        inner sep=5.5pt, anchor=west,
+        font=\scriptsize, text=furutaSlate
+    ] (legendCard) at ($(MainRightScope.east |- Ppiv) + (0.72, -0.30)$) {%
+        \begin{tabular}{@{}l@{\hspace{6pt}}r@{}}
+            \multicolumn{2}{@{}l@{}}{\textbf{\color{furutaSlate}Resumen de cotas y par\'ametros}} \\[2pt]
+            \hline\\[-6pt]
+            Altura torre ($H$)                  & \qty{160}{\milli\meter} \\[1.5pt]
+            Cota pivote ($Z_{\text{piv}}$)      & \qty{182.8}{\milli\meter} \\[1.5pt]
+            Brazo horiz. ($L_0$)                & \qty{88.5}{\milli\meter} \\[1.5pt]
+            Barra p\'endulo ($L_1$)             & \qty{155}{\milli\meter} \\[1.5pt]
+            Despeje ($\alpha=\qty{0}{\degree}$) & \qty{30}{\milli\meter} \\[1.5pt]
+            Centro de masa                      & $l_1,\; m_1,\; J_1$ \\[1.5pt]
+            Equil.\ invertido                   & $\alpha=\qty{180}{\degree}$ \\[1.5pt]
+            Desviaci\'on                        & $\tilde{\alpha}=\alpha-\pi$ \\[1.5pt]
+            Actuador                            & Namiki 22CL (80:1) \\[1.5pt]
+            Sensores ($\theta,\alpha$)          & $2\times$ AS5600 ($\text{I}^2\text{C}_{1,2}$)
+        \end{tabular}%
+    };
+
+    % Vector de gravedad g centrado sobre legendCard por construccion
+    \coordinate (Gbot) at ($(legendCard.north) + (-0.30, 0.48)$);
+    \coordinate (Gtop) at ($(Gbot) + (0, 1.15)$);
+    \draw[->, >={Stealth[length=6pt, width=4.2pt]}, very thick, furutaSlate]
+        (Gtop) -- (Gbot);
+    \node[anchor=west, align=left, font=\small, text=furutaSlate]
+        at ($(Gtop)!0.48!(Gbot) + (0.12, 0)$)
+        {$\vec{g}$\\[-2pt]{\scriptsize\color{furutaMuted}\qty{9.81}{\meter\per\second\squared}}};
+
+\end{tikzpicture}%
+}%
+\caption{Diagrama cinem\'atico y cotas geom\'etricas principales del p\'endulo de Furuta ($H=\qty{160}{\milli\meter}$, $L_0=\qty{88.5}{\milli\meter}$, $L_1=\qty{155}{\milli\meter}$, $Z_{\text{piv}}=\qty{182.8}{\milli\meter}$, despeje de $\qty{30}{\milli\meter}$) entre el marco inercial $\mathcal{F}_0$ y la articulaci\'on distal $\mathcal{F}_1$.}
+\label{fig:cinematica_furuta}
+\end{figure*}

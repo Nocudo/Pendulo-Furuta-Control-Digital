@@ -1,0 +1,444 @@
+% ==============================================================================
+% Figura 4: Diagrama de Bloques del Lazo de Control Dual M4 Ultra-Silk
+% Archivo modular listo para \input{} en IEEEtran dos columnas (figure* [!t])
+% Requiere: tikz (arrows.meta, positioning, fit, calc, shapes.geometric, babel),
+%           siunitx, amsmath, graphicx.
+% ==============================================================================
+\begin{figure*}[!t]
+\centering
+\definecolor{m4ink}{HTML}{1E293B}
+\definecolor{m4muted}{HTML}{475569}
+\definecolor{m4pendEdge}{HTML}{1B4965}
+\definecolor{m4pendFill}{HTML}{EAF4FB}
+\definecolor{m4armEdge}{HTML}{1B6B72}
+\definecolor{m4armFill}{HTML}{E8F6F6}
+\definecolor{m4condEdge}{HTML}{B45309}
+\definecolor{m4condFill}{HTML}{FEF6EB}
+\definecolor{m4distEdge}{HTML}{7E2268}
+\definecolor{m4distFill}{HTML}{FBF0F8}
+\definecolor{m4actEdge}{HTML}{A63429}
+\definecolor{m4actFill}{HTML}{FDF0EE}
+\definecolor{m4plantEdge}{HTML}{243447}
+\definecolor{m4plantFill}{HTML}{ECEFF4}
+\definecolor{m4sensEdge}{HTML}{2A6B43}
+\definecolor{m4sensFill}{HTML}{ECF7F0}
+\definecolor{m4ctrlZone}{HTML}{33658A}
+\definecolor{m4condZone}{HTML}{C26D1F}
+\definecolor{m4metaBg}{HTML}{F8FAFC}
+\definecolor{m4metaEdge}{HTML}{CBD5E1}
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    >=Stealth,
+    font=\small\sffamily,
+    % --- Estilos de bloques ---
+    pendblk/.style={
+        rectangle,
+        rounded corners=4pt,
+        draw=m4pendEdge,
+        line width=1.1pt,
+        fill=m4pendFill,
+        text width=4.35cm,
+        minimum height=1.72cm,
+        align=center,
+        inner sep=5pt,
+        text=m4ink
+    },
+    armblk/.style={
+        rectangle,
+        rounded corners=4pt,
+        draw=m4armEdge,
+        line width=1.1pt,
+        fill=m4armFill,
+        text width=4.35cm,
+        minimum height=1.95cm,
+        align=center,
+        inner sep=5pt,
+        text=m4ink
+    },
+    condblk/.style={
+        rectangle,
+        rounded corners=4pt,
+        draw=m4condEdge,
+        line width=1.05pt,
+        fill=m4condFill,
+        minimum height=2.05cm,
+        align=center,
+        inner sep=5pt,
+        text=m4ink
+    },
+    actblk/.style={
+        rectangle,
+        rounded corners=4pt,
+        draw=m4actEdge,
+        line width=1.05pt,
+        fill=m4actFill,
+        text width=4.05cm,
+        minimum height=2.05cm,
+        align=center,
+        inner sep=5pt,
+        text=m4ink
+    },
+    plantblk/.style={
+        rectangle,
+        rounded corners=4pt,
+        draw=m4plantEdge,
+        line width=1.35pt,
+        fill=m4plantFill,
+        text width=3.05cm,
+        minimum height=2.15cm,
+        align=center,
+        inner sep=5pt,
+        text=m4ink
+    },
+    sensblk/.style={
+        rectangle,
+        rounded corners=4pt,
+        draw=m4sensEdge,
+        line width=1.05pt,
+        fill=m4sensFill,
+        text width=7.25cm,
+        minimum height=1.15cm,
+        align=center,
+        inner xsep=6pt,
+        inner ysep=5pt,
+        text=m4ink
+    },
+    distblk/.style={
+        rectangle,
+        rounded corners=4pt,
+        draw=m4distEdge,
+        line width=1.0pt,
+        fill=m4distFill,
+        text width=5.15cm,
+        minimum height=1.00cm,
+        align=center,
+        inner xsep=6pt,
+        inner ysep=4pt,
+        text=m4ink
+    },
+    sum/.style={
+        circle,
+        draw=m4ink,
+        line width=1.05pt,
+        fill=white,
+        minimum size=0.68cm,
+        inner sep=0pt,
+        font=\small\bfseries,
+        text=m4ink
+    },
+    dot/.style={
+        circle,
+        fill=#1,
+        inner sep=1.7pt
+    },
+    % --- Estilos de flechas ---
+    sig/.style={
+        -{Stealth[length=5.5pt, width=4.2pt]},
+        line width=1.05pt,
+        draw=m4ink
+    },
+    sigshort/.style={
+        -{Stealth[length=4.2pt, width=3.2pt]},
+        line width=1.05pt,
+        draw=m4ink
+    },
+    fbpend/.style={
+        -{Stealth[length=5.5pt, width=4.2pt]},
+        line width=1.05pt,
+        draw=m4pendEdge
+    },
+    fbarm/.style={
+        -{Stealth[length=5.5pt, width=4.2pt]},
+        line width=1.05pt,
+        draw=m4armEdge
+    },
+    adapt/.style={
+        -{Stealth[length=4.5pt, width=3.4pt]},
+        line width=1.0pt,
+        densely dashed,
+        draw=m4distEdge
+    },
+    zonebox/.style={
+        rectangle,
+        rounded corners=6pt,
+        draw=#1,
+        densely dashed,
+        line width=1.05pt,
+        fill=#1,
+        fill opacity=0.04,
+        text opacity=1
+    },
+    zonetitle/.style={
+        rectangle,
+        rounded corners=3pt,
+        draw=#1,
+        line width=0.75pt,
+        fill=white,
+        inner xsep=6pt,
+        inner ysep=2.2pt,
+        font=\footnotesize\sffamily\bfseries,
+        text=#1
+    },
+    signlbl/.style={
+        font=\footnotesize\bfseries,
+        text=m4ink,
+        inner sep=1pt
+    },
+    wirelbl/.style={
+        font=\footnotesize\sffamily,
+        text=m4ink,
+        inner sep=2pt
+    }
+]
+
+% ==============================================================================
+% 1. RAMAS DE CONTROL DUAL M4 (IZQUIERDA) — LAYOUT BY CONSTRUCTION
+% ==============================================================================
+\node[sum] (sig1) at (0, 0) {$\Sigma_1$};
+
+\node[pendblk, right=0.78cm of sig1] (pd_alpha) {%
+    {\normalsize\bfseries PD P\'endulo}\\[-1pt]
+    {\footnotesize\texttt{pid\_pend\_alpha}}\\[2pt]
+    {\footnotesize ${K_p=14.50},\; {K_i=0},\; {K_d=1.50}$}\\[1pt]
+    {\footnotesize Derivada suavizada con $\dot{\alpha}_f[k]$}%
+};
+
+\node[armblk, below=1.15cm of pd_alpha] (pid_theta) {%
+    {\normalsize\bfseries PID Brazo}\\[-1pt]
+    {\footnotesize\texttt{pid\_arm\_theta}}\\[2pt]
+    {\footnotesize ${K_p=-1.45},\; {K_i=-0.75},$}\\[0.5pt]
+    {\footnotesize ${K_d=-0.85}$}\\[1pt]
+    {\footnotesize $I$ cond.\ ($<45^\circ$, $\pm\qty{1.6}{\volt}$)}\\[0.5pt]
+    {\footnotesize Sat.\ $\pm\qty{2.2}{\volt}$}%
+};
+
+% Sumador Sigma_2 alineado verticalmente con Sigma_1 y horizontalmente con PID Brazo
+\node[sum] (sig2) at (sig1 |- pid_theta) {$\Sigma_2$};
+
+% Sumador Sigma_u en el punto medio vertical exacto entre ambas ramas
+\coordinate (ctrl_mid_east) at ($(pd_alpha.east)!0.5!(pid_theta.east)$);
+\node[sum, right=0.88cm of ctrl_mid_east] (sig_u) {$\Sigma_u$};
+
+% Etiquetas sutiles de rama incluidas en el fit para evitar choque con el titulo de zona
+\node[above=0.10cm of pd_alpha.north west, anchor=south west,
+      font=\scriptsize\sffamily\bfseries, text=m4pendEdge, inner sep=1pt]
+      (lbl_fast) {Lazo R\'apido Principal (P\'endulo $\tilde{\alpha}$)};
+\node[below=0.10cm of pid_theta.south west, anchor=north west,
+      font=\scriptsize\sffamily\bfseries, text=m4armEdge, inner sep=1pt]
+      (lbl_slow) {Lazo Lento Secundario (Brazo $\theta$)};
+
+% ==============================================================================
+% 2. CASCADA PRINCIPAL: ACONDICIONAMIENTO ANTI-RESONANCIA, ACTUADOR Y PLANTA
+% ==============================================================================
+\node[condblk, text width=3.95cm, right=2.55cm of sig_u] (notch) {%
+    {\normalsize\bfseries Filtro Dual-Notch}\\[-1pt]
+    {\footnotesize\bfseries Biquad}\\[2pt]
+    {\footnotesize Notch 1 fijo: \qty{11.0}{\hertz} ($Q=1.2$)}\\[1pt]
+    {\footnotesize Mezcla $(1-\mathrm{dist})$ Notch 2:}\\[0.5pt]
+    {\footnotesize \qty{-6}{\decibel} @ \qty{6.2}{\hertz} ($Q=1.4$)}%
+};
+
+\node[condblk, text width=3.65cm, right=0.85cm of notch] (slew) {%
+    {\normalsize\bfseries Slew-Rate y Techo}\\[-1pt]
+    {\footnotesize\bfseries Adaptativo}\\[2pt]
+    {\footnotesize $\Delta u$: \qtyrange[range-units=single, range-phrase=\text{--}]{0.065}{0.40}{\volt\per\milli\second}}\\[1pt]
+    {\footnotesize Techo: $\pm\qty{6.5}{\volt}$ a $\pm\qty{8.5}{\volt}$}\\[1pt]
+    {\footnotesize Escalado lineal con $\mathrm{dist}$}%
+};
+
+\node[actblk, right=1.40cm of slew] (l298n) {%
+    {\normalsize\bfseries Comp.\ Suave L298N}\\[-1pt]
+    {\footnotesize\bfseries Zona Muerta + PWM}\\[2pt]
+    {\footnotesize $+9.2\% / -16.0\%$, $V_k=\qty{0.65}{\volt}$}\\[1pt]
+    {\footnotesize Rampa continua ($\ge\qty{0.06}{\volt}$)}\\[1pt]
+    {\footnotesize Puente H $\cdot$ PWM \qty{20}{\kilo\hertz}}%
+};
+
+\node[plantblk, right=0.85cm of l298n] (plant) {%
+    {\normalsize\bfseries Planta: P\'endulo}\\[-1pt]
+    {\normalsize\bfseries de Furuta}\\[3pt]
+    {\footnotesize Motor Namiki 80:1}\\[1pt]
+    {\footnotesize Brazo ($\theta$) + P\'endulo ($\alpha$)}%
+};
+
+% ==============================================================================
+% 3. CAJAS FIT PUNTEADAS SUAVES (ZONAS DE ARQUITECTURA)
+% ==============================================================================
+\node[zonebox=m4ctrlZone, inner xsep=15pt, inner ysep=14pt,
+      fit=(sig1) (sig2) (pd_alpha) (pid_theta) (sig_u) (lbl_fast) (lbl_slow)] (zone_ctrl) {};
+\node[zonetitle=m4ctrlZone, anchor=center] at (zone_ctrl.north) {Control Dual M4};
+
+\node[zonebox=m4condZone, inner xsep=10pt, inner ysep=15pt,
+      fit=(notch) (slew)] (zone_cond) {};
+\node[zonetitle=m4condZone, anchor=center] at (zone_cond.north) {Acondicionamiento Anti-Resonancia};
+
+% ==============================================================================
+% 4. BANNER SUPERIOR DERECHO (CONTEXTO DE EJECUCIÓN Y LEYENDA)
+% ==============================================================================
+\coordinate (meta_left)  at (zone_cond.west |- zone_ctrl.north);
+\coordinate (meta_right) at (plant.east |- zone_ctrl.north);
+\coordinate (meta_mid)   at ($(meta_left)!0.5!(meta_right)$);
+\node[rectangle, rounded corners=4pt, draw=m4metaEdge, line width=0.8pt,
+      fill=m4metaBg, anchor=north, inner xsep=9pt, inner ysep=4.5pt,
+      align=center, text=m4ink] (meta_bar) at (meta_mid) {%
+    {\footnotesize\bfseries Estado:} {\footnotesize\texttt{FURUTA\_STATE\_BALANCE\_PID}}
+    \;\;$\cdot$\;\;
+    {\footnotesize $T_s = \qty{1.0}{\milli\second}$ ($f_s=\qty{1}{\kilo\hertz}$, \texttt{TIM6})}
+    \;\;$\cdot$\;\;
+    {\footnotesize\textcolor{m4pendEdge}{\rule[2.2pt]{11pt}{1.2pt}} Lazo $\tilde{\alpha}$}
+    \;\;
+    {\footnotesize\textcolor{m4armEdge}{\rule[2.2pt]{11pt}{1.2pt}} Lazo $\theta$}
+    \;\;
+    {\footnotesize\textcolor{m4distEdge}{\rule[2.2pt]{4pt}{1.1pt}\hspace{1.8pt}\rule[2.2pt]{4pt}{1.1pt}} Planif.\ $\mathrm{dist}$}%
+};
+
+% ==============================================================================
+% 5. ÍNDICE ADAPTATIVO dist Y BLOQUES DE SENSORES EN REALIMENTACIÓN (ABAJO)
+%    Encadenamiento vertical estricto para cero colisiones por construcción
+% ==============================================================================
+\coordinate (cond_mid_south) at (zone_cond.south);
+\node[distblk, below=0.82cm of cond_mid_south] (dist_box) {%
+    {\footnotesize\bfseries \'Indice de Perturbaci\'on $\mathrm{dist} \in [0, 1]$}\\[1pt]
+    {\footnotesize $\mathrm{dist} = \operatorname{sat}_{[0,1]}\!\big(\max(|\tilde{\alpha}|/4.5^\circ,\; |\dot{\alpha}|/2.5)\big)$}%
+};
+
+% Banco de sensores AS5600 estrictamente POR DEBAJO de dist_box
+\coordinate[below=0.55cm of dist_box.south] (below_dist);
+\coordinate (sens_col_x) at ($(l298n.west)!0.50!(plant.east)$);
+\node[sensblk, anchor=north] (sens_theta) at (sens_col_x |- below_dist) {%
+    {\small\bfseries AS5600 Base (\texttt{I2C1}, $\div 80$) + Doble LPF IIR}\\[1pt]
+    {\footnotesize $\tau = \qty{6}{\milli\second} \times 2$ ($f_c = \qty{15.8}{\hertz}$) $\;\cdot\;$ 12 bits $\;\longrightarrow\;$ $\theta[k],\,\dot{\theta}_f[k]$}%
+};
+
+\node[sensblk, below=0.55cm of sens_theta] (sens_alpha) {%
+    {\small\bfseries AS5600 Distal (\texttt{I2C2}) + Doble LPF IIR}\\[1pt]
+    {\footnotesize $\tau = \qty{6}{\milli\second} \times 2$ ($f_c = \qty{15.8}{\hertz}$) $\;\cdot\;$ $\tilde{\alpha} = \operatorname{wrapToPi}(\alpha - \pi)$}%
+};
+
+% ==============================================================================
+% 6. CONEXIONES DE LA CASCADA PRINCIPAL Y ENTRADAS DE REFERENCIA
+% ==============================================================================
+% Coordenadas relativas para referencias (amplio margen antes de + y Sigma)
+% y canal vertical izquierdo de realimentación (estrictamente a la izquierda)
+\coordinate[left=2.45cm of sig1.west] (ref_in_top);
+\coordinate (ref_in_bot) at (ref_in_top |- sig2.west);
+\coordinate[left=0.60cm of ref_in_top] (x_riser_a);
+
+% Referencia superior: alpha_tilde_ref = 0 (alpha = 180 deg)
+\draw[sig] (ref_in_top) -- (sig1.west)
+    node[wirelbl, pos=0.36, above=2pt] {$\tilde{\alpha}_{\mathrm{ref}} = 0$}
+    node[wirelbl, pos=0.36, below=2pt, text=m4muted] {$(\alpha = 180^\circ)$};
+\node[signlbl, anchor=south] at ($(sig1.west)+(-0.19, 0.12)$) {$+$};
+
+% Referencia inferior: theta_ref = 0 (estrictamente a la derecha de x_riser_a)
+\draw[sig] (ref_in_bot) -- (sig2.west)
+    node[wirelbl, pos=0.36, above=2pt] {$\theta_{\mathrm{ref}} = 0$};
+\node[signlbl, anchor=south] at ($(sig2.west)+(-0.19, 0.12)$) {$+$};
+
+% Sigma_1 -> PD Péndulo -> Sigma_u
+\draw[sigshort] (sig1.east) -- (pd_alpha.west)
+    node[wirelbl, midway, above=2pt] {$e_\alpha[k]$};
+
+\draw[sig, rounded corners=4pt] (pd_alpha.east) -| (sig_u.north)
+    node[wirelbl, pos=0.25, above=2pt] {$u_\alpha[k]$};
+\node[signlbl, anchor=south west] at ($(sig_u.north)+(0.14, 0.12)$) {$+$};
+
+% Sigma_2 -> PID Brazo -> Sigma_u
+\draw[sigshort] (sig2.east) -- (pid_theta.west)
+    node[wirelbl, midway, above=2pt] {$e_\theta[k]$};
+
+\draw[sig, rounded corners=4pt] (pid_theta.east) -| (sig_u.south)
+    node[wirelbl, pos=0.25, below=2pt] {$u_\theta[k]$};
+\node[signlbl, anchor=north west] at ($(sig_u.south)+(0.14,-0.12)$) {$+$};
+
+% Sigma_u -> Dual-Notch -> Slew-Rate -> L298N -> Planta
+\draw[sig] (sig_u.east) -- (notch.west)
+    node[wirelbl, midway, above=2pt] {$u_{\mathrm{raw}}[k]$}
+    node[wirelbl, midway, below=2pt, text=m4muted] {\scriptsize $u_\alpha + u_\theta$};
+
+\draw[sigshort] (notch.east) -- (slew.west)
+    node[wirelbl, midway, above=2pt] {$u_n[k]$};
+
+\draw[sig] (slew.east) -- (l298n.west)
+    node[wirelbl, pos=0.62, above=2pt] {$u[k]$};
+
+\draw[sigshort] (l298n.east) -- (plant.west)
+    node[wirelbl, midway, above=2pt] {$V_m(t)$};
+
+% ==============================================================================
+% 7. SALIDAS DE LA PLANTA Y CAMINOS DE REALIMENTACIÓN (CERO CRUCES DE LAZOS)
+% ==============================================================================
+\coordinate (plant_a_out) at ($(plant.east)+(0,  0.50)$);
+\coordinate (plant_t_out) at ($(plant.east)+(0, -0.50)$);
+\coordinate[right=0.80cm of plant.east] (tap_t_x);
+\coordinate[right=1.55cm of plant.east] (tap_a_x);
+
+% Salida theta(t) -> canal interno -> AS5600 Base
+\draw[fbarm, rounded corners=5pt]
+    (plant_t_out) -- (plant_t_out -| tap_t_x) |- (sens_theta.east);
+\node[wirelbl, text=m4armEdge, anchor=north west]
+    at ($(plant_t_out)+(0.10, -0.05)$) {$\theta(t)$};
+
+% Salida alpha(t) -> canal externo -> AS5600 Distal
+\draw[fbpend, rounded corners=5pt]
+    (plant_a_out) -- (plant_a_out -| tap_a_x) |- (sens_alpha.east);
+\node[wirelbl, text=m4pendEdge, anchor=south west]
+    at ($(plant_a_out)+(0.12, 0.05)$) {$\alpha(t)$};
+
+% Realimentación Brazo: AS5600 Base -> Sigma_2 (por debajo de dist_box sin colisión)
+\draw[fbarm, rounded corners=5pt]
+    (sens_theta.west) -| (sig2.south);
+\node[signlbl, text=m4armEdge, anchor=north west] at ($(sig2.south)+(0.14,-0.14)$) {$-$};
+
+% Realimentación Péndulo: AS5600 Distal -> canal izquierdo -> corredor central -> Sigma_1
+\coordinate (mid_corridor_y) at ($(pd_alpha.south)!0.5!(pid_theta.north)$);
+\draw[fbpend, rounded corners=5pt]
+    (sens_alpha.west) -| (x_riser_a |- mid_corridor_y) -| (sig1.south);
+\node[signlbl, text=m4pendEdge, anchor=north west] at ($(sig1.south)+(0.14,-0.14)$) {$-$};
+
+% ==============================================================================
+% 8. RAMA ADAPTATIVA PUNTEADA (dist -> DUAL-NOTCH Y SLEW-RATE)
+%    Un único salto semicircular limpio sobre el bus de theta[k]
+% ==============================================================================
+\coordinate (dist_tap)   at (dist_box.south |- sens_alpha.west);
+\coordinate (dist_cross) at (dist_box.south |- sens_theta.west);
+\coordinate (hop_bot)    at ($(dist_cross)+(0,-0.16)$);
+\coordinate (hop_top)    at ($(dist_cross)+(0, 0.16)$);
+
+% Etiquetas limpias en segmentos libres de los buses horizontales
+\node[wirelbl, text=m4armEdge, anchor=south]
+    at ($(dist_cross)!0.52!(sens_theta.west) + (0, 0.05)$) {$\theta[k],\,\dot{\theta}_f[k]$};
+\node[wirelbl, text=m4pendEdge, anchor=north]
+    at ($(dist_tap)!0.52!(sens_alpha.west) + (0, -0.05)$) {$\tilde{\alpha}[k],\,\dot{\alpha}_f[k]$};
+
+% Nodo de derivación en el lazo de péndulo
+\node[dot=m4distEdge] at (dist_tap) {};
+
+% Línea punteada hasta el puente semicircular, salto limpio y llegada a dist_box
+\draw[line width=1.0pt, densely dashed, draw=m4distEdge] (dist_tap) -- (hop_bot);
+\draw[line width=1.0pt, draw=m4distEdge] (hop_bot) arc[start angle=-90, end angle=90, radius=0.16cm];
+\draw[adapt] (hop_top) -- (dist_box.south);
+\node[wirelbl, text=m4distEdge, anchor=west]
+    at ($(dist_tap)!0.48!(hop_bot)+(0.09, 0)$) {$\tilde{\alpha},\,\dot{\alpha}$};
+
+% Distribución ortogonal desde dist_box hacia Dual-Notch y Slew-Rate
+\coordinate (dist_rail)  at ($(dist_box.north)!0.40!(zone_cond.south)$);
+\coordinate (dist_lbl_y) at ($(dist_rail)!0.50!(zone_cond.south)$);
+\draw[line width=1.0pt, densely dashed, draw=m4distEdge]
+    (dist_box.north) -- (dist_rail);
+\node[dot=m4distEdge] at (dist_rail) {};
+\draw[adapt, rounded corners=3pt]
+    (dist_rail) -| (notch.south);
+\draw[adapt, rounded corners=3pt]
+    (dist_rail) -| (slew.south);
+
+\node[wirelbl, text=m4distEdge, anchor=east]
+    at ($(notch.south |- dist_lbl_y)+(-0.10, 0)$) {$(1-\mathrm{dist})$};
+\node[wirelbl, text=m4distEdge, anchor=west]
+    at ($(slew.south |- dist_lbl_y)+(0.10, 0)$) {$\mathrm{dist}$};
+
+\end{tikzpicture}%
+}
+\caption{Diagrama de bloques completo del lazo de control digital dual M4 Ultra-Silk implementado en el estado \texttt{FURUTA\_STATE\_BALANCE\_PID} ($T_s = \qty{1.0}{\milli\second}$). El lazo r\'apido estabilizador del p\'endulo ($\tilde{\alpha}$) y el lazo lento regulador del brazo ($\theta$) convergen en $\Sigma_u$ hacia la cascada adaptativa anti-resonancia (Dual-Notch Biquad \qty{11.0}{\hertz}/\qty{6.2}{\hertz} y limitador de pendiente/techo modulados por el \'indice $\mathrm{dist}$), seguida por el compensador suave de zona muerta del puente H L298N y los lazos de realimentaci\'on magn\'etica AS5600 con doble filtrado IIR.}
+\label{fig:diagrama_bloques_control}
+\end{figure*}
