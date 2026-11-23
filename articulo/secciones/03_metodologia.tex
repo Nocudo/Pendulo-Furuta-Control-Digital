@@ -178,6 +178,10 @@ La máquina de estados finitos (Fig.~\ref{fig:fsm_firmware}) coordina diez modos
     \item \textbf{Ciclo autónomo y parada ordenada:} el comando \texttt{START}/\texttt{SWING} verifica si el brazo parte alineado ($|\theta|<\qty{2.5}{\degree}$) y el péndulo en calma ($|\alpha|<\qty{12}{\degree}$, $|\dot{\alpha}|<\qty{0.85}{\radian\per\second}$) para iniciar directamente \texttt{SWING\_UP} (\texttt{5}), o bien transita primero por \texttt{RECOVER\_HOME} (\texttt{8}) cuando $\theta\neq\qty{0}{\degree}$. Al ingresar al cono lineal, \texttt{SWING\_UP} conmuta sin saltos a \texttt{BALANCE\_PID} (\texttt{6}, accesible también manualmente vía \texttt{BALANCE} sin auto-recuperación). Si ocurre un \textit{timeout} de levantamiento (\qty{5.5}{\second}) o una caída en equilibrio ($|\tilde{\alpha}|>\qty{32}{\degree}$, sin límite angular en $\theta$), el sistema entra a \texttt{RECOVER\_HOME} para aparcar, esperar calma y relanzar \texttt{SWING\_UP}. Finalmente, \texttt{STOPHOME} transita a \texttt{STOP\_HOME} (\texttt{9}) para regresar suavemente a $\qty{0}{\degree}$ durante \qty{150}{\milli\second} estables (cota \qty{3.5}{\second}) antes de desenergizar en \texttt{IDLE}.
 \end{itemize}
 
+\input{figuras/fig_conmutacion_bloques.tex}
+
+Para articular la visión de conjunto antes de desglosar cada lazo individual, la Fig.~\ref{fig:conmutacion_bloques} ilustra cómo el supervisor FSM conmuta e intercomunica los distintos diagramas de bloques atómicos (Figs.~\ref{fig:diagrama_bloques_control}--\ref{fig:detalle_recover_home}) sobre la cadena compartida de actuación L298N y el bus de sensado AS5600. En cada periodo de \qty{1.0}{\milli\second}, el multiplexor lógico \texttt{MUX FSM} selecciona sin saltos (\textit{bumpless}) qué controlador gobierna la planta ---habilitando el desvío directo \texttt{Coast / Brake} sobre \texttt{IN1/IN2} en los estados pasivos o de frenado---, mientras todos los modos consumen el bus filtrado de primera etapa (\texttt{LPF IIR 1}), \texttt{RECOVER\_HOME} reutiliza \texttt{Servo \qty{0}{\degree}} en su subfase \texttt{F1}, y únicamente \texttt{BALANCE\_PID} habilita la segunda etapa \texttt{LPF IIR 2}.
+
 \subsubsection{Estado \texttt{BALANCE\_PID} (M4 Ultra-Silk) y Filtros Digitales}
 
 \input{figuras/fig_diagrama_bloques_control.tex}
@@ -193,7 +197,7 @@ La Fig.~\ref{fig:diagrama_bloques_control} desglosa la arquitectura atómica del
         u_{\text{raw}}[k] = K_{p,\alpha}\tilde{\alpha}[k] + K_{d,\alpha}\dot{\alpha}_{f2}[k] + \mathrm{sat}_{\pm 2.2}\!\bigl(u_{\theta}[k]\bigr).
         \label{eq:m4_dual}
     \end{equation}
-    \textit{(iv)~Implementación:} ejecutado a \qty{1.0}{\kilo\hertz} dentro del caso \texttt{FURUTA\_STATE\_BALANCE\_PID} en \texttt{furuta\_control.c}.
+    \textit{(iv)~Implementación:} ejecutado a \qty{1.0}{\kilo\hertz} dentro del caso \texttt{FURUTA\_\allowbreak STATE\_\allowbreak BALANCE\_\allowbreak PID} en \texttt{furuta\_control.c}.
 
     \item \textbf{Ramas paralelas de sensado y doble cascada LPF IIR (\texttt{LPF IIR 1} $\to$ \texttt{LPF IIR 2}):}
     \textit{(i)~Necesidad:} atenuar los picos derivativos introducidos por saltos de $1\,\mathrm{LSB}$ de los encoders de 12~bits al diferenciar a $T_s=\qty{1.0}{\milli\second}$ ($\pm\qty{1.534}{\radian\per\second}$ en el brazo pendular).

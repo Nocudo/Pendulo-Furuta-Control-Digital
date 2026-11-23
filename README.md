@@ -12,12 +12,12 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 ├── GUIA_EXPOSICION_PROYECTO.md       # ★ Guía completa de sustentación (filtros, controladores, física y Q&A)
 ├── README.md                         # Portada ejecutiva e inicio rápido del proyecto
 │
-├── articulo/                         # ★ Artículo científico IEEEtran IMRyD + Marco Teórico (29 págs., certificado 0/0/0)
+├── articulo/                         # ★ Artículo científico IEEEtran IMRyD + Marco Teórico (30 págs., certificado 0/0/0)
 │   ├── plantilla.pdf                 # Documento PDF final certificado (0 errores, 0 warnings, 0 sobreposiciones)
 │   ├── plantilla.tex                 # Código fuente principal LaTeX (IEEEtran conference)
 │   ├── plantilla.bib                 # Base de datos bibliográfica BibTeX (18 referencias verificadas con DOI)
 │   ├── secciones/                    # Secciones modulares (01_introduccion a 06_conclusiones, matemática matricial)
-│   └── figuras/                      # 9 diagramas vectoriales TikZ atómicos + figuras experimentales y del simulador 3D
+│   └── figuras/                      # 10 diagramas vectoriales TikZ + figuras experimentales y del simulador 3D
 │
 ├── simulacion cinematica/            # ★ Simulador interactivo 3D de cinemática matricial simbólica (HTML5 offline)
 │   └── index.html                    # Aplicación web autónoma (sin dependencias): modelo 3D + matrices Ecs. (1)–(19) + RK4
@@ -218,7 +218,7 @@ El dueño del repositorio puede agregar colaboradores en:
 
 | Documento | Descripción |
 |---|---|
-| [`articulo/plantilla.pdf`](articulo/plantilla.pdf) | **Artículo científico IEEEtran certificado (29 págs.):** marco teórico matricial, metodología, validación experimental y discusiones |
+| [`articulo/plantilla.pdf`](articulo/plantilla.pdf) | **Artículo científico IEEEtran certificado (30 págs.):** marco teórico matricial, metodología, validación experimental y discusiones |
 | [`simulacion cinematica/index.html`](simulacion%20cinematica/index.html) | **Simulador interactivo 3D offline** de la cinemática y dinámica matricial simbólica acoplada al artículo |
 | [`GUIA_EXPOSICION_PROYECTO.md`](GUIA_EXPOSICION_PROYECTO.md) | **Guía completa de sustentación**: funcionamiento, filtros, controladores, física y preguntas frecuentes |
 | [`docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md`](docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md) | Arquitectura de control STM32F446RE, tabla de pines, explicación del código C/caracterización y diagramas de bloques |
