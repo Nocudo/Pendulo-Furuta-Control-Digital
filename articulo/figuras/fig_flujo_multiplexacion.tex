@@ -1,0 +1,411 @@
+% ==============================================================================
+% Figura: Diagrama de Flujo Lógico de la Multiplexación de Estados (1.0 kHz)
+% Refleja exactamente Furuta_ControlISR_1kHz + Furuta_ProcessCommand + TIM6 ISR
+% en furuta_control.c y stm32f4xx_it.c, cubriendo los 10 estados de Furuta_State_t.
+% Estrategia: Layout by Construction, paleta idéntica a Figs. 5-11, cero cruces.
+% Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
+%                              shapes.geometric, backgrounds, babel, bending.
+% ==============================================================================
+\begin{figure*}[!t]
+\centering
+% --- Paleta semántica armónica (idéntica a Figs. 5-11) ---
+\definecolor{flInk}{HTML}{1E293B}%
+\definecolor{flMuted}{HTML}{475569}%
+\definecolor{flIdleBdr}{HTML}{243447}%
+\definecolor{flIdleFill}{HTML}{ECEFF4}%
+\definecolor{flServBdr}{HTML}{33658A}%
+\definecolor{flServFill}{HTML}{EEF5FA}%
+\definecolor{flArmBdr}{HTML}{0F766E}%
+\definecolor{flArmFill}{HTML}{E6F7F5}%
+\definecolor{flSwBdr}{HTML}{B45309}%
+\definecolor{flSwFill}{HTML}{FEF6EB}%
+\definecolor{flBalBdr}{HTML}{1B4965}%
+\definecolor{flBalFill}{HTML}{EAF4FB}%
+\definecolor{flActBdr}{HTML}{A63429}%
+\definecolor{flActFill}{HTML}{FDF0EE}%
+\definecolor{flMuxBdr}{HTML}{7E2268}%
+\definecolor{flMuxFill}{HTML}{FBF0F8}%
+\definecolor{flDecBdr}{HTML}{B45309}%
+\definecolor{flDecFill}{HTML}{FFFBEB}%
+
+% --- Parámetros centralizados de geometría (Single Source of Truth) ---
+\def\flCaseW{2.85cm}%
+\def\flRowH{0.58cm}%
+\def\flSubDrop{0.84cm}%
+\def\flActW{2.45cm}%
+
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    font=\sffamily,
+    % --- Estilos ISO 5807 armonizados ---
+    term/.style={
+        rectangle,
+        rounded corners=10pt,
+        draw=flIdleBdr,
+        fill=flIdleFill,
+        line width=1.25pt,
+        minimum height=0.66cm,
+        inner xsep=8pt,
+        inner ysep=3pt,
+        align=center,
+        text=flInk,
+        font=\footnotesize\bfseries\sffamily
+    },
+    proc/.style={
+        rectangle,
+        rounded corners=3.5pt,
+        draw=#1,
+        fill=#1!8!white,
+        line width=0.95pt,
+        minimum height=\flRowH,
+        inner xsep=5pt,
+        inner ysep=2.5pt,
+        align=center,
+        text=flInk,
+        font=\footnotesize\sffamily
+    },
+    casepill/.style={
+        rectangle,
+        rounded corners=4pt,
+        draw=#1,
+        fill=#1!12!white,
+        line width=1.10pt,
+        text width=\flCaseW,
+        minimum height=\flRowH,
+        inner xsep=4pt,
+        inner ysep=2.5pt,
+        align=center,
+        text=flInk,
+        font=\footnotesize\bfseries\sffamily
+    },
+    muxbox/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=flMuxBdr,
+        fill=flMuxFill,
+        line width=1.35pt,
+        text width=3.10cm,
+        minimum height=0.80cm,
+        inner xsep=5pt,
+        inner ysep=3pt,
+        align=center,
+        text=flMuxBdr,
+        font=\footnotesize\bfseries\sffamily
+    },
+    actout/.style={
+        rectangle,
+        rounded corners=3.5pt,
+        draw=flActBdr,
+        fill=flActFill,
+        line width=0.95pt,
+        text width=\flActW,
+        minimum height=0.52cm,
+        inner xsep=4pt,
+        inner ysep=2pt,
+        align=center,
+        text=flInk,
+        font=\scriptsize\bfseries\sffamily
+    },
+    transout/.style={
+        rectangle,
+        rounded corners=3.5pt,
+        draw=flMuxBdr,
+        fill=flMuxFill,
+        line width=0.95pt,
+        minimum height=0.52cm,
+        inner xsep=5pt,
+        inner ysep=2pt,
+        align=center,
+        text=flMuxBdr,
+        font=\scriptsize\bfseries\sffamily
+    },
+    dec/.style={
+        diamond,
+        aspect=2.35,
+        draw=flDecBdr,
+        fill=flDecFill,
+        line width=1.0pt,
+        inner xsep=2pt,
+        inner ysep=1.2pt,
+        minimum width=1.95cm,
+        minimum height=0.72cm,
+        align=center,
+        text=flInk,
+        font=\scriptsize\bfseries\sffamily
+    },
+    zonebox/.style={
+        rectangle,
+        rounded corners=6pt,
+        draw=#1,
+        densely dashed,
+        line width=0.9pt,
+        fill=#1,
+        fill opacity=0.035,
+        text opacity=1
+    },
+    zonetitle/.style={
+        rectangle,
+        rounded corners=3pt,
+        draw=#1,
+        line width=0.75pt,
+        fill=white,
+        inner xsep=5pt,
+        inner ysep=1.8pt,
+        font=\scriptsize\bfseries\sffamily,
+        text=#1
+    },
+    % --- Flechas canónicas ---
+    flw/.style={-{Stealth[length=4.0pt, width=2.9pt]}, line width=0.95pt, draw=flInk},
+    flwshort/.style={-{Stealth[length=3.5pt, width=2.6pt]}, line width=0.95pt, draw=flInk},
+    flwline/.style={line width=0.95pt, draw=flInk},
+    flwmux/.style={-{Stealth[length=4.2pt, width=3.0pt]}, line width=1.05pt, densely dashed, draw=flMuxBdr},
+    flwbyp/.style={-{Stealth[length=4.2pt, width=3.0pt]}, line width=0.95pt, densely dashed, draw=flServBdr},
+    dot/.style={circle, fill=#1, inner sep=1.35pt},
+    lbl/.style={font=\scriptsize\sffamily, text=flInk, inner sep=1.2pt}
+]
+
+% ==============================================================================
+% 1. BANDA SUPERIOR: ENTRADA ISR TIM6 (1 kHz), GUARDA CALIBRATING Y SUPERLAZO
+% ==============================================================================
+\node[term] (isr_start) at (0, 0) {ISR \texttt{TIM6} (1 kHz)};
+\node[dec, minimum width=2.45cm, right=0.85cm of isr_start] (dec_cal) {¿\texttt{CALIBRATING}?};
+\node[proc=flArmBdr, text width=2.75cm, right=1.05cm of dec_cal] (acq_sens)
+    {\textbf{Lectura AS5600}\\$\theta,\dot{\theta}_{f1},\alpha,\tilde{\alpha},\dot{\alpha}_{f1}$};
+
+% Superlazo de fondo asíncrono (UART DMA / B1 -> Parser CLI)
+\node[proc=flMuxBdr, text width=2.35cm, right=1.35cm of acq_sens] (uart_b1) {\textbf{UART DMA / B1}};
+\node[proc=flMuxBdr, text width=2.25cm, right=0.85cm of uart_b1] (parser) {\textbf{Parser CLI}};
+
+\begin{scope}[on background layer]
+    \node[zonebox=flMuxBdr, fit=(uart_b1)(parser), inner xsep=8pt, inner ysep=8pt] (zBg) {};
+    \node[zonetitle=flMuxBdr, anchor=west] at ([xshift=0.25cm]zBg.north west) {Superlazo Fondo (as\'incrono)};
+\end{scope}
+
+% Despachador lógico central: switch(sys->state)
+\node[muxbox] (mux_sw) at (0, -1.55) {MUX L\'ogico\\\texttt{switch(sys->state)}};
+
+% Conexiones banda superior (cero cruces)
+\draw[flwshort] (isr_start.east) -- node[lbl, midway, above=1.5pt]{\texttt{tick++}} (dec_cal.west);
+\draw[flwshort] (dec_cal.east) -- node[lbl, midway, above=1.5pt]{\textbf{No}} (acq_sens.west);
+\draw[flwshort, draw=flMuxBdr] (uart_b1.east) -- (parser.west);
+
+% Lectura AS5600 -> MUX (carril superior de entrada a mux_sw.east)
+\draw[flw, rounded corners=4pt]
+    (acq_sens.south) |- ([yshift=0.16cm]mux_sw.east);
+
+% Parser CLI -> MUX (carril inferior punteado, estrictamente debajo del de AS5600)
+\draw[flwmux, rounded corners=4pt]
+    (parser.south) |- node[lbl, pos=0.66, above=2pt, text=flMuxBdr]{\textbf{\texttt{sel / reset}} (actualiza \texttt{sys->state})}
+    ([yshift=-0.18cm]mux_sw.east);
+
+% ==============================================================================
+% 2. REJILLA DE COORDENADAS X PARA LAS 8 RAMAS DEL MULTIPLEXOR (SINGLE SOURCE)
+% ==============================================================================
+\coordinate (x_spine)  at (0, 0);
+\coordinate (x_case)   at (0.72, 0);
+\coordinate (x_c1)     at (4.35, 0);
+\coordinate (x_d1)     at (5.45, 0);
+\coordinate (x_d2)     at (8.65, 0);
+\coordinate (x_d3)     at (11.80, 0);
+\coordinate (x_out)    at (18.15, 0);
+\coordinate (x_coll)   at (20.25, 0);
+\coordinate (x_bypass) at (20.98, 0);
+
+% Coordenadas Y de las 8 filas (ritmo determinista sin solapamientos)
+\def\yRone{-3.15}
+\def\yRtwo{-4.25}
+\def\yRthree{-5.70}
+\def\yRfour{-6.80}
+\def\yRfive{-8.30}
+\def\yRsix{-9.80}
+\def\yRseven{-11.50}
+\def\yReight{-14.05}
+
+% ==============================================================================
+% 3. FILAS 1-6: ESTADOS PASIVOS, SERVICIO, MOTOR AISLADO, PARADA Y RECUPERACIÓN
+% ==============================================================================
+
+% --- FILA 1: IDLE / FAULT_STOP (Estados 0 y 7) ---
+\node[casepill=flIdleBdr, anchor=west] (c1) at (x_case |- 0,\yRone) {IDLE / FAULT\_STOP};
+\node[proc=flIdleBdr, text width=2.85cm, anchor=west] (p1) at (x_c1 |- c1) {$u = 0$, \texttt{slew} $= 0$};
+\node[actout, anchor=center] (o1) at (x_out |- c1) {\texttt{L298N\_Coast}};
+\draw[flwshort] (c1.east) -- (p1.west);
+\draw[flw] (p1.east) -- (o1.west);
+\draw[flwline] (o1.east) -- (x_coll |- o1);
+
+% --- FILA 2: CHARACTERIZATION (Estado 2) ---
+\node[casepill=flServBdr, anchor=west] (c2) at (x_case |- 0,\yRtwo) {CHARACTERIZATION};
+\node[proc=flServBdr, text width=2.85cm, anchor=west] (p2) at (x_c1 |- c2) {Ensayo \texttt{CHAR1--5B}};
+\node[dec, anchor=center] (d2) at (x_d2 |- c2) {¿Fin?};
+\node[transout, text width=2.65cm, anchor=center] (o2a) at (x_out |- d2) {\texttt{state} $\leftarrow$ \texttt{IDLE}};
+\node[actout, anchor=center] (o2b) at ($(x_out |- d2)+(0,-\flSubDrop)$) {PWM / Coast};
+\draw[flwshort] (c2.east) -- (p2.west);
+\draw[flwshort] (p2.east) -- (d2.west);
+\draw[flw] (d2.east) -- node[lbl, pos=0.14, above=1.5pt]{\textbf{S\'i}} (o2a.west);
+\draw[flw, rounded corners=4pt] (d2.south) |- node[lbl, pos=0.22, right=2.5pt]{\textbf{No}} (o2b.west);
+\draw[flwline] (o2a.east) -- (x_coll |- o2a);
+\draw[flwline] (o2b.east) -- (x_coll |- o2b);
+
+% --- FILA 3: MOTOR_PID_VEL (Estado 3) ---
+\node[casepill=flArmBdr, anchor=west] (c3) at (x_case |- 0,\yRthree) {MOTOR\_PID\_VEL};
+\node[proc=flArmBdr, text width=2.85cm, anchor=west] (p3) at (x_c1 |- c3) {PID Velocidad};
+\node[actout, anchor=center] (o3) at (x_out |- c3) {\texttt{L298N\_SetVoltage}};
+\draw[flwshort] (c3.east) -- (p3.west);
+\draw[flw] (p3.east) -- (o3.west);
+\draw[flwline] (o3.east) -- (x_coll |- o3);
+
+% --- FILA 4: MOTOR_PID_POS (Estado 4) ---
+\node[casepill=flArmBdr, anchor=west] (c4) at (x_case |- 0,\yRfour) {MOTOR\_PID\_POS};
+\node[proc=flArmBdr, text width=2.85cm, anchor=west] (p4) at (x_c1 |- c4) {Servo Clegg ($\theta_{\mathrm{ref}}$)};
+\node[dec, anchor=center] (d4) at (x_d2 |- c4) {¿Bloq.?};
+\node[actout, anchor=center] (o4a) at (x_out |- d4) {\texttt{L298N\_Brake}};
+\node[actout, anchor=center] (o4b) at ($(x_out |- d4)+(0,-\flSubDrop)$) {\texttt{L298N\_SetVoltage}};
+\draw[flwshort] (c4.east) -- (p4.west);
+\draw[flwshort] (p4.east) -- (d4.west);
+\draw[flw] (d4.east) -- node[lbl, pos=0.14, above=1.5pt]{\textbf{S\'i}} (o4a.west);
+\draw[flw, rounded corners=4pt] (d4.south) |- node[lbl, pos=0.22, right=2.5pt]{\textbf{No}} (o4b.west);
+\draw[flwline] (o4a.east) -- (x_coll |- o4a);
+\draw[flwline] (o4b.east) -- (x_coll |- o4b);
+
+% --- FILA 5: STOP_HOME (Estado 9) ---
+\node[casepill=flActBdr, anchor=west] (c5) at (x_case |- 0,\yRfive) {STOP\_HOME};
+\node[proc=flActBdr, text width=2.85cm, anchor=west] (p5) at (x_c1 |- c5) {Servo $0^\circ$ (Clegg)};
+\node[dec, anchor=center] (d5) at (x_d2 |- c5) {¿En $0^\circ$?};
+\node[transout, text width=2.65cm, anchor=center] (o5a) at (x_out |- d5) {\texttt{IDLE} + \texttt{Coast}};
+\node[actout, anchor=center] (o5b) at ($(x_out |- d5)+(0,-\flSubDrop)$) {SetVoltage / Brake};
+\draw[flwshort] (c5.east) -- (p5.west);
+\draw[flwshort] (p5.east) -- (d5.west);
+\draw[flw] (d5.east) -- node[lbl, pos=0.14, above=1.5pt]{\textbf{S\'i}} (o5a.west);
+\draw[flw, rounded corners=4pt] (d5.south) |- node[lbl, pos=0.22, right=2.5pt]{\textbf{No}} (o5b.west);
+\draw[flwline] (o5a.east) -- (x_coll |- o5a);
+\draw[flwline] (o5b.east) -- (x_coll |- o5b);
+
+% --- FILA 6: RECOVER_HOME (Estado 8) ---
+\node[casepill=flActBdr, anchor=west] (c6) at (x_case |- 0,\yRsix) {RECOVER\_HOME};
+\node[proc=flActBdr, text width=2.85cm, anchor=west] (p6) at (x_c1 |- c6) {Subfases \texttt{F0$\to$F1$\to$F2}};
+\node[dec, anchor=center] (d6) at (x_d2 |- c6) {¿Calma?};
+\node[transout, text width=2.65cm, anchor=center] (o6a) at (x_out |- d6) {Reset $\to$ \texttt{SWING\_UP}};
+\node[actout, anchor=center] (o6b) at ($(x_out |- d6)+(0,-\flSubDrop)$) {Coast / PWM / Brake};
+\draw[flwshort] (c6.east) -- (p6.west);
+\draw[flwshort] (p6.east) -- (d6.west);
+\draw[flw] (d6.east) -- node[lbl, pos=0.14, above=1.5pt]{\textbf{S\'i}} (o6a.west);
+\draw[flw, rounded corners=4pt] (d6.south) |- node[lbl, pos=0.22, right=2.5pt]{\textbf{No}} (o6b.west);
+\draw[flwline] (o6a.east) -- (x_coll |- o6a);
+\draw[flwline] (o6b.east) -- (x_coll |- o6b);
+
+% ==============================================================================
+% 4. FILAS 7-8: CICLO AUTÓNOMO CON GUARDAS I2C2, CAPTURA, TIMEOUT Y CAÍDA
+% ==============================================================================
+
+% --- FILA 7: SWING_UP (Estado 5) ---
+\node[casepill=flSwBdr, anchor=west] (c7) at (x_case |- 0,\yRseven) {SWING\_UP};
+\node[dec, anchor=center] (d7_i2c) at (x_d1 |- c7) {¿\texttt{I2C2} OK?};
+\node[dec, anchor=center] (d7_cap) at (x_d2 |- c7) {¿Captura?};
+\node[dec, anchor=center] (d7_tmo) at (x_d3 |- c7) {¿Timeout?};
+\node[proc=flSwBdr, text width=2.05cm, anchor=center] (p7) at (14.95, \yRseven) {Swing-Up PD};
+\node[actout, anchor=center] (o7) at (x_out |- c7) {\texttt{L298N\_SetVoltage}};
+
+% Salidas cortocircuitadas de Row 7 (sub-fila limpia debajo de cada rombo)
+\coordinate (y7_sub)  at (0, \yRseven - 1.12);
+\coordinate (y7_rail) at (0, \yRseven - 1.72);
+\node[actout, text width=2.10cm, anchor=center] (o7_i2c) at (d7_i2c |- y7_sub) {\texttt{L298N\_Coast}};
+\node[transout, text width=2.75cm, anchor=center] (o7_cap) at (d7_cap |- y7_sub) {Bumpless $\to$ \texttt{BALANCE}};
+\node[transout, text width=2.45cm, anchor=center] (o7_tmo) at (d7_tmo |- y7_sub) {\texttt{RECOVER} + \texttt{Coast}};
+
+\draw[flwshort] (c7.east) -- (d7_i2c.west);
+\draw[flwshort] (d7_i2c.east) -- node[lbl, midway, above=1.5pt]{\textbf{S\'i}} (d7_cap.west);
+\draw[flwshort] (d7_cap.east) -- node[lbl, midway, above=1.5pt]{\textbf{No}} (d7_tmo.west);
+\draw[flwshort] (d7_tmo.east) -- node[lbl, midway, above=1.5pt]{\textbf{No}} (p7.west);
+\draw[flwshort] (p7.east) -- (o7.west);
+\draw[flwline] (o7.east) -- (x_coll |- o7);
+
+\draw[flwshort] (d7_i2c.south) -- node[lbl, midway, right=2pt]{\textbf{No}} (o7_i2c.north);
+\draw[flwshort] (d7_cap.south) -- node[lbl, midway, right=2pt]{\textbf{S\'i}} (o7_cap.north);
+\draw[flwshort] (d7_tmo.south) -- node[lbl, midway, right=2pt]{\textbf{S\'i}} (o7_tmo.north);
+
+% Riel colector dedicado de Fila 7 -> bus colector derecho
+\draw[flwline, rounded corners=3pt] (o7_i2c.south) |- (x_coll |- y7_rail);
+\draw[flwline] (o7_cap.south) -- (o7_cap |- y7_rail);
+\draw[flwline] (o7_tmo.south) -- (o7_tmo |- y7_rail);
+\node[dot=flInk] at (o7_cap |- y7_rail) {};
+\node[dot=flInk] at (o7_tmo |- y7_rail) {};
+
+% --- FILA 8: BALANCE_PID (Estado 6) ---
+\node[casepill=flBalBdr, line width=1.45pt, anchor=west] (c8) at (x_case |- 0,\yReight) {BALANCE\_PID};
+\node[dec, anchor=center] (d8_i2c) at (x_d1 |- c8) {¿\texttt{I2C2} OK?};
+\node[dec, anchor=center] (d8_fal) at (x_d2 |- c8) {¿Ca\'ida?};
+\node[proc=flBalBdr, text width=4.85cm, anchor=center] (p8) at (13.65, \yReight) {\textbf{LPF 2} + \textbf{M4 Dual} + \textbf{Dual-Notch}};
+\node[actout, anchor=center] (o8) at (x_out |- c8) {\texttt{L298N\_SetVoltage}};
+
+% Salidas cortocircuitadas de Row 8
+\coordinate (y8_sub)  at (0, \yReight - 1.12);
+\coordinate (y8_rail) at (0, \yReight - 1.72);
+\node[actout, text width=2.10cm, anchor=center] (o8_i2c) at (d8_i2c |- y8_sub) {\texttt{L298N\_Coast}};
+\node[transout, text width=5.90cm, anchor=center] (o8_fal) at (11.15, \yReight - 1.12)
+    {Reset $\to$ (\texttt{auto}? \texttt{RECOVER\_HOME} : \texttt{IDLE}) + \texttt{Coast}};
+
+\draw[flwshort] (c8.east) -- (d8_i2c.west);
+\draw[flwshort] (d8_i2c.east) -- node[lbl, midway, above=1.5pt]{\textbf{S\'i}} (d8_fal.west);
+\draw[flwshort] (d8_fal.east) -- node[lbl, midway, above=1.5pt]{\textbf{No}} (p8.west);
+\draw[flwshort] (p8.east) -- (o8.west);
+\draw[flwline] (o8.east) -- (x_coll |- o8);
+
+\draw[flwshort] (d8_i2c.south) -- node[lbl, midway, right=2pt]{\textbf{No}} (o8_i2c.north);
+\draw[flwshort] (d8_fal.south) -- node[lbl, midway, right=2pt]{\textbf{S\'i}} (d8_fal |- o8_fal.north);
+
+% Riel colector dedicado de Fila 8 -> bus colector derecho
+\draw[flwline, rounded corners=3pt] (o8_i2c.south) |- (x_coll |- y8_rail);
+\draw[flwline] (o8_fal.south) -- (o8_fal |- y8_rail);
+\node[dot=flInk] at (o8_fal |- y8_rail) {};
+
+% ==============================================================================
+% 5. ESPINA VERTICAL DEL MULTIPLEXOR (IZQUIERDA) Y CONTENEDOR DE RAMAS
+% ==============================================================================
+\draw[flwline] (mux_sw.south) -- (x_spine |- c8.west);
+\foreach \n in {c1, c2, c3, c4, c5, c6, c7, c8} {
+    \draw[flwshort] (x_spine |- \n.west) -- (\n.west);
+}
+\foreach \n in {c1, c2, c3, c4, c5, c6, c7} {
+    \node[dot=flInk] at (x_spine |- \n.west) {};
+}
+
+\begin{scope}[on background layer]
+    \node[zonebox=flBalBdr, inner xsep=11pt, inner ysep=10pt,
+          fit=(x_spine |- c1)(c1)(o1)(c8)(o8)(y8_rail)(o7_i2c)] (zMux) {};
+    \node[zonetitle=flBalBdr, anchor=east]
+          at ([xshift=-0.25cm]zMux.north east) {Multiplexaci\'on Determinista por Estado (\texttt{Furuta\_ControlISR\_1kHz})};
+\end{scope}
+
+% ==============================================================================
+% 6. BUS COLECTOR DERECHO, BYPASS CALIBRATING, DECIMACIÓN Y SALIDA ISR
+% ==============================================================================
+\node[proc=flServBdr, text width=5.25cm, anchor=east] (decim) at (19.25, \yReight - 2.65)
+    {\textbf{Decimaci\'on Telemetr\'ia} (\texttt{tick \% 10 == 0} $\to$ 100 Hz)};
+\node[term, left=1.10cm of decim] (isr_end) {Fin ISR \texttt{TIM6}};
+
+% Bus colector derecho (une las 8 filas hacia decim.east superior)
+\coordinate (dec_in_top) at ([yshift= 0.14cm]decim.east);
+\coordinate (dec_in_bot) at ([yshift=-0.14cm]decim.east);
+
+\draw[flw, rounded corners=5pt]
+    (x_coll |- o1) -- (x_coll |- dec_in_top) -- (dec_in_top);
+\foreach \p in {o2a, o2b, o3, o4a, o4b, o5a, o5b, o6a, o6b, o7, o8} {
+    \node[dot=flInk] at (x_coll |- \p) {};
+}
+\node[dot=flInk] at (x_coll |- y7_rail) {};
+\node[dot=flInk] at (x_coll |- y8_rail) {};
+
+% Desvío superior CALIBRATING (Sí -> pausa I2C, corre estrictamente por fuera de x_coll)
+\coordinate (y_byp_top) at ([yshift=0.58cm]zBg.north);
+\draw[flwbyp, rounded corners=6pt]
+    (dec_cal.north) |- node[lbl, pos=0.62, above=2pt, text=flServBdr]{\textbf{S\'i} (pausa bus $\text{I}^2\text{C}$ durante calibraci\'on)}
+    (x_bypass |- y_byp_top) -- (x_bypass |- dec_in_bot) -- (dec_in_bot);
+
+% Salida final hacia Fin ISR TIM6
+\draw[flw] (decim.west) -- (isr_end.east);
+
+\end{tikzpicture}%
+}%
+\caption{Diagrama de flujo l\'ogico de la multiplexaci\'on de estados ejecutada a \qty{1.0}{\kilo\hertz} dentro de \texttt{Furuta\_ControlISR\_1kHz} (\texttt{furuta\_control.c} y \texttt{stm32f4xx\_it.c}). Cada periodo de \texttt{TIM6} verifica la guarda previa \texttt{CALIBRATING} (evitando colisiones $\text{I}^2\text{C}$ durante el promediado de cero), adquiere ambos sensores AS5600 y despacha mediante \texttt{switch(sys->state)} ---actualizado as\'incronamente por el superlazo \texttt{UART DMA / B1} $\to$ \texttt{Parser CLI}--- una \'unica rama mutuamente excluyente entre los diez estados de \texttt{Furuta\_State\_t}, aplicando protecci\'on por racha de fallos $\text{I}^2\text{C}_2$, transferencias \textit{bumpless}, conmutaci\'on autom\'atica/manual ante ca\'ida y salida directa a \texttt{L298N\_SetVoltage}, \texttt{L298N\_Brake} o \texttt{L298N\_Coast} antes de la decimaci\'on de telemetr\'ia a \qty{100}{\hertz}.}
+\label{fig:flujo_multiplexacion}
+\end{figure*}
