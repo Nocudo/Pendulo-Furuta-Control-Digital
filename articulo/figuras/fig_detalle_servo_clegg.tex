@@ -1,171 +1,130 @@
 % ==============================================================================
-% Figura de Detalle: Arquitectura Interna del Control Servo 0° con Reinicio de
-% Clegg y Freno Activo (Furuta_DriveArmToZero_1kHz / FURUTA_STATE_MOTOR_PID_POS)
-% Archivo modular listo para \input{} en IEEEtran dos columnas (figure* [!t])
-% Diseño por construcción (Layout by Construction): 1 único origen (0,0),
-% posicionamiento relativo, coordenadas nombradas y cero posiciones absolutas.
+% Figura: Diagrama de Bloques Atómico — Servo 0° con Reinicio de Clegg y Freno
+% Estados: MOTOR_PID_POS / STOP_HOME / Fase F1 de RECOVER_HOME (1 kHz)
+% Paleta, estilo y 3 zonas idénticas a Figs. 6, 7, 8 y 10. Solo nombres cortos
+% en bloques, realimentación cerrada con posición theta y velocidad dtheta_f1
+% en pistas estrictamente separadas.
 % Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
-%                            backgrounds, babel, bending.
+%                              backgrounds, babel, bending.
 % ==============================================================================
 \begin{figure*}[!t]
 \centering
-\definecolor{scInk}{HTML}{1E293B}%
-\definecolor{scArmEdge}{HTML}{1B6B72}%
-\definecolor{scArmFill}{HTML}{E8F6F6}%
-\definecolor{scIntEdge}{HTML}{1B4965}%
-\definecolor{scIntFill}{HTML}{EAF4FB}%
-\definecolor{scCleggEdge}{HTML}{7E2268}%
-\definecolor{scCleggFill}{HTML}{FBF0F8}%
-\definecolor{scCondEdge}{HTML}{B45309}%
-\definecolor{scCondFill}{HTML}{FEF6EB}%
-\definecolor{scSelEdge}{HTML}{243447}%
-\definecolor{scSelFill}{HTML}{ECEFF4}%
-\definecolor{scActEdge}{HTML}{A63429}%
-\definecolor{scActFill}{HTML}{FDF0EE}%
-%
-% --- Parámetros centralizados de ritmo geométrico (Single Source of Truth) ---
-\def\scBlkW{1.96cm}%
-\def\scBlkH{0.92cm}%
-\def\scColGapX{0.68cm}%
-\def\scErrTapX{0.92cm}%
-\def\scErrLeadX{0.62cm}%
-\def\scSumCGapX{1.12cm}%
-\def\scCascGapX{0.64cm}%
-\def\scRefSpanX{1.65cm}%
-\def\scOutSpanX{2.05cm}%
-\def\scFbDropY{0.95cm}%
-\def\scCleggGapY{0.82cm}%
-\def\scPropGapY{0.68cm}%
-\def\scDerivDropY{1.05cm}%
-\def\scHystDropY{0.88cm}%
-\def\scHystInOff{0.18cm}%
-\def\scSelOffX{0.28cm}%
-\def\scHopRad{0.14cm}%
-%
-\resizebox{0.84\textwidth}{!}{%
+% --- Paleta semántica armónica (idéntica a Figs. 6, 7, 8 y 10) ---
+\definecolor{blkInk}{HTML}{1E293B}
+\definecolor{blkPendEdge}{HTML}{1B4965}
+\definecolor{blkPendFill}{HTML}{EAF4FB}
+\definecolor{blkArmEdge}{HTML}{0F766E}
+\definecolor{blkArmFill}{HTML}{E6F7F5}
+\definecolor{blkCondEdge}{HTML}{B45309}
+\definecolor{blkCondFill}{HTML}{FEF6EB}
+\definecolor{blkDistEdge}{HTML}{7E2268}
+\definecolor{blkDistFill}{HTML}{FBF0F8}
+\definecolor{blkActEdge}{HTML}{A63429}
+\definecolor{blkActFill}{HTML}{FDF0EE}
+\definecolor{blkPlantEdge}{HTML}{243447}
+\definecolor{blkPlantFill}{HTML}{ECEFF4}
+\definecolor{blkZoneZ1}{HTML}{33658A}
+\definecolor{blkZoneL2}{HTML}{A63429}
+\definecolor{blkZoneL3}{HTML}{2A6B43}
+
+% --- Parámetros centralizados de ritmo geométrico (Layout by Construction) ---
+\def\scBlkW{2.04cm}
+\def\scBlkH{0.84cm}
+\def\scColGapX{0.58cm}
+\def\scErrTapX{0.82cm}
+\def\scErrLeadX{0.58cm}
+\def\scSumCGapX{0.92cm}
+\def\scCascGapX{0.54cm}
+\def\scActGapX{0.54cm}
+\def\scSensGapX{0.56cm}
+\def\scCleggGapY{0.62cm}
+\def\scPropGapY{0.50cm}
+\def\scDerivDropY{0.78cm}
+\def\scHystDropY{0.66cm}
+\def\scHystInOff{0.18cm}
+\def\scSelOffX{0.26cm}
+\def\scHopRad{0.095cm}
+\def\scTrkStepX{0.44cm}
+
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
     >=Stealth,
-    font=\small\sffamily,
-    % --- Estilos de bloques (solo nombre corto en cada bloque) ---
+    font=\sffamily,
+    % --- Estilos de bloques atómicos (solo nombre corto, sin parámetros ni fórmulas) ---
     baseblk/.style={
         rectangle,
-        rounded corners=4pt,
+        rounded corners=3.5pt,
         align=center,
-        inner xsep=4pt,
-        inner ysep=4pt,
-        text=scInk,
+        inner xsep=3.5pt,
+        inner ysep=3pt,
+        text=blkInk,
         text width=\scBlkW,
         minimum height=\scBlkH,
         font=\small\sffamily\bfseries
     },
-    armblk/.style={
-        baseblk,
-        draw=scArmEdge,
-        line width=1.1pt,
-        fill=scArmFill
-    },
-    intblk/.style={
-        baseblk,
-        draw=scIntEdge,
-        line width=1.1pt,
-        fill=scIntFill
-    },
-    cleggblk/.style={
-        baseblk,
-        draw=scCleggEdge,
-        line width=1.1pt,
-        fill=scCleggFill
-    },
-    condblk/.style={
-        baseblk,
-        draw=scCondEdge,
-        line width=1.1pt,
-        fill=scCondFill
-    },
-    selblk/.style={
-        baseblk,
-        draw=scSelEdge,
-        line width=1.2pt,
-        fill=scSelFill
-    },
-    actblk/.style={
-        baseblk,
-        draw=scActEdge,
-        line width=1.1pt,
-        fill=scActFill
-    },
+    armblk/.style={baseblk, draw=blkArmEdge, line width=1.1pt, fill=blkArmFill},
+    intblk/.style={baseblk, draw=blkPendEdge, line width=1.1pt, fill=blkPendFill},
+    cleggblk/.style={baseblk, draw=blkDistEdge, line width=1.1pt, fill=blkDistFill},
+    condblk/.style={baseblk, draw=blkCondEdge, line width=1.1pt, fill=blkCondFill},
+    selblk/.style={baseblk, draw=blkPlantEdge, line width=1.2pt, fill=blkPlantFill},
+    actblk/.style={baseblk, draw=blkActEdge, line width=1.1pt, fill=blkActFill, text width=1.94cm},
+    plantblk/.style={baseblk, draw=blkPlantEdge, line width=1.35pt, fill=blkPlantFill, text width=1.82cm},
+    sensTblk/.style={baseblk, draw=blkArmEdge, line width=1.1pt, fill=blkArmFill, text width=2.14cm},
     sum/.style={
         circle,
-        draw=scInk,
+        draw=blkInk,
         line width=1.05pt,
         fill=white,
-        minimum size=0.64cm,
+        minimum size=0.58cm,
         inner sep=0pt,
         font=\small\bfseries,
-        text=scInk
+        text=blkInk
     },
-    dot/.style={
-        circle,
+    dot/.style={circle, fill=#1, inner sep=1.5pt},
+    % --- Flechas canónicas ---
+    wire/.style={line width=1.0pt, draw=blkInk},
+    sig/.style={-{Stealth[length=4.6pt, width=3.4pt]}, line width=1.0pt, draw=blkInk},
+    sigshort/.style={-{Stealth[length=3.9pt, width=2.9pt]}, line width=1.0pt, draw=blkInk},
+    fbT/.style={-{Stealth[length=4.4pt, width=3.1pt]}, line width=0.95pt, draw=blkArmEdge},
+    lineT/.style={line width=0.95pt, draw=blkArmEdge},
+    sigClegg/.style={-{Stealth[length=4.0pt, width=2.9pt]}, line width=0.95pt, densely dashed, draw=blkDistEdge},
+    sigBrakeDash/.style={-{Stealth[length=4.0pt, width=2.9pt]}, line width=0.95pt, densely dashed, draw=blkActEdge},
+    wireBrakeDash/.style={line width=0.95pt, densely dashed, draw=blkActEdge},
+    sigBrakeSolid/.style={-{Stealth[length=4.2pt, width=3.1pt]}, line width=1.05pt, draw=blkActEdge},
+    % --- Contenedores y etiquetas (idénticos a Figs. 6, 7, 8 y 10) ---
+    zonebox/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=#1,
+        densely dashed,
+        line width=0.95pt,
         fill=#1,
-        inner sep=1.6pt
+        fill opacity=0.035,
+        text opacity=1
     },
-    % --- Estilos de líneas y flechas canónicas ---
-    wire/.style={
-        line width=1.0pt,
-        draw=scInk
+    zonetitle/.style={
+        rectangle,
+        rounded corners=3pt,
+        draw=#1,
+        line width=0.8pt,
+        fill=white,
+        inner xsep=5.5pt,
+        inner ysep=2.2pt,
+        font=\small\sffamily\bfseries,
+        text=#1
     },
-    sig/.style={
-        -{Stealth[length=4.8pt, width=3.6pt]},
-        line width=1.0pt,
-        draw=scInk
-    },
-    sigshort/.style={
-        -{Stealth[length=3.8pt, width=2.9pt]},
-        line width=1.0pt,
-        draw=scInk
-    },
-    sigClegg/.style={
-        -{Stealth[length=3.8pt, width=2.9pt]},
-        line width=1.0pt,
-        densely dashed,
-        draw=scCleggEdge
-    },
-    sigBrakeDash/.style={
-        -{Stealth[length=3.8pt, width=2.9pt]},
-        line width=1.0pt,
-        densely dashed,
-        draw=scActEdge
-    },
-    wireBrakeDash/.style={
-        line width=1.0pt,
-        densely dashed,
-        draw=scActEdge
-    },
-    sigBrakeSolid/.style={
-        -{Stealth[length=4.2pt, width=3.1pt]},
-        line width=1.05pt,
-        draw=scActEdge
-    },
-    signlbl/.style={
-        font=\footnotesize\bfseries,
-        text=scInk,
-        inner sep=1pt
-    },
-    wirelbl/.style={
-        font=\footnotesize\sffamily,
-        text=scInk,
-        inner sep=2pt
-    }
+    signlbl/.style={font=\footnotesize\bfseries, text=blkInk, inner sep=1pt},
+    wirelbl/.style={font=\footnotesize\sffamily, text=blkInk, inner sep=1.5pt}
 ]
 
 % ==============================================================================
-% 1. RAMA CENTRAL (I NO LINEAL) Y CASCADA DE SALIDA — ÚNICO ANCLAJE EN (0,0)
+% ZONA 1: CONTROL SERVO 0° CON REINICIO DE CLEGG Y FRENO — ANCLAJE EN (0,0)
 % ==============================================================================
 \node[sum] (sig_p) at (0,0) {$\Sigma_p$};
 
 \coordinate[right=\scErrTapX of sig_p.east] (split_e);
 
-\node[intblk, right=\scErrLeadX of split_e] (win_box) {Ventana\\$\pm 5^\circ$};
+\node[intblk, right=\scErrLeadX of split_e] (win_box) {Ventana\\Integral};
 \node[intblk, right=\scColGapX of win_box] (int_box) {Integrador};
 \node[intblk, right=\scColGapX of int_box] (clamp_box) {Clamp\\Integral};
 
@@ -175,138 +134,231 @@
 \node[condblk, right=\scCascGapX of sat_box] (slew_box) {Slew-Rate};
 \node[selblk,  right=\scCascGapX of slew_box] (sel_box) {Selector\\Freno};
 
-% ==============================================================================
-% 2. RAMA SUPERIOR (P) Y REINICIO DE CLEGG (ENCIMA DEL INTEGRADOR)
-% ==============================================================================
 \node[cleggblk, above=\scCleggGapY of int_box] (clegg_box) {Reinicio\\Clegg};
 \node[armblk,   above=\scPropGapY  of clegg_box] (prop_box) {Proporcional};
 
-% ==============================================================================
-% 3. RAMA INFERIOR (D) Y BLOQUEO ELECTROMAGNÉTICO (ABAJO)
-% ==============================================================================
 \node[armblk, below=\scDerivDropY of clamp_box] (deriv_box) {Derivativo};
-\node[actblk] (brake_box) at (slew_box |- deriv_box) {Freno\\Activo};
+\node[actblk, text width=\scBlkW] (brake_box) at (slew_box |- deriv_box) {Freno\\Activo};
 
 \coordinate[below=\scHystDropY of deriv_box.south] (hyst_top_row);
-\node[actblk, anchor=north] (hyst_box) at (int_box |- hyst_top_row) {Hist\'eresis};
+\node[actblk, text width=\scBlkW, anchor=north] (hyst_box) at (int_box |- hyst_top_row) {Hist\'eresis};
+
+\coordinate (z1_top)   at ([yshift=0.42cm]prop_box.north);
+\coordinate (z1_bot)   at ([yshift=-0.32cm]hyst_box.south);
+\coordinate (z1_left)  at ([xshift=-0.62cm]sig_p.west);
+\coordinate (z1_right) at ([xshift=0.34cm]sel_box.east);
+
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneZ1, inner sep=0pt,
+          fit=(z1_top)(z1_bot)(z1_left)(z1_right)] (zone1) {};
+\end{scope}
+\node[zonetitle=blkZoneZ1, anchor=west] at ([xshift=0.35cm]zone1.north west)
+    {Control Servo $0^\circ$ con Reinicio de Clegg (Paralelo + Cascada)};
 
 % ==============================================================================
-% 4. ENTRADAS Y CONEXIONES DE LAS 3 RAMAS PARALELAS + REINICIO CLEGG
+% ZONA 2: ACTUACIÓN Y MOTOR (CASCADA IDÉNTICA A FIGS. 6, 7, 8 Y 10)
 % ==============================================================================
-\coordinate[left=\scRefSpanX of sig_p.west] (ref_in);
-\coordinate[below=\scFbDropY of sig_p.south] (theta_in);
-\coordinate[right=\scOutSpanX of sel_box.east] (u_out);
+\coordinate (z2_y) at ([yshift=-1.92cm]zone1.south);
+\node[actblk, anchor=west] (banda) at ([xshift=3.60cm]zone1.west |- z2_y) {Banda\\Silenciosa};
+\node[actblk, right=\scActGapX of banda] (rampa) {Rampa\\L298N};
+\node[actblk, right=\scActGapX of rampa] (pwm) {Modulador\\PWM};
+\node[actblk, right=\scActGapX of pwm] (puente) {Puente H\\L298N};
+\node[plantblk, right=0.72cm of puente] (motor) {Motor\\80:1};
 
-% Referencia theta_ref y realimentación negativa -theta
-\draw[sig] (ref_in) -- (sig_p.west)
-    node[wirelbl, pos=0.38, above=2pt] {$\theta_{\mathrm{ref}}$};
-\node[signlbl, anchor=south] at ($(sig_p.west)+(-0.15, 0.11)$) {$+$};
+\coordinate (z2_top)   at ([yshift=0.44cm]banda.north);
+\coordinate (z2_bot)   at ([yshift=-0.30cm]banda.south);
+\coordinate (z2_left)  at ([xshift=-0.30cm]banda.west);
+\coordinate (z2_right) at ([xshift=0.32cm]motor.east);
 
-\draw[sigshort] (theta_in) -- (sig_p.south)
-    node[wirelbl, pos=0.44, left=3pt] {$\theta$};
-\node[signlbl, anchor=north west] at ($(sig_p.south)+(0.10, -0.10)$) {$-$};
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneL2, inner sep=0pt,
+          fit=(z2_top)(z2_bot)(z2_left)(z2_right)] (zoneL2) {};
+\end{scope}
+\node[zonetitle=blkZoneL2, anchor=west] at ([xshift=0.32cm]zoneL2.north west)
+    {Actuaci\'on y Motor (Cascada)};
 
-% Error e_theta y bifurcación hacia P, I y Reinicio de Clegg
+% ==============================================================================
+% ZONA 3: SENSADO BASE Y LPF IIR 1 (DERECHA -> IZQUIERDA)
+% ==============================================================================
+\coordinate (z3_y) at ([yshift=-1.65cm]zoneL2.south);
+\node[sensTblk, anchor=center] (as5600_base) at (puente.center |- z3_y) {AS5600\\Base};
+\node[sensTblk, left=\scSensGapX of as5600_base] (desenv) {Desenvoltura};
+\node[sensTblk, left=\scSensGapX of desenv] (deriv_t) {Derivador $\theta$};
+\node[sensTblk, left=\scSensGapX of deriv_t] (lpf1_t) {LPF IIR 1};
+
+\coordinate (z3_top)   at ([yshift=0.42cm]lpf1_t.north);
+\coordinate (z3_bot)   at ([yshift=-0.32cm]lpf1_t.south);
+\coordinate (z3_left)  at ([xshift=-0.78cm]lpf1_t.west);
+\coordinate (z3_right) at ([xshift=0.30cm]as5600_base.east);
+
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneL3, inner sep=0pt,
+          fit=(z3_top)(z3_bot)(z3_left)(z3_right)] (zoneL3) {};
+\end{scope}
+\node[zonetitle=blkZoneL3, anchor=west] at ([xshift=0.32cm]zoneL3.south west)
+    {Sensado Base y LPF IIR 1};
+
+% ==============================================================================
+% CONEXIONES INTERNAS ZONA 1
+% ==============================================================================
+\coordinate (trk_dt1_x)   at ([xshift=-0.52cm]zone1.west);
+\coordinate (trk_theta_x) at ([xshift=-\scTrkStepX]trk_dt1_x);
+\coordinate (ref_in)      at ([xshift=-1.35cm]trk_theta_x |- sig_p.west);
+
+% Referencia theta_ref
+\draw[sig] (ref_in) -- (sig_p.west);
+\node[wirelbl, anchor=south] at ($(ref_in)!0.50!(trk_theta_x |- sig_p.west) + (0, 2pt)$) {$\theta_{\mathrm{ref}}$};
+\node[signlbl, anchor=south] at ($(sig_p.west)+(-0.15, 0.08)$) {$+$};
+
+% Error e_theta y bifurcación hacia P, I y Reinicio Clegg
 \draw[wire] (sig_p.east) -- (split_e)
     node[wirelbl, midway, above=2pt] {$e_\theta$};
-\node[dot=scInk] at (split_e) {};
+\node[dot=blkInk] at (split_e) {};
 
-% Rama I central
 \draw[sigshort] (split_e) -- (win_box.west);
 \draw[sigshort] (win_box.east) -- (int_box.west);
 \draw[sigshort] (int_box.east) -- (clamp_box.west);
 \draw[sigshort] (clamp_box.east) -- (sig_c.west)
-    node[wirelbl, pos=0.35, above=2pt] {$u_i$};
-\node[signlbl, anchor=south] at ($(sig_c.west)+(-0.15, 0.11)$) {$+$};
+    node[wirelbl, pos=0.38, above=2pt] {$u_i$};
+\node[signlbl, anchor=south] at ($(sig_c.west)+(-0.15, 0.08)$) {$+$};
 
-% Riser superior desde split_e hacia Reinicio Clegg y Proporcional
 \coordinate (clegg_tap) at (split_e |- clegg_box.west);
 \draw[wire] (split_e) -- (clegg_tap);
-\node[dot=scInk] at (clegg_tap) {};
-
-\draw[sig] (clegg_tap) -- (clegg_box.west);
+\node[dot=blkInk] at (clegg_tap) {};
+\draw[sigshort] (clegg_tap) -- (clegg_box.west);
 \draw[sig, rounded corners=4pt] (clegg_tap) |- (prop_box.west);
 
-% Disparo/reset vertical de Clegg hacia Integrador
 \draw[sigClegg] (clegg_box.south) -- (int_box.north)
-    node[wirelbl, text=scCleggEdge, midway, right=4pt] {$e_\theta[k]e_\theta[k-1]\le 0$};
+    node[wirelbl, text=blkDistEdge, midway, right=3pt] {$\mathrm{reset}$};
 
-% Rama P -> Sigma_c
 \draw[sig, rounded corners=4pt] (prop_box.east) -| (sig_c.north)
-    node[wirelbl, pos=0.75, right=4pt] {$u_p$};
-\node[signlbl, anchor=south west] at ($(sig_c.north)+(0.10, 0.10)$) {$+$};
+    node[wirelbl, pos=0.75, right=3pt] {$u_p$};
+\node[signlbl, anchor=south west] at ($(sig_c.north)+(0.08, 0.08)$) {$+$};
 
-% ==============================================================================
-% 5. BUS DE MEDICIÓN \dot{\theta}_{f1}, RAMA D Y BLOQUEO ELECTROMAGNÉTICO
-% ==============================================================================
-\coordinate (vel_in)      at (ref_in |- deriv_box.west);
-\coordinate (vel_cross_e) at (split_e |- vel_in);
-\coordinate (vel_tap)     at (win_box.center |- vel_in);
-\coordinate (vel_cross_r) at (int_box.center |- vel_in);
+\draw[sig, rounded corners=4pt] (deriv_box.east) -| (sig_c.south)
+    node[wirelbl, pos=0.25, below=2pt] {$u_d$};
+\node[signlbl, anchor=north west] at ($(sig_c.south)+(0.08, -0.08)$) {$+$};
 
-% Puntos de salto semicircular sobre el bus horizontal \dot{\theta}_{f1}
+\draw[sigshort] (sig_c.east) -- (sat_box.west);
+\draw[sigshort] (sat_box.east) -- (slew_box.west);
+\draw[sigshort] (slew_box.east) -- (sel_box.west);
+
+% Bus interno de velocidad dtheta_f1 -> Derivativo y Histéresis (con saltos limpios)
+\coordinate (vel_cross_e) at (split_e |- deriv_box.west);
+\coordinate (vel_tap)     at (win_box.center |- deriv_box.west);
+\coordinate (vel_cross_r) at (int_box.center |- deriv_box.west);
+
 \coordinate (ehop_top) at ($(vel_cross_e)+(0, \scHopRad)$);
 \coordinate (ehop_bot) at ($(vel_cross_e)+(0,-\scHopRad)$);
 \coordinate (rhop_top) at ($(vel_cross_r)+(0, \scHopRad)$);
 \coordinate (rhop_bot) at ($(vel_cross_r)+(0,-\scHopRad)$);
 
-% Bus horizontal \dot{\theta}_{f1} hacia Derivativo (sin pasar por Sigma_p)
-\draw[sig] (vel_in) -- (deriv_box.west);
-\node[wirelbl, anchor=south]
-    at ($(vel_in)!0.50!(vel_cross_e) + (0, 0.04)$) {$\dot{\theta}_{f1}$};
-\node[wirelbl, anchor=south]
-    at ($(vel_cross_r)!0.56!(deriv_box.west) + (0, 0.04)$) {$-\dot{\theta}_{f1}$};
-
-% Rama D -> Sigma_c
-\draw[sig, rounded corners=4pt] (deriv_box.east) -| (sig_c.south)
-    node[wirelbl, pos=0.25, below=2pt] {$u_d$};
-\node[signlbl, anchor=north west] at ($(sig_c.south)+(0.10, -0.10)$) {$+$};
-
-% Entrada e_theta hacia Histéresis (con salto limpio sobre vel_bus)
 \coordinate (hyst_in_e) at ([yshift=-\scHystInOff]hyst_box.west);
 \coordinate (hyst_in_v) at ([yshift=+\scHystInOff]hyst_box.west);
 
+% e_theta -> Histéresis (salto sobre dtheta_f1)
 \draw[wire] (split_e) -- (ehop_top);
 \draw[wire] (ehop_top) arc[start angle=90, end angle=-90, radius=\scHopRad];
 \draw[sig, rounded corners=4pt] (ehop_bot) |- (hyst_in_e)
-    node[wirelbl, pos=0.76, below=2pt] {$e_\theta$};
+    node[wirelbl, pos=0.78, below=2pt] {$e_\theta$};
 
-% Entrada \dot{\theta}_{f1} hacia Histéresis (derivada a la derecha de split_e)
-\node[dot=scInk] at (vel_tap) {};
-\draw[sig, rounded corners=4pt] (vel_tap) |- (hyst_in_v)
-    node[wirelbl, pos=0.76, above=2pt] {$\dot{\theta}_{f1}$};
-
-% Línea de reset desde Histéresis hacia Integrador (con salto limpio sobre vel_bus)
+% reset desde Histéresis -> Integrador (salto sobre dtheta_f1)
 \draw[wireBrakeDash] (hyst_box.north) -- (rhop_bot)
-    node[wirelbl, text=scActEdge, midway, right=4pt] {$\mathrm{reset}$};
-\draw[wire, draw=scActEdge] (rhop_bot) arc[start angle=-90, end angle=90, radius=\scHopRad];
+    node[wirelbl, text=blkActEdge, midway, right=3pt] {$\mathrm{reset}$};
+\draw[wire, draw=blkActEdge] (rhop_bot) arc[start angle=-90, end angle=90, radius=\scHopRad];
 \draw[sigBrakeDash] (rhop_top) -- (int_box.south);
 
-% Comando desde Histéresis -> habilita Freno Activo y comanda Selector Freno
+% Histéresis -> Freno Activo y lock -> Selector Freno
 \coordinate (brake_en_tap) at (brake_box.south |- hyst_box.east);
 \coordinate (sel_cmd_in)   at ([xshift=+\scSelOffX]sel_box.south);
 \coordinate (sel_brk_in)   at ([xshift=-\scSelOffX]sel_box.south);
 
 \draw[wireBrakeDash] (hyst_box.east) -- (brake_en_tap);
-\node[dot=scActEdge] at (brake_en_tap) {};
+\node[dot=blkActEdge] at (brake_en_tap) {};
 \draw[sigBrakeDash] (brake_en_tap) -- (brake_box.south);
 \draw[sigBrakeDash, rounded corners=4pt] (brake_en_tap) -| (sel_cmd_in)
-    node[wirelbl, text=scActEdge, pos=0.75, right=3pt] {$\mathrm{lock}$};
-
-% Actuación de Freno Activo hacia Selector Freno
+    node[wirelbl, text=blkActEdge, pos=0.75, right=3pt] {$\mathrm{lock}$};
 \draw[sigBrakeSolid, rounded corners=4pt] (brake_box.east) -| (sel_brk_in);
 
 % ==============================================================================
-% 6. CASCADA DE SALIDA: SATURACIÓN -> SLEW-RATE -> SELECTOR FRENO -> SALIDA
+% CONEXIONES ZONA 1 -> ZONA 2 (TENSIÓN u_servo Y DESVÍO FRENO ACTIVO)
 % ==============================================================================
-\draw[sigshort] (sig_c.east) -- (sat_box.west);
-\draw[sigshort] (sat_box.east) -- (slew_box.west);
-\draw[sigshort] (slew_box.east) -- (sel_box.west);
-\draw[sig] (sel_box.east) -- (u_out)
-    node[wirelbl, midway, above=2pt] {$u_{\mathrm{servo}}\text{ / Freno}$};
+\coordinate (u_right_x)  at ([xshift=0.68cm]zone1.east);
+\coordinate (lane_u_y)   at ([yshift=0.68cm]zoneL2.north);
+\coordinate (u_in_x)     at ([xshift=-0.38cm]zoneL2.west);
+\coordinate (sel_out_u)  at ([yshift= 0.14cm]sel_box.east);
+\coordinate (sel_out_br) at ([yshift=-0.14cm]sel_box.east);
+
+% Canal tensión u_servo -> Banda Silenciosa
+\draw[sig, rounded corners=4pt]
+    (sel_out_u) -- (u_right_x |- sel_out_u)
+    -- (u_right_x |- lane_u_y)
+    -- (u_in_x |- lane_u_y) |- (banda.west);
+\node[wirelbl, anchor=south]
+    at ($(rampa.center |- lane_u_y)!0.50!(pwm.center |- lane_u_y) + (0, 1.5pt)$) {$u_{\mathrm{servo}}$};
+
+% Canal Freno directo -> Puente H L298N (en corredor limpio entre lane_u_y y zoneL2.north)
+\coordinate (br_right_x) at ([xshift=0.32cm]zone1.east);
+\coordinate (lane_br_y)  at ([yshift=0.30cm]zoneL2.north);
+\draw[sigBrakeDash, rounded corners=4pt]
+    (sel_out_br) -- (br_right_x |- sel_out_br)
+    -- (br_right_x |- lane_br_y) -| (puente.north);
+\node[wirelbl, text=blkActEdge, anchor=south]
+    at ($(puente.east |- lane_br_y)!0.52!(motor.east |- lane_br_y) + (0, 1pt)$) {Freno};
+
+% Cascada interna Zona 2
+\draw[sigshort] (banda.east) -- (rampa.west);
+\draw[sigshort] (rampa.east) -- (pwm.west);
+\draw[sigshort] (pwm.east) -- (puente.west);
+\draw[sigshort] (puente.east) -- node[wirelbl, midway, above=2pt]{$V_m$} (motor.west);
+
+% ==============================================================================
+% CONEXIONES ZONA 3 -> 2 PISTAS SEPARADAS (POSICIÓN theta Y VELOCIDAD dtheta_f1)
+% ==============================================================================
+\draw[fbT, rounded corners=4pt] (motor.south) |- (as5600_base.east);
+\node[wirelbl, text=blkArmEdge, anchor=west]
+    at ([xshift=0.08cm]$(motor.south |- zoneL2.south)!0.48!(motor.south |- zoneL3.north)$) {$\theta(t)$};
+
+\draw[fbT] (as5600_base.west) -- (desenv.east);
+\draw[fbT] (desenv.west) -- (deriv_t.east);
+\draw[fbT] (deriv_t.west) -- (lpf1_t.east);
+
+% 1) PISTA INTERIOR (VELOCIDAD dtheta_f1) -> Derivativo (-dtheta_f1) y Histéresis (dtheta_f1)
+\draw[fbT, rounded corners=4pt]
+    (lpf1_t.west) -- (trk_dt1_x |- lpf1_t.west)
+    -- (trk_dt1_x |- deriv_box.west) -- (deriv_box.west);
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ($(lpf1_t.west)!0.50!(zoneL3.west |- lpf1_t.west) + (0, 2pt)$) {$\dot{\theta}_{f1}$};
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ($(sig_p.west |- deriv_box.west)!0.42!(vel_cross_e) + (0, 2pt)$) {$\dot{\theta}_{f1}$};
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ($(vel_cross_r)!0.54!(deriv_box.west) + (0, 2pt)$) {$-\dot{\theta}_{f1}$};
+
+\node[dot=blkArmEdge] at (vel_tap) {};
+\draw[fbT, rounded corners=4pt] (vel_tap) |- (hyst_in_v)
+    node[wirelbl, text=blkArmEdge, pos=0.78, above=2pt] {$\dot{\theta}_{f1}$};
+
+% 2) PISTA EXTERIOR (POSICIÓN theta) -> Sigma_p (-) [salta sobre trk_dt1_x limpiamente]
+\coordinate (tap_theta)    at ($(desenv.west)!0.56!(deriv_t.east)$);
+\coordinate (rail_theta_y) at ($(zoneL2.south)!0.52!(zoneL3.north)$);
+\coordinate (y_sigp_fb)    at ([yshift=-0.46cm]sig_p.south);
+
+\node[dot=blkArmEdge] at (tap_theta) {};
+\draw[lineT, rounded corners=4pt]
+    (tap_theta) -- (tap_theta |- rail_theta_y)
+    -- ($(trk_dt1_x |- rail_theta_y)+(\scHopRad, 0)$)
+    arc[start angle=0, end angle=180, radius=\scHopRad];
+\draw[fbT, rounded corners=4pt]
+    ($(trk_dt1_x |- rail_theta_y)+(-\scHopRad, 0)$) -- (trk_theta_x |- rail_theta_y)
+    -- (trk_theta_x |- y_sigp_fb) -| (sig_p.south);
+\node[wirelbl, text=blkArmEdge, anchor=north]
+    at ($(deriv_t.north |- rail_theta_y) + (-0.15cm, -1pt)$) {$\theta$};
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ($(trk_dt1_x |- y_sigp_fb)!0.52!(sig_p.south |- y_sigp_fb) + (0, 1.5pt)$) {$\theta$};
+\node[signlbl, text=blkArmEdge, anchor=north west] at ($(sig_p.south)+(0.08, -0.06)$) {$-$};
 
 \end{tikzpicture}%
-}%
-\caption{Diagrama de bloques atómico exclusivo del control servo a $\qty{0}{\degree}$ activo en \texttt{FURUTA\_STATE\_MOTOR\_PID\_POS}, \texttt{STOP\_HOME} y la subfase \texttt{F1} de \texttt{RECOVER\_HOME} (\texttt{Furuta\_DriveArmToZero\_1kHz} en \texttt{furuta\_control.c}, $T_s=\qty{1.0}{\milli\second}$). Combina tres ramas paralelas ---proporcional, integral no lineal acotada en ventana de $\pm\qty{5}{\degree}$ con sujeción en $\pm\qty{6.5}{\volt}$ y reinicio instantáneo de Clegg~\eqref{eq:clegg_pos} en el cruce por cero, y derivativa directa sobre la velocidad filtrada $-\dot{\theta}_{f1}$--- seguidas en cascada por saturación en $\pm\qty{5.8}{\volt}$, limitador de pendiente de $\qty{0.055}{\volt\per\milli\second}$ y selector supervisado por histéresis de bloqueo con freno electromagnético activo \texttt{L298N\_Brake}.}
+}
+\caption{Diagrama de bloques at\'omico exclusivo del control servo a $\qty{0}{\degree}$ activo en \texttt{FURUTA\_STATE\_MOTOR\_PID\_POS}, \texttt{STOP\_HOME} y la subfase \texttt{F1} de \texttt{RECOVER\_HOME} (\texttt{Furuta\_DriveArmToZero\_1kHz} en \texttt{furuta\_control.c}, $T_s=\qty{1.0}{\milli\second}$). Combina tres ramas paralelas ---proporcional, integral no lineal con ventana de $\pm\qty{5}{\degree}$, sujeci\'on en $\pm\qty{6.5}{\volt}$ y reinicio instant\'aneo de Clegg~\eqref{eq:clegg_pos}, y derivativa directa sobre $-\dot{\theta}_{f1}$--- seguidas por saturaci\'on ($\pm\qty{5.8}{\volt}$), limitador de pendiente ($\qty{0.055}{\volt\per\milli\second}$), selector con freno activo \texttt{L298N\_Brake}, la cascada de potencia L298N hacia el motor $80:1$ y la realimentaci\'on base AS5600 con se\~nales separadas de posici\'on ($\theta$) y velocidad filtrada ($\dot{\theta}_{f1}$).}
 \label{fig:detalle_servo_clegg}
 \end{figure*}

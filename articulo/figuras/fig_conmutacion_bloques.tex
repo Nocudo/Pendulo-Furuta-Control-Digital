@@ -1,360 +1,464 @@
 % ==============================================================================
 % Figura: Arquitectura Global de Conmutación e Interconexión de Bloques (1 kHz)
-% Estrategia: Layout by Construction (posicionamiento relativo, anclas exactas,
-% fit, cero cruces de señales) y texto mínimo (solo nombres cortos, referencias
-% de figura y símbolos puros en cables). Fiel a Furuta_ControlISR_1kHz en
-% furuta_control.c.
+% Estrategia: Layout by Construction, paleta e idioma visual idénticos a Figs. 7-10.
+% Regla estricta: SOLO nombres cortos de bloques (cero subtítulos ni texto extra),
+% realimentación separada por sensor (brazo theta vs péndulo alpha) y separada
+% entre posición y velocidad (6 pistas ordenadas con puentes limpios).
 % Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
 %                              shapes.geometric, backgrounds, babel, bending.
 % ==============================================================================
 \begin{figure*}[!t]
 \centering
-% --- Paleta semántica armónica (coherente con Figs. 5-11) ---
-\definecolor{cbInk}{HTML}{1E293B}
-\definecolor{cbMuted}{HTML}{475569}
-\definecolor{cbSupEdge}{HTML}{0F766E}
-\definecolor{cbSupFill}{HTML}{F0FDFA}
-\definecolor{cbSupPill}{HTML}{CCFBF1}
-\definecolor{cbIdleEdge}{HTML}{475569}
-\definecolor{cbIdleFill}{HTML}{F1F5F9}
-\definecolor{cbServEdge}{HTML}{2563EB}
-\definecolor{cbServFill}{HTML}{EFF6FF}
-\definecolor{cbPosEdge}{HTML}{0284C7}
-\definecolor{cbPosFill}{HTML}{E0F2FE}
-\definecolor{cbRecEdge}{HTML}{DC2626}
-\definecolor{cbRecFill}{HTML}{FEF2F2}
-\definecolor{cbSwEdge}{HTML}{EA580C}
-\definecolor{cbSwFill}{HTML}{FFF7ED}
-\definecolor{cbBalEdge}{HTML}{059669}
-\definecolor{cbBalFill}{HTML}{DCFCE7}
-\definecolor{cbMuxEdge}{HTML}{6D28D9}
-\definecolor{cbMuxFill}{HTML}{F5F3FF}
-\definecolor{cbActEdge}{HTML}{A63429}
-\definecolor{cbActFill}{HTML}{FDF0EE}
-\definecolor{cbPlantEdge}{HTML}{243447}
-\definecolor{cbPlantFill}{HTML}{ECEFF4}
-\definecolor{cbSensEdge}{HTML}{1B4965}
-\definecolor{cbSensFill}{HTML}{EAF4FB}
-\definecolor{cbLpf2Edge}{HTML}{1D4ED8}
-\definecolor{cbLpf2Fill}{HTML}{DBEAFE}
+% --- Paleta semántica armónica (idéntica a Figs. 7, 8, 9 y 10) ---
+\definecolor{blkInk}{HTML}{1E293B}
+\definecolor{blkPendEdge}{HTML}{1B4965}
+\definecolor{blkPendFill}{HTML}{EAF4FB}
+\definecolor{blkArmEdge}{HTML}{0F766E}
+\definecolor{blkArmFill}{HTML}{E6F7F5}
+\definecolor{blkCondEdge}{HTML}{B45309}
+\definecolor{blkCondFill}{HTML}{FEF6EB}
+\definecolor{blkDistEdge}{HTML}{7E2268}
+\definecolor{blkDistFill}{HTML}{FBF0F8}
+\definecolor{blkActEdge}{HTML}{A63429}
+\definecolor{blkActFill}{HTML}{FDF0EE}
+\definecolor{blkPlantEdge}{HTML}{243447}
+\definecolor{blkPlantFill}{HTML}{ECEFF4}
+\definecolor{blkZoneZ1}{HTML}{33658A}
+\definecolor{blkZoneL2}{HTML}{A63429}
+\definecolor{blkZoneL3}{HTML}{2A6B43}
+\definecolor{blkZoneSup}{HTML}{0F766E}
 
 % --- Parámetros centralizados de ritmo geométrico (Single Source of Truth) ---
-\def\cbModW{3.85cm}
-\def\cbModH{0.82cm}
+\def\cbModW{3.45cm}
 \def\cbRowGap{0.34cm}
-\def\cbMuxGap{1.48cm}
-\def\cbMuxW{1.70cm}
-\def\cbActGap{0.62cm}
-\def\cbActW{2.22cm}
-\def\cbActH{0.92cm}
-\def\cbSpineGap{2.30cm}
-\def\cbSupGap{1.85cm}
-\def\cbSensDrop{2.20cm}
+\def\cbMuxGap{1.35cm}
+\def\cbMuxW{1.55cm}
+\def\cbActGap{0.44cm}
+\def\cbActW{1.82cm}
+\def\cbActH{0.86cm}
+\def\cbSensGap{0.46cm}
+\def\cbSensW{2.04cm}
+\def\cbSensH{0.82cm}
+\def\cbTrkStep{0.46cm}
+\def\cbHopRad{0.085cm}
+\def\cbPortGap{0.40cm}
 
-\resizebox{0.98\textwidth}{!}{%
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
     >=Stealth,
     font=\sffamily,
-    % --- Estilos de módulos ---
-    modblk/.style={
+    % --- Estilos de bloques atómicos (solo nombre corto, sin texto extra) ---
+    baseblk/.style={
         rectangle,
-        rounded corners=4pt,
+        rounded corners=3.5pt,
         align=center,
-        text width=\cbModW,
-        minimum height=\cbModH,
-        inner xsep=4pt,
+        inner xsep=3.5pt,
         inner ysep=3pt,
-        text=cbInk,
-        line width=1.05pt
-    },
-    actblk/.style={
-        rectangle,
-        rounded corners=4pt,
-        align=center,
-        text width=\cbActW,
-        minimum height=\cbActH,
-        inner xsep=3pt,
-        inner ysep=3pt,
-        text=cbInk,
-        draw=cbActEdge,
-        fill=cbActFill,
-        line width=1.05pt,
+        text=blkInk,
         font=\small\sffamily\bfseries
     },
-    plantblk/.style={
-        actblk,
-        draw=cbPlantEdge,
-        fill=cbPlantFill,
-        line width=1.35pt,
-        text width=1.85cm
-    },
-    sensblk/.style={
+    modIdle/.style={baseblk, draw=blkPlantEdge, fill=blkPlantFill, line width=1.05pt, text width=\cbModW, minimum height=0.72cm},
+    modArm/.style={baseblk, draw=blkArmEdge, fill=blkArmFill, line width=1.1pt, text width=\cbModW},
+    modCond/.style={baseblk, draw=blkCondEdge, fill=blkCondFill, line width=1.1pt, text width=\cbModW},
+    modAct/.style={baseblk, draw=blkActEdge, fill=blkActFill, line width=1.1pt, text width=\cbModW},
+    modPend/.style={baseblk, draw=blkPendEdge, fill=blkPendFill, line width=1.45pt, text width=\cbModW},
+    actblk/.style={baseblk, draw=blkActEdge, fill=blkActFill, line width=1.05pt, text width=\cbActW, minimum height=\cbActH},
+    plantblk/.style={baseblk, draw=blkPlantEdge, fill=blkPlantFill, line width=1.35pt, text width=1.74cm, minimum height=\cbActH},
+    sensTblk/.style={baseblk, draw=blkArmEdge, fill=blkArmFill, line width=1.05pt, text width=\cbSensW, minimum height=\cbSensH},
+    sensAblk/.style={baseblk, draw=blkPendEdge, fill=blkPendFill, line width=1.05pt, text width=\cbSensW, minimum height=\cbSensH},
+    suppill/.style={
         rectangle,
         rounded corners=4pt,
         align=center,
-        minimum height=0.72cm,
-        inner xsep=6pt,
-        inner ysep=3pt,
-        text=cbInk,
-        draw=cbSensEdge,
-        fill=cbSensFill,
-        line width=1.0pt,
-        font=\footnotesize\sffamily\bfseries
-    },
-    lpf2blk/.style={
-        sensblk,
-        draw=cbLpf2Edge,
-        fill=cbLpf2Fill,
-        line width=1.15pt,
-        text width=2.45cm,
-        minimum height=0.70cm
-    },
-    suppill/.style={
-        rectangle,
-        rounded corners=5pt,
-        align=center,
-        minimum height=0.58cm,
+        minimum height=0.60cm,
         inner xsep=6pt,
         inner ysep=2.5pt,
+        text=blkInk,
         font=\footnotesize\sffamily\bfseries,
-        line width=1.0pt
+        line width=1.05pt
     },
+    % --- Contenedores y etiquetas (idénticos a Figs. 7, 8 y 10) ---
     zonebox/.style={
         rectangle,
-        rounded corners=7pt,
-        dashed,
-        line width=0.9pt,
-        inner sep=9pt
+        rounded corners=5pt,
+        draw=#1,
+        densely dashed,
+        line width=0.95pt,
+        fill=#1,
+        fill opacity=0.035,
+        text opacity=1
     },
-    zonetag/.style={
+    zonetitle/.style={
         rectangle,
         rounded corners=3pt,
-        inner xsep=5pt,
-        inner ysep=1.8pt,
-        font=\scriptsize\sffamily\bfseries
+        draw=#1,
+        line width=0.8pt,
+        fill=white,
+        inner xsep=5.5pt,
+        inner ysep=2.2pt,
+        font=\small\sffamily\bfseries,
+        text=#1
     },
-    % --- Estilos de flechas canónicas ---
-    sig/.style={-{Stealth[length=2.3mm,width=1.6mm]}, line width=1.0pt, draw=cbInk, rounded corners=3pt},
-    sigShort/.style={-{Stealth[length=1.9mm,width=1.4mm]}, line width=0.95pt, draw=cbInk, rounded corners=2pt},
-    sigFb1/.style={-{Stealth[length=2.2mm,width=1.6mm]}, line width=1.05pt, draw=cbSupEdge, rounded corners=3pt},
-    sigFb2/.style={-{Stealth[length=2.2mm,width=1.6mm]}, line width=1.15pt, draw=cbLpf2Edge, rounded corners=3pt},
-    sigSel/.style={-{Stealth[length=2.3mm,width=1.6mm]}, line width=1.15pt, draw=cbMuxEdge, densely dashed, rounded corners=3pt},
-    sigByp/.style={-{Stealth[length=2.2mm,width=1.6mm]}, line width=1.05pt, draw=cbRecEdge, densely dashed, rounded corners=3pt},
-    sigSup/.style={-{Stealth[length=1.9mm,width=1.4mm]}, line width=0.95pt, draw=cbSupEdge, rounded corners=2pt},
-    lbl/.style={font=\scriptsize\sffamily, text=cbInk, inner sep=1.5pt},
-    dot1/.style={circle, fill=cbSupEdge, inner sep=1.5pt}
+    dot/.style={circle, fill=#1, inner sep=1.45pt},
+    % --- Flechas canónicas ---
+    sig/.style={-{Stealth[length=4.6pt, width=3.4pt]}, line width=1.0pt, draw=blkInk},
+    sigshort/.style={-{Stealth[length=3.9pt, width=2.9pt]}, line width=0.95pt, draw=blkInk},
+    fbT/.style={-{Stealth[length=4.2pt, width=3.0pt]}, line width=0.95pt, draw=blkArmEdge},
+    fbA/.style={-{Stealth[length=4.2pt, width=3.0pt]}, line width=0.95pt, draw=blkPendEdge},
+    lineT/.style={line width=0.95pt, draw=blkArmEdge},
+    lineA/.style={line width=0.95pt, draw=blkPendEdge},
+    adapt/.style={-{Stealth[length=4.4pt, width=3.2pt]}, line width=1.05pt, densely dashed, draw=blkDistEdge},
+    byp/.style={-{Stealth[length=4.4pt, width=3.2pt]}, line width=1.0pt, densely dashed, draw=blkActEdge},
+    wirelbl/.style={font=\footnotesize\sffamily, text=blkInk, inner sep=1.2pt}
 ]
 
 % ==============================================================================
-% 1. BANCO DE DIAGRAMAS DE BLOQUES CONMUTABLES (Anclaje relativo vertical)
+% 1. BANCO DE DIAGRAMAS DE BLOQUES CONMUTABLES (Solo nombre corto por bloque)
 % ==============================================================================
-\node[modblk, draw=cbIdleEdge, fill=cbIdleFill] (modIdle) at (0,0)
-    {\textbf{\small IDLE / FAULT}\\[-1pt]{\scriptsize\color{cbMuted}Espera segura}};
+\node[modIdle] (modIdle) at (0,0) {IDLE / FAULT};
+\node[modArm, minimum height=0.80cm, below=\cbRowGap of modIdle] (modVel) {MOTOR\_PID\_VEL};
+\node[modArm, minimum height=0.98cm, below=\cbRowGap of modVel] (modPos) {Servo $0^\circ$};
+\node[modAct, minimum height=1.32cm, below=\cbRowGap of modPos] (modRec) {RECOVER\_HOME};
+\node[modCond, minimum height=1.68cm, below=\cbRowGap of modRec] (modSw) {SWING\_UP};
+\node[modPend, minimum height=2.08cm, below=\cbRowGap of modSw] (modBal) {BALANCE\_PID};
 
-\node[modblk, draw=cbServEdge, fill=cbServFill, below=\cbRowGap of modIdle] (modVel)
-    {\textbf{\small MOTOR\_PID\_VEL}\\[-1pt]{\scriptsize\color{cbMuted}Tustin + AW $\cdot$ Fig.~\ref{fig:bloques_velocidad}}};
-
-\node[modblk, draw=cbPosEdge, fill=cbPosFill, below=\cbRowGap of modVel] (modPos)
-    {\textbf{\small Servo $0^\circ$ (POS / STOP)}\\[-1pt]{\scriptsize\color{cbMuted}Clegg + Freno $\cdot$ Fig.~\ref{fig:detalle_servo_clegg}}};
-
-\node[modblk, draw=cbRecEdge, fill=cbRecFill, below=\cbRowGap of modPos] (modRec)
-    {\textbf{\small RECOVER\_HOME}\\[-1pt]{\scriptsize\color{cbMuted}F0 $\to$ F1 $\to$ F2 $\cdot$ Fig.~\ref{fig:detalle_recover_home}}};
-
-\node[modblk, draw=cbSwEdge, fill=cbSwFill, below=\cbRowGap of modRec] (modSw)
-    {\textbf{\small SWING\_UP}\\[-1pt]{\scriptsize\color{cbMuted}Cascada Energ\'ia $\cdot$ Fig.~\ref{fig:bloques_swingup}}};
-
-\node[modblk, draw=cbBalEdge, fill=cbBalFill, line width=1.6pt, below=\cbRowGap of modSw] (modBal)
-    {\textbf{\small BALANCE\_PID}\\[-1pt]{\scriptsize\color{cbBalEdge}M4 Dual + Notch $\cdot$ Fig.~\ref{fig:diagrama_bloques_control}}};
-
-% Llamada interna F1: RECOVER_HOME invoca Servo 0°
-\draw[sigByp, draw=cbPosEdge] (modRec.north) -- node[lbl, right=2.5pt, text=cbPosEdge]{\textbf{F1}} (modPos.south);
+% Reutilización directa F1: RECOVER_HOME invoca Servo 0°
+\draw[adapt, draw=blkArmEdge] (modRec.north) -- node[wirelbl, right=2.5pt, text=blkArmEdge]{\textbf{F1}} (modPos.south);
 
 % ==============================================================================
-% 2. CONMUTADOR CENTRAL MUX FSM (Construido sobre el rango exacto de módulos)
+% 2. CONMUTADOR CENTRAL MUX FSM (Construido sobre el rango vertical exacto)
 % ==============================================================================
 \coordinate (muxNW) at ($(modIdle.north east)+(\cbMuxGap, 0.14)$);
 \coordinate (muxSW) at ($(modBal.south east)+(\cbMuxGap, -0.14)$);
-\coordinate (muxNE) at ($(muxNW)+(\cbMuxW, -0.65)$);
-\coordinate (muxSE) at ($(muxSW)+(\cbMuxW, 0.65)$);
-\coordinate (muxMidL) at ($(muxNW)!0.5!(muxSW)$);
+\coordinate (muxNE) at ($(muxNW)+(\cbMuxW, -0.72)$);
+\coordinate (muxSE) at ($(muxSW)+(\cbMuxW, 0.72)$);
 \coordinate (muxMidR) at ($(muxNE)!0.5!(muxSE)$);
 \coordinate (muxTop)  at ($(muxNW)!0.48!(muxNE)$);
 \coordinate (muxOutU) at ($(muxNE)!0.38!(muxSE)$);
-\coordinate (muxOutB) at ($(muxNE)!0.70!(muxSE)$);
+\coordinate (muxOutB) at ($(muxNE)!0.66!(muxSE)$);
 
-\filldraw[fill=cbMuxFill, draw=cbMuxEdge, line width=1.35pt, rounded corners=5pt]
+\filldraw[fill=blkDistFill, draw=blkDistEdge, line width=1.35pt, rounded corners=4pt]
     (muxNW) -- (muxNE) -- (muxSE) -- (muxSW) -- cycle;
+\node[font=\small\sffamily\bfseries, text=blkDistEdge, align=center]
+    at ($(muxNW)!0.52!(muxNE)+(0,-0.56)$) {MUX\\[-2pt]FSM};
 
-\node[font=\small\sffamily\bfseries, text=cbMuxEdge, align=center]
-    at ($(muxNW)!0.52!(muxNE)+(0,-0.52)$) {MUX\\[-2pt]FSM};
-
-% Contactos del conmutador alineados EXACTAMENTE con cada módulo + brazo selector
-\coordinate (muxPivot) at ($(muxMidR)+(-0.36, 0)$);
-\foreach \m/\c in {modIdle/cbIdleEdge, modVel/cbServEdge, modPos/cbPosEdge, modRec/cbRecEdge, modSw/cbSwEdge, modBal/cbBalEdge} {
+% Contactos y brazo selector rotatorio alineados a cada bloque
+\coordinate (muxPivot) at ($(muxMidR)+(-0.34, 0)$);
+\foreach \m/\c in {modIdle/blkPlantEdge, modVel/blkArmEdge, modPos/blkArmEdge, modRec/blkActEdge, modSw/blkCondEdge, modBal/blkPendEdge} {
     \coordinate (pIn-\m) at (muxNW |- \m.east);
-    \coordinate (pDot-\m) at ($(pIn-\m)+(0.28, 0)$);
+    \coordinate (pDot-\m) at ($(pIn-\m)+(0.25, 0)$);
     \draw[draw=\c, line width=0.8pt] (pIn-\m) -- (pDot-\m);
-    \fill[fill=\c] (pDot-\m) circle (2.0pt);
+    \fill[fill=\c] (pDot-\m) circle (1.9pt);
 }
-\draw[draw=cbMuxEdge, line width=1.55pt, line cap=round] (muxPivot) -- (pDot-modBal);
-\fill[fill=cbMuxEdge] (muxPivot) circle (2.4pt);
-\draw[draw=cbMuxEdge!55, line width=0.85pt, densely dotted, -{Stealth[length=1.6mm,width=1.2mm]}]
-    ($(muxPivot)+(-0.62, 1.35)$) to[bend right=20] ($(muxPivot)+(-0.62, -1.35)$);
+\draw[draw=blkDistEdge, line width=1.5pt, line cap=round] (muxPivot) -- (pDot-modBal);
+\fill[fill=blkDistEdge] (muxPivot) circle (2.3pt);
+\draw[draw=blkDistEdge!55, line width=0.85pt, densely dotted, -{Stealth[length=3.6pt,width=2.6pt]}]
+    ($(muxPivot)+(-0.56, 1.75)$) to[bend right=18] ($(muxPivot)+(-0.56, -1.75)$);
 
-% Conexiones horizontales Módulos -> MUX (etiquetas estrictamente fuera de zBank)
-\draw[sigShort, draw=cbIdleEdge] (modIdle.east) -- node[lbl, pos=0.60, above=1.5pt]{\texttt{0 V}} (pIn-modIdle);
-\draw[sigShort, draw=cbServEdge] (modVel.east)  -- node[lbl, pos=0.60, above=1.5pt]{$u_{\text{vel}}$} (pIn-modVel);
-\draw[sigShort, draw=cbPosEdge]  (modPos.east)  -- node[lbl, pos=0.60, above=1.5pt]{$u_{\text{pos}}$} (pIn-modPos);
-\draw[sigShort, draw=cbRecEdge]  (modRec.east)  -- node[lbl, pos=0.60, above=1.5pt]{\texttt{F0/F2}} (pIn-modRec);
-\draw[sigShort, draw=cbSwEdge]   (modSw.east)   -- node[lbl, pos=0.60, above=1.5pt]{$u_{\text{sw}}$} (pIn-modSw);
-\draw[sigShort, draw=cbBalEdge]  (modBal.east)  -- node[lbl, pos=0.60, above=1.5pt]{$u_{\text{bal}}$} (pIn-modBal);
-
-% ==============================================================================
-% 3. CADENA DE ACTUACIÓN Y PLANTA COMPARTIDA (Derecha del MUX)
-% ==============================================================================
-\node[actblk, right=1.18cm of muxOutU] (actComp) {Compensador\\L298N};
-\node[actblk, right=\cbActGap of actComp] (actPwm) {Modulador\\PWM \qty{20}{\kilo\hertz}};
-\node[actblk, right=\cbActGap of actPwm] (actMotor) {Puente H\\Motor $80:1$};
-\node[plantblk, right=\cbActGap of actMotor] (actPlant) {P\'endulo\\Furuta};
-
-\draw[sig] (muxOutU) -- node[lbl, pos=0.35, above=1.5pt]{$u[k]$} (actComp.west);
-\draw[sig] (actComp.east) -- (actPwm.west);
-\draw[sig] (actPwm.east)  -- node[lbl, above=1.5pt]{$V_m$} (actMotor.west);
-\draw[sig] (actMotor.east) -- node[lbl, above=1.5pt]{$\tau_0$} (actPlant.west);
-
-% Desvío directo Coast / Brake desde MUX hacia Puente H (IN1/IN2)
-\coordinate (bypTurn) at ($(actComp.south west)+(0.08, -0.78)$);
-\draw[sigByp] (muxOutB) -- (muxOutB -| bypTurn) |- (bypTurn -| actMotor.south) -- (actMotor.south);
-\node[lbl, above=1.8pt, text=cbRecEdge] (lblByp)
-    at ($(bypTurn)!0.50!(bypTurn -| actMotor.south)$) {\texttt{Coast / Brake} (\texttt{IN1/IN2})};
+% Salidas de bloques -> MUX (solo símbolos puros)
+\draw[sigshort, draw=blkPlantEdge] (modIdle.east) -- node[wirelbl, pos=0.60, above=1.5pt]{$0$} (pIn-modIdle);
+\draw[sigshort, draw=blkArmEdge]   (modVel.east)  -- node[wirelbl, pos=0.60, above=1.5pt]{$u_v$} (pIn-modVel);
+\draw[sigshort, draw=blkArmEdge]   (modPos.east)  -- node[wirelbl, pos=0.60, above=1.5pt]{$u_{\text{servo}}$} (pIn-modPos);
+\draw[sigshort, draw=blkActEdge]   (modRec.east)  -- node[wirelbl, pos=0.60, above=1.5pt]{\texttt{F0/F2}} (pIn-modRec);
+\draw[sigshort, draw=blkCondEdge]  (modSw.east)   -- node[wirelbl, pos=0.60, above=1.5pt]{$u_{\text{sw}}$} (pIn-modSw);
+\draw[sigshort, draw=blkPendEdge]  (modBal.east)  -- node[wirelbl, pos=0.60, above=1.5pt]{$u_{\text{bal}}$} (pIn-modBal);
 
 % ==============================================================================
-% 4. CAPA INFERIOR: SENSADO COMPARTIDO + ETAPA 2 EXCLUSIVA DE BALANCE_PID
+% 3. ACTUACIÓN Y PLANTA (CASCADA IDÉNTICA A FIGS. 7, 8 Y 10)
 % ==============================================================================
-\coordinate (sensYBase) at ($(modBal.south)+(0, -\cbSensDrop)$);
-\node[sensblk, anchor=center] (sensBase) at (actMotor.center |- sensYBase) {AS5600\\Base ($\theta$)};
-\node[sensblk, left=0.85cm of sensBase] (lpfBase1) {LPF IIR 1\\($\theta$)};
+\node[actblk, right=1.18cm of muxOutU] (banda) {Banda\\Silenciosa};
+\node[actblk, right=\cbActGap of banda] (rampa) {Rampa\\L298N};
+\node[actblk, right=\cbActGap of rampa] (pwm) {Modulador\\PWM};
+\node[actblk, right=\cbActGap of pwm] (puente) {Puente H\\L298N};
+\node[actblk, right=0.58cm of puente] (motor) {Motor\\80:1};
+\node[plantblk, right=0.58cm of motor] (planta) {P\'endulo\\Furuta};
 
-\node[sensblk, below=0.45cm of sensBase] (sensPend) {AS5600\\Distal ($\alpha$)};
-\node[sensblk, left=0.85cm of sensPend] (lpfPend1) {LPF IIR 1\\($\alpha$)};
+\draw[sig] (muxOutU) -- node[wirelbl, pos=0.36, above=1.5pt]{$u[k]$} (banda.west);
+\draw[sigshort] (banda.east) -- (rampa.west);
+\draw[sigshort] (rampa.east) -- (pwm.west);
+\draw[sigshort] (pwm.east) -- (puente.west);
+\draw[sigshort] (puente.east) -- node[wirelbl, midway, above=1.5pt]{$V_m$} (motor.west);
+\draw[sigshort] (motor.east) -- node[wirelbl, midway, above=1.5pt]{$\tau_0$} (planta.west);
 
-% Bloque exclusivo LPF IIR 2 (azul) situado directamente debajo de BALANCE_PID (CERO cruces)
-\node[lpf2blk, below=1.08cm of modBal] (lpfStage2) {LPF IIR 2 ($\theta,\,\alpha$)};
-
-% Salidas de planta hacia sensores
-\coordinate (plOut1) at ($(actPlant.south)+(-0.28, 0)$);
-\coordinate (plOut2) at ($(actPlant.south)+(0.28, 0)$);
-\draw[sigFb1] (plOut1) |- node[lbl, pos=0.22, left=2.5pt, text=cbSupEdge]{$\theta(t)$} (sensBase.east);
-\draw[sigFb1] (plOut2) |- node[lbl, pos=0.28, right=2.5pt, text=cbSupEdge]{$\alpha(t)$} (sensPend.east);
-
-\draw[sigFb1] (sensBase.west) -- (lpfBase1.east);
-\draw[sigFb1] (sensPend.west) -- (lpfPend1.east);
+% Desvío directo Freno / Libre hacia Puente H L298N
+\coordinate (bypTurn) at ($(banda.south west)+(0.10, -0.78)$);
+\draw[byp, rounded corners=3pt]
+    (muxOutB) -- (muxOutB -| bypTurn) |- (bypTurn -| puente.south) -- (puente.south);
+\node[wirelbl, above=1.5pt, text=blkActEdge] (lblByp)
+    at ($(bypTurn)!0.50!(bypTurn -| puente.south)$) {Freno / Libre};
 
 % ==============================================================================
-% 5. CAPA SUPERIOR: SUPERVISOR FSM Y CONMUTACIÓN DE ESTADOS (Minimal Text)
+% 4. REALIMENTACIÓN Y FILTRADO PARALELO (IDÉNTICO A FIGS. 7 Y 8)
 % ==============================================================================
-\coordinate (supMidX) at ($(modIdle.west)!0.50!(actPlant.east)$);
-\coordinate (supY)    at ($(modIdle.north)+(0, \cbSupGap+0.85)$);
+\coordinate (sensYTop) at ($(modBal.south)+(0, -2.42)$);
+\node[sensTblk, anchor=center] (as5600_base) at (motor.center |- sensYTop) {AS5600\\Base};
+\node[sensTblk, left=\cbSensGap of as5600_base] (desenv) {Desenvoltura};
+\node[sensTblk, left=\cbSensGap of desenv] (deriv_t) {Derivador $\theta$};
+\node[sensTblk, left=\cbSensGap of deriv_t] (lpf1_t) {LPF IIR 1\\($\theta$)};
+\node[sensTblk, left=\cbSensGap of lpf1_t] (lpf2_t) {LPF IIR 2\\($\theta$)};
 
-\node[suppill, draw=cbSwEdge, fill=cbSwFill] (supSw) at ($(supMidX |- supY)+(-1.15, 0)$) {SWING\_UP};
-\node[suppill, draw=cbIdleEdge, fill=cbIdleFill, left=1.15cm of supSw] (supIdle) {IDLE};
-\node[suppill, draw=cbBalEdge, fill=cbBalFill, line width=1.4pt, right=1.15cm of supSw] (supBal) {BALANCE\_PID};
-\node[suppill, draw=cbRecEdge, fill=cbRecFill, right=1.15cm of supBal] (supRec) {RECOVER\_HOME};
-\node[suppill, draw=cbPosEdge, fill=cbPosFill, right=0.95cm of supRec] (supAux) {PID Motor / STOP};
+\node[sensAblk, below=0.52cm of as5600_base] (as5600_dist) {AS5600\\Distal};
+\node[sensAblk, left=\cbSensGap of as5600_dist] (envolt) {Envoltura};
+\node[sensAblk, left=\cbSensGap of envolt] (deriv_a) {Derivador $\alpha$};
+\node[sensAblk, left=\cbSensGap of deriv_a] (lpf1_a) {LPF IIR 1\\($\alpha$)};
+\node[sensAblk, left=\cbSensGap of lpf1_a] (lpf2_a) {LPF IIR 2\\($\alpha$)};
 
-% Entrada externa CLI / B1 a la izquierda del Supervisor
-\node[suppill, draw=cbMuted, fill=white, left=1.40cm of supIdle] (supCli) {CLI / B1};
+% Dos salidas físicas separadas de la planta: theta(t) y alpha(t)
+\coordinate (pl_t_out) at ([xshift=-0.26cm]planta.south);
+\coordinate (pl_a_out) at ([xshift= 0.26cm]planta.south);
+\draw[fbT, rounded corners=4pt] (pl_t_out) |- (as5600_base.east);
+\node[wirelbl, text=blkArmEdge, anchor=east]
+    at ([xshift=-0.08cm]$(pl_t_out |- banda.south)!0.65!(pl_t_out |- as5600_base.east)$) {$\theta(t)$};
+\draw[fbA, rounded corners=4pt] (pl_a_out) |- (as5600_dist.east);
+\node[wirelbl, text=blkPendEdge, anchor=west]
+    at ([xshift=0.08cm]$(pl_a_out |- as5600_base.east)!0.50!(pl_a_out |- as5600_dist.east)$) {$\alpha(t)$};
 
-% Transiciones principales dentro del Supervisor FSM
-\draw[sigSup, draw=cbMuted] (supCli.east) -- node[lbl, pos=0.32, above=1.5pt]{\scriptsize cmd} (supIdle.west);
-\draw[sigSup] (supIdle.east) -- node[lbl, above=1.5pt]{\texttt{START}} (supSw.west);
-\draw[sigSup, draw=cbBalEdge] (supSw.east) -- node[lbl, above=1.5pt]{Captura} (supBal.west);
-\draw[sigSup, draw=cbRecEdge] (supBal.east) -- node[lbl, above=1.5pt]{Ca\'ida} (supRec.west);
+\draw[fbT] (as5600_base.west) -- (desenv.east);
+\draw[fbT] (desenv.west) -- (deriv_t.east);
+\draw[fbT] (deriv_t.west) -- (lpf1_t.east);
+\draw[fbT] (lpf1_t.west) -- (lpf2_t.east);
 
-% Retorno Calma: RECOVER_HOME -> SWING_UP por encima limpio
+\draw[fbA] (as5600_dist.west) -- (envolt.east);
+\draw[fbA] (envolt.west) -- (deriv_a.east);
+\draw[fbA] (deriv_a.west) -- (lpf1_a.east);
+\draw[fbA] (lpf1_a.west) -- (lpf2_a.east);
+
+% ==============================================================================
+% 5. CAPA SUPERIOR: SUPERVISOR FSM (SOLO NOMBRES DE ESTADOS Y TRANSICIONES)
+% ==============================================================================
+\coordinate (supMidX) at ($(modIdle.west)!0.42!(planta.east)$);
+\coordinate (supY)    at ($(modIdle.north)+(0, 3.35)$);
+
+\node[suppill, draw=blkCondEdge, fill=blkCondFill] (supSw) at ($(supMidX |- supY)+(-2.25, 0)$) {SWING\_UP};
+\node[suppill, draw=blkPlantEdge, fill=blkPlantFill, left=1.10cm of supSw] (supIdle) {IDLE};
+\node[suppill, draw=blkPendEdge, fill=blkPendFill, line width=1.4pt, right=1.15cm of supSw] (supBal) {BALANCE\_PID};
+\node[suppill, draw=blkActEdge, fill=blkActFill, right=1.15cm of supBal] (supRec) {RECOVER\_HOME};
+\node[suppill, draw=blkArmEdge, fill=blkArmFill, right=1.00cm of supRec] (supAux) {MOTOR\_PID / STOP\_HOME};
+\node[suppill, draw=blkPlantEdge, fill=white, left=1.45cm of supIdle] (supCli) {CLI / B1};
+
+\draw[sigshort] (supCli.east) -- node[wirelbl, pos=0.32, above=1.5pt]{cmd} (supIdle.west);
+\draw[sigshort] (supIdle.east) -- node[wirelbl, midway, above=1.5pt]{\texttt{START}} (supSw.west);
+\draw[sigshort, draw=blkPendEdge] (supSw.east) -- node[wirelbl, midway, above=1.5pt]{Captura} (supBal.west);
+\draw[sigshort, draw=blkActEdge] (supBal.east) -- node[wirelbl, midway, above=1.5pt]{Ca\'ida} (supRec.west);
+
 \coordinate (calmTop) at ($(supRec.north)+(0, 0.38)$);
-\draw[sigSup, draw=cbSwEdge] (supRec.north) -- (calmTop) -| node[lbl, pos=0.25, above=1.5pt, text=cbSwEdge]{Calma} (supSw.north);
+\coordinate (calmLblPad) at ($(calmTop)+(0, 0.28)$);
+\draw[sigshort, draw=blkCondEdge, rounded corners=3pt]
+    (supRec.north) -- (calmTop) -| node[wirelbl, pos=0.25, above=1.5pt, text=blkCondEdge]{Calma} (supSw.north);
 
-% Enlace rápido a modos auxiliares desde IDLE por debajo limpio
 \coordinate (auxBot) at ($(supIdle.south)+(0, -0.34)$);
-\draw[sigSup, draw=cbPosEdge, densely dashed] (supIdle.south) -- (auxBot) -| node[lbl, pos=0.25, below=1.5pt, text=cbPosEdge]{\texttt{VEL / POS / STOPHOME}} (supAux.south);
-\coordinate (auxLblPad) at ($(auxBot)+(0, -0.28)$);
+\draw[sigshort, draw=blkArmEdge, densely dashed, rounded corners=3pt]
+    (supIdle.south) -- (auxBot) -| node[wirelbl, pos=0.25, below=1.5pt, text=blkArmEdge]{\texttt{VEL / POS / STOPHOME}} (supAux.south);
+\coordinate (auxLblPad) at ($(auxBot)+(0, -0.32)$);
 
 % ==============================================================================
 % 6. CONTENEDORES SEMÁNTICOS POR CONSTRUCCIÓN (fit en capa de fondo)
 % ==============================================================================
 \begin{scope}[on background layer]
-    \node[zonebox, draw=cbSupEdge, fill=cbSupFill!45,
-          fit=(supIdle)(supSw)(supBal)(supRec)(supAux)(calmTop)(auxLblPad),
+    \node[zonebox=blkZoneSup,
+          fit=(supIdle)(supSw)(supBal)(supRec)(supAux)(calmLblPad)(auxLblPad),
           inner ysep=9pt, inner xsep=10pt] (zSup) {};
-    \node[zonetag, fill=cbSupPill, text=cbSupEdge, anchor=west]
-          at ($(zSup.north west)+(0.35, 0)$) {Supervisor FSM (TIM6 $\cdot$ \qty{1.0}{\kilo\hertz})};
+    \node[zonetitle=blkZoneSup, anchor=west]
+          at ([xshift=0.35cm]zSup.north west) {Supervisor FSM};
 
-    \node[zonebox, draw=cbMuted!80, fill=cbIdleFill!30,
+    \node[zonebox=blkZoneZ1,
           fit=(modIdle)(modVel)(modPos)(modRec)(modSw)(modBal),
-          inner sep=8pt] (zBank) {};
-    \node[zonetag, fill=cbIdleFill, text=cbInk, anchor=west]
-          at ($(zBank.north west)+(0.30, 0)$) {Banco de Controladores};
+          inner ysep=10pt, inner xsep=9pt] (zBank) {};
+    \node[zonetitle=blkZoneZ1, anchor=west]
+          at ([xshift=0.30cm]zBank.north west) {Controladores por Estado};
 
-    \node[zonebox, draw=cbActEdge!85, fill=cbActFill!35,
-          fit=(actComp)(actPwm)(actMotor)(actPlant)(bypTurn)(lblByp),
-          inner sep=9pt] (zAct) {};
-    \node[zonetag, fill=cbActFill, text=cbActEdge, anchor=west]
-          at ($(zAct.north west)+(0.35, 0)$) {Actuaci\'on y Planta Compartida};
+    \node[zonebox=blkZoneL2,
+          fit=(banda)(rampa)(pwm)(puente)(motor)(planta)(bypTurn)(lblByp),
+          inner ysep=10pt, inner xsep=9pt] (zAct) {};
+    \node[zonetitle=blkZoneL2, anchor=west]
+          at ([xshift=0.32cm]zAct.north west) {Actuaci\'on y Planta (Cascada)};
 
-    \node[zonebox, draw=cbSensEdge!85, fill=cbSensFill!35,
-          fit=(sensBase)(lpfBase1)(sensPend)(lpfPend1),
-          inner sep=9pt] (zSens) {};
-    \node[zonetag, fill=cbSensFill, text=cbSensEdge, anchor=west]
-          at ($(zSens.north west)+(0.30, 0)$) {Sensado y LPF IIR 1};
+    \node[zonebox=blkZoneL3,
+          fit=(as5600_base)(desenv)(deriv_t)(lpf1_t)(lpf2_t)(as5600_dist)(envolt)(deriv_a)(lpf1_a)(lpf2_a),
+          inner ysep=11pt, inner xsep=9pt] (zSens) {};
+    \node[zonetitle=blkZoneL3, anchor=east]
+          at ([xshift=-0.16cm]zSens.south east) {Realimentaci\'on y Filtrado};
 \end{scope}
 
 % ==============================================================================
-% 7. BUSES DE REALIMENTACIÓN CON CERO CRUCES + SELECTOR FSM -> MUX
+% 7. 6 PISTAS DE REALIMENTACIÓN SEPARADAS (POSICIÓN != VELOCIDAD, THETA != ALPHA)
 % ==============================================================================
-% Bus horizontal Stage-1 (LPF IIR 1) desde zSens hasta la espina izquierda
-\coordinate (bus1JoinX) at ($(zSens.west)+(-0.45, 0)$);
-\coordinate (bus1MidY)  at ($(lpfBase1.west)!0.5!(lpfPend1.west)$);
-\coordinate (spineX)    at ($(modIdle.west)+(-\cbSpineGap, 0)$);
+% Coordenadas X de las 6 pistas verticales en el margen izquierdo (interior -> exterior)
+\coordinate (trk_dt2) at ([xshift=-0.78cm]zBank.west);
+\coordinate (trk_da2) at ([xshift=-\cbTrkStep]trk_dt2);
+\coordinate (trk_dt1) at ([xshift=-\cbTrkStep]trk_da2);
+\coordinate (trk_t)   at ([xshift=-\cbTrkStep]trk_dt1);
+\coordinate (trk_da1) at ([xshift=-\cbTrkStep]trk_t);
+\coordinate (trk_a)   at ([xshift=-\cbTrkStep]trk_da1);
 
-\draw[draw=cbSupEdge, line width=1.05pt, rounded corners=3pt]
-    (lpfBase1.west) -| (bus1JoinX) |- (lpfPend1.west);
-\node[dot1] at (bus1JoinX |- bus1MidY) {};
-\draw[draw=cbSupEdge, line width=1.15pt, rounded corners=3pt]
-    (bus1JoinX |- bus1MidY) -- (spineX |- bus1MidY);
-\node[lbl, below=2pt, text=cbSupEdge] at ($(lpfStage2.south |- bus1MidY)!0.5!(bus1JoinX |- bus1MidY)$)
-    {$\theta,\,\dot{\theta}_{f1},\,\alpha,\,\tilde{\alpha},\,\dot{\alpha}_{f1}$};
+% Puntos de derivación separados en zSens (posición tras Desenvoltura/Envoltura; velocidad tras LPF 1/2)
+\coordinate (tap_t)   at ($(desenv.west)!0.52!(deriv_t.east)$);
+\coordinate (tap_dt1) at ($(lpf1_t.west)!0.52!(lpf2_t.east)$);
+\coordinate (tap_a)   at ($(envolt.west)!0.52!(deriv_a.east)$);
+\coordinate (tap_da1) at ($(lpf1_a.west)!0.52!(lpf2_a.east)$);
 
-% Derivación vertical limpia hacia LPF IIR 2 (exclusivo de BALANCE_PID) -> CERO CRUCES
-\node[dot1] at (lpfStage2.south |- bus1MidY) {};
-\draw[sigFb1] (lpfStage2.south |- bus1MidY) -- (lpfStage2.south);
-\draw[sigFb2] (lpfStage2.north) -- node[lbl, pos=0.34, right=3pt, text=cbLpf2Edge]{$\dot{\theta}_{f2},\,\dot{\alpha}_{f2}$} (modBal.south);
+\node[dot=blkArmEdge]  at (tap_t) {};
+\node[dot=blkArmEdge]  at (tap_dt1) {};
+\node[dot=blkPendEdge] at (tap_a) {};
+\node[dot=blkPendEdge] at (tap_da1) {};
 
-% Espina vertical izquierda hacia arriba (corredor libre sobre zBank hasta zSup.south)
-\coordinate (supGuardIn)   at ($(zSup.south west)+(0.55, 0)$);
-\coordinate (guardCorrY)   at ($(zBank.north)!0.52!(zSup.south)$);
-\draw[sigFb1] (spineX |- bus1MidY) -- (spineX |- guardCorrY) -| (supGuardIn);
-\node[lbl, rotate=90, anchor=south, text=cbSupEdge] at ($(spineX |- modIdle.west)+(-0.12, 0.25)$)
-    {Guardas ($\theta, \alpha, \tilde{\alpha}, \dot{\alpha}_{f1}$)};
+% Canales horizontales limpios fuera de zSens (CERO solapamiento con etiquetas de zona)
+\coordinate (rail_dt1_y) at ([yshift=0.34cm]zSens.north);
+\coordinate (rail_t_y)   at ([yshift=0.84cm]zSens.north);
+\coordinate (rail_da1_y) at ([yshift=-0.34cm]zSens.south);
+\coordinate (rail_a_y)   at ([yshift=-0.80cm]zSens.south);
 
-% Derivaciones horizontales desde la espina hacia cada controlador activo (etiquetas en espacio libre)
-\foreach \m/\s in {
-    modVel/{$\dot{\theta}_{f1}$},
-    modPos/{$\theta,\,\dot{\theta}_{f1}$},
-    modRec/{$\theta,\,\alpha,\,\dot{\alpha}_{f1}$},
-    modSw/{$\theta,\,\alpha,\,\dot{\theta}_{f1},\,\dot{\alpha}_{f1}$},
-    modBal/{$\theta,\,\tilde{\alpha},\,\dot{\alpha}_{f1}$}
-} {
-    \coordinate (sp-\m) at (spineX |- \m.west);
-    \node[dot1] at (sp-\m) {};
-    \draw[sigFb1] (sp-\m) -- node[lbl, pos=0.44, above=1.5pt, text=cbSupEdge]{\scriptsize \s} (\m.west);
+% Puertos de entrada separados en cada controlador (posiciones Y exactas)
+% BALANCE_PID (5 puertos: de abajo hacia arriba dt2, da2, t, da1, a_tilde)
+\coordinate (bal_p1) at ([yshift=-2*\cbPortGap]modBal.west);
+\coordinate (bal_p2) at ([yshift=-1*\cbPortGap]modBal.west);
+\coordinate (bal_p3) at (modBal.west);
+\coordinate (bal_p4) at ([yshift= 1*\cbPortGap]modBal.west);
+\coordinate (bal_p5) at ([yshift= 2*\cbPortGap]modBal.west);
+
+% SWING_UP (4 puertos: dt1, t, da1, alpha/a_tilde)
+\coordinate (sw_p1) at ([yshift=-1.5*\cbPortGap]modSw.west);
+\coordinate (sw_p2) at ([yshift=-0.5*\cbPortGap]modSw.west);
+\coordinate (sw_p3) at ([yshift= 0.5*\cbPortGap]modSw.west);
+\coordinate (sw_p4) at ([yshift= 1.5*\cbPortGap]modSw.west);
+
+% RECOVER_HOME (3 puertos: t, da1, alpha)
+\coordinate (rec_p1) at ([yshift=-1*\cbPortGap]modRec.west);
+\coordinate (rec_p2) at (modRec.west);
+\coordinate (rec_p3) at ([yshift= 1*\cbPortGap]modRec.west);
+
+% Servo 0° (2 puertos: dt1, t)
+\coordinate (pos_p1) at ([yshift=-0.55*\cbPortGap]modPos.west);
+\coordinate (pos_p2) at ([yshift= 0.55*\cbPortGap]modPos.west);
+
+% MOTOR_PID_VEL (1 puerto: dt1)
+\coordinate (vel_p1) at (modVel.west);
+
+% Destinos separados de guardas en Supervisor FSM (estrictamente a la IZQUIERDA de muxTop -> CERO cruces con sel/reset)
+\coordinate (sup_g_a)   at ([xshift=0.45cm]zSup.south west);
+\coordinate (sup_g_da1) at ([xshift=0.95cm]zSup.south west);
+\coordinate (sup_g_t)   at ([xshift=1.45cm]zSup.south west);
+\coordinate (corr_t_y)   at ([yshift=0.42cm]zBank.north);
+\coordinate (corr_da1_y) at ([yshift=0.88cm]zBank.north);
+\coordinate (corr_a_y)   at ([yshift=1.34cm]zBank.north);
+
+% --- 6 pistas explícitas (posición separada de velocidad, brazo separado de péndulo) ---
+% 1) PISTA 1: dtheta_f2 (Teal) -> EXCLUSIVA BALANCE_PID (bal_p1)
+\draw[fbT, rounded corners=3pt]
+    (lpf2_t.west) -- (trk_dt2 |- lpf2_t.west) -- (trk_dt2 |- bal_p1) -- (bal_p1);
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ([xshift=-0.72cm, yshift=1.5pt]lpf2_t.west) {$\dot{\theta}_{f2}$};
+\node[wirelbl, font=\scriptsize\sffamily, text=blkArmEdge, anchor=north]
+    at ($(trk_dt2 |- bal_p1)!0.52!(zBank.west |- bal_p1) + (0, -0.5pt)$) {$\dot{\theta}_{f2}$};
+
+% 2) PISTA 2: dalpha_f2 (Navy) -> EXCLUSIVA BALANCE_PID (bal_p2) [salta sobre lpf2_t horizontal]
+\draw[lineA, rounded corners=3pt]
+    (lpf2_a.west) -- (trk_da2 |- lpf2_a.west)
+    -- ($(trk_da2 |- lpf2_t.west)+(0, -\cbHopRad)$)
+    arc[start angle=-90, end angle=90, radius=\cbHopRad];
+\draw[fbA, rounded corners=3pt]
+    ($(trk_da2 |- lpf2_t.west)+(0, \cbHopRad)$) -- (trk_da2 |- bal_p2) -- (bal_p2);
+\node[wirelbl, text=blkPendEdge, anchor=north]
+    at ([xshift=-0.72cm, yshift=-1.5pt]lpf2_a.west) {$\dot{\alpha}_{f2}$};
+\node[wirelbl, font=\scriptsize\sffamily, text=blkPendEdge, anchor=south]
+    at ($(trk_dt2 |- bal_p2)!0.52!(zBank.west |- bal_p2) + (0, 0.5pt)$) {$\dot{\alpha}_{f2}$};
+
+% 3) PISTA 3: dtheta_f1 (Teal) -> SWING_UP, Servo 0°, MOTOR_PID_VEL [salta trk_dt2 y trk_da2 en rail_dt1_y]
+\draw[lineT, rounded corners=3pt]
+    (tap_dt1) -- (tap_dt1 |- rail_dt1_y)
+    -- ($(trk_dt2 |- rail_dt1_y)+(\cbHopRad,0)$)
+    arc[start angle=0, end angle=180, radius=\cbHopRad]
+    -- ($(trk_da2 |- rail_dt1_y)+(\cbHopRad,0)$)
+    arc[start angle=0, end angle=180, radius=\cbHopRad];
+\draw[lineT, rounded corners=3pt]
+    ($(trk_da2 |- rail_dt1_y)+(-\cbHopRad,0)$) -- (trk_dt1 |- rail_dt1_y) -- (trk_dt1 |- vel_p1);
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ($(lpf2_t.north |- rail_dt1_y) + (-0.25cm, 1pt)$) {$\dot{\theta}_{f1}$};
+
+\node[dot=blkArmEdge] at (trk_dt1 |- sw_p1) {};
+\draw[fbT] (trk_dt1 |- sw_p1) -- (sw_p1);
+\node[wirelbl, font=\scriptsize\sffamily, text=blkArmEdge, anchor=north]
+    at ($(trk_dt2 |- sw_p1)!0.52!(zBank.west |- sw_p1) + (0, -0.5pt)$) {$\dot{\theta}_{f1}$};
+
+\node[dot=blkArmEdge] at (trk_dt1 |- pos_p1) {};
+\draw[fbT] (trk_dt1 |- pos_p1) -- (pos_p1);
+\node[wirelbl, font=\scriptsize\sffamily, text=blkArmEdge, anchor=north]
+    at ($(trk_dt2 |- pos_p1)!0.52!(zBank.west |- pos_p1) + (0, -0.5pt)$) {$\dot{\theta}_{f1}$};
+
+\draw[fbT] (trk_dt1 |- vel_p1) -- (vel_p1);
+\node[wirelbl, font=\scriptsize\sffamily, text=blkArmEdge, anchor=south]
+    at ($(trk_dt2 |- vel_p1)!0.52!(zBank.west |- vel_p1) + (0, 1pt)$) {$\dot{\theta}_{f1}$};
+
+% 4) PISTA 4: theta (Teal) -> BALANCE, SWING, RECOVER, Servo 0° y Supervisor FSM
+\draw[lineT, rounded corners=3pt]
+    (tap_t) -- (tap_t |- rail_t_y)
+    -- ($(trk_dt2 |- rail_t_y)+(\cbHopRad,0)$) arc[start angle=0, end angle=180, radius=\cbHopRad]
+    -- ($(trk_da2 |- rail_t_y)+(\cbHopRad,0)$) arc[start angle=0, end angle=180, radius=\cbHopRad]
+    -- ($(trk_dt1 |- rail_t_y)+(\cbHopRad,0)$) arc[start angle=0, end angle=180, radius=\cbHopRad];
+\draw[fbT, rounded corners=3pt]
+    ($(trk_dt1 |- rail_t_y)+(-\cbHopRad,0)$) -- (trk_t |- rail_t_y)
+    -- (trk_t |- corr_t_y) -| (sup_g_t);
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ($(lpf1_t.north |- rail_t_y) + (-0.15cm, 1pt)$) {$\theta$};
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ($(zBank.north west |- corr_t_y) + (-0.35cm, 1pt)$) {$\theta$};
+
+% Taps de theta hacia BALANCE (bal_p3), SWING (sw_p2), RECOVER (rec_p1), Servo 0° (pos_p2)
+\foreach \pt in {bal_p3, sw_p2, rec_p1, pos_p2} {
+    \node[dot=blkArmEdge] at (trk_t |- \pt) {};
+    \draw[lineT] (trk_t |- \pt) -- ($(trk_dt1 |- \pt)+(-\cbHopRad,0)$)
+        arc[start angle=180, end angle=0, radius=\cbHopRad];
+    \draw[fbT] ($(trk_dt1 |- \pt)+(\cbHopRad,0)$) -- (\pt);
+    \node[wirelbl, font=\scriptsize\sffamily, text=blkArmEdge, anchor=south]
+        at ($(trk_dt2 |- \pt)!0.52!(zBank.west |- \pt) + (0, 0.5pt)$) {$\theta$};
 }
 
-% Línea de selección y reinicio bumpless: exactamente desde zSup.south hasta muxTop
-\draw[sigSel] (muxTop |- zSup.south) -- node[lbl, right=4pt, text=cbMuxEdge, align=left]{\textbf{sel / reset}\\[-1pt]\scriptsize\textit{bumpless}} (muxTop);
+% 5) PISTA 5: dalpha_f1 (Navy) -> BALANCE, SWING, RECOVER y Supervisor FSM
+\draw[fbA, rounded corners=3pt]
+    (tap_da1) -- (tap_da1 |- rail_da1_y)
+    -- (trk_da1 |- rail_da1_y)
+    -- (trk_da1 |- corr_da1_y) -| (sup_g_da1);
+\node[wirelbl, text=blkPendEdge, anchor=north]
+    at ($(lpf2_a.south |- rail_da1_y) + (-0.25cm, -1pt)$) {$\dot{\alpha}_{f1}$};
+\node[wirelbl, text=blkPendEdge, anchor=south]
+    at ($(zBank.north west |- corr_da1_y) + (-0.35cm, 1pt)$) {$\dot{\alpha}_{f1}$};
+
+\foreach \pt in {bal_p4, sw_p3, rec_p2} {
+    \node[dot=blkPendEdge] at (trk_da1 |- \pt) {};
+    \draw[lineA] (trk_da1 |- \pt)
+        -- ($(trk_t |- \pt)+(-\cbHopRad,0)$) arc[start angle=180, end angle=0, radius=\cbHopRad]
+        -- ($(trk_dt1 |- \pt)+(-\cbHopRad,0)$) arc[start angle=180, end angle=0, radius=\cbHopRad];
+    \draw[fbA] ($(trk_dt1 |- \pt)+(\cbHopRad,0)$) -- (\pt);
+    \node[wirelbl, font=\scriptsize\sffamily, text=blkPendEdge, anchor=south]
+        at ($(trk_dt2 |- \pt)!0.52!(zBank.west |- \pt) + (0, 0.5pt)$) {$\dot{\alpha}_{f1}$};
+}
+
+% 6) PISTA 6: alpha, alpha_tilde (Navy) -> BALANCE, SWING, RECOVER y Supervisor FSM
+\draw[fbA, rounded corners=3pt]
+    (tap_a) -- (tap_a |- rail_a_y)
+    -- (trk_a |- rail_a_y)
+    -- (trk_a |- corr_a_y) -| (sup_g_a);
+\node[wirelbl, text=blkPendEdge, anchor=north]
+    at ($(deriv_a.south |- rail_a_y) + (-0.25cm, -1pt)$) {$\alpha,\,\tilde{\alpha}$};
+\node[wirelbl, text=blkPendEdge, anchor=south]
+    at ($(zBank.north west |- corr_a_y) + (-0.35cm, 1pt)$) {$\alpha,\,\tilde{\alpha}$};
+
+\foreach \pt/\lb in {bal_p5/{$\tilde{\alpha}$}, sw_p4/{$\alpha,\tilde{\alpha}$}, rec_p3/{$\alpha$}} {
+    \node[dot=blkPendEdge] at (trk_a |- \pt) {};
+    \draw[lineA] (trk_a |- \pt)
+        -- ($(trk_da1 |- \pt)+(-\cbHopRad,0)$) arc[start angle=180, end angle=0, radius=\cbHopRad]
+        -- ($(trk_t |- \pt)+(-\cbHopRad,0)$) arc[start angle=180, end angle=0, radius=\cbHopRad]
+        -- ($(trk_dt1 |- \pt)+(-\cbHopRad,0)$) arc[start angle=180, end angle=0, radius=\cbHopRad];
+    \draw[fbA] ($(trk_dt1 |- \pt)+(\cbHopRad,0)$) -- (\pt);
+    \node[wirelbl, font=\scriptsize\sffamily, text=blkPendEdge, anchor=south]
+        at ($(trk_dt2 |- \pt)!0.52!(zBank.west |- \pt) + (0, 0.5pt)$) {\lb};
+}
+
+% --- Selector FSM -> MUX FSM ---
+\draw[adapt] (muxTop |- zSup.south) -- node[wirelbl, right=4pt, text=blkDistEdge]{\textbf{sel / reset}} (muxTop);
 
 \end{tikzpicture}%
 }
-\caption{Arquitectura global de conmutaci\'on e interconexi\'on entre el supervisor FSM (\texttt{TIM6} a \qty{1.0}{\kilo\hertz}), el banco de diagramas de bloques at\'omicos (Figs.~\ref{fig:diagrama_bloques_control}--\ref{fig:detalle_recover_home}), la cadena de actuaci\'on compartida L298N y el bus de sensado AS5600. El multiplexor central \texttt{MUX FSM} selecciona sin saltos (\textit{bumpless}) qu\'e lazo gobierna la planta en cada instante, habilitando el desv\'io directo \texttt{Coast / Brake} por \texttt{IN1/IN2}, la reutilizaci\'on de \texttt{Servo $0^\circ$} en la subfase \texttt{F1} de \texttt{RECOVER\_HOME} y la segunda etapa de filtrado \texttt{LPF IIR 2} exclusivamente para \texttt{BALANCE\_PID}.}
+\caption{Arquitectura global de conmutaci\'on e interconexi\'on de los diagramas de bloques at\'omicos (Figs.~\ref{fig:diagrama_bloques_control}--\ref{fig:detalle_recover_home}) gobernados por el supervisor FSM a \qty{1.0}{\kilo\hertz}. El multiplexor \texttt{MUX FSM} selecciona sin saltos (\textit{bumpless}) qu\'e controlador comanda la cascada compartida de actuaci\'on L298N o el desv\'io directo \texttt{Freno / Libre}, mientras la realimentaci\'on mantiene estrictamente separadas las ramas del brazo ($\theta$, $\dot{\theta}_{f1}$, $\dot{\theta}_{f2}$) y del p\'endulo ($\alpha$, $\tilde{\alpha}$, $\dot{\alpha}_{f1}$, $\dot{\alpha}_{f2}$), diferenciando las se\~nales de posici\'on y velocidad y reservando la segunda etapa \texttt{LPF IIR 2} exclusivamente para \texttt{BALANCE\_PID}.}
 \label{fig:conmutacion_bloques}
 \end{figure*}
