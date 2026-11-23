@@ -833,7 +833,6 @@ E IMPRESION 3D          ELECTRONICA            PERIFERICOS STM32      Y MODELADO
    - `Brazo_Horizontal_L88.stl`: PETG/PLA+, relleno 45% Giroide, 5 perímetros.
    - `Barra_Pendulo_Furuta.stl`: PETG/PLA+, 45% Giroide orientada plana sobre la cama.
    - `Eje_Portaiman_Pendulo.stl`, `Acoplador_Motor_AS5600.stl` y `Portaiman_AS5600.stl`: 100% sólido ($0.12\text{ mm}$).
-   - `Caja_Base_Nucleo.stl`, `Tapa_Caja_Nucleo.stl`, `Caja_Base_L298N.stl` y `Tapa_Caja_L298N.stl`: Chasis ventilados para STM32 y puente H.
 2. Limpiar rebabas y verificar tolerancias con pie de rey.
 
 ### Fase 2: Montaje Físico y Cableado Eléctrico
@@ -905,12 +904,12 @@ E IMPRESION 3D          ELECTRONICA            PERIFERICOS STM32      Y MODELADO
 
 ### Piezas Mecánicas y Rodamientos:
 * **1x** Rodamiento de bolas 608-2RS ($\varnothing 22 \times \varnothing 8 \times 7\text{ mm}$).
-* **1x** Kit completo de piezas impresas 3D (`Base_Inferior_Torre_Furuta`, `Torre_Superior_Motor_Furuta`, `Tapa_Motor_Torre_Furuta`, `Brazo_Horizontal_L88`, `Barra_Pendulo_Furuta`, `Eje_Portaiman_Pendulo`, `Masa_Ajustable_Pendulo`, `Acoplador_Motor_AS5600`, `Portaiman_AS5600`, `Caja_Base_Nucleo`, `Tapa_Caja_Nucleo`, `Caja_Base_L298N`, `Tapa_Caja_L298N`).
+* **1x** Kit completo de piezas impresas 3D (`Base_Inferior_Torre_Furuta`, `Torre_Superior_Motor_Furuta`, `Tapa_Motor_Torre_Furuta`, `Brazo_Horizontal_L88`, `Barra_Pendulo_Furuta`, `Eje_Portaiman_Pendulo`, `Masa_Ajustable_Pendulo`, `Acoplador_Motor_AS5600`, `Portaiman_AS5600`).
 
 ### Tornillería Estándar (Ferretería M3, M2, M5):
 * **8x** Tornillos M3 $\times 6\text{ mm}$ (fijación de los 2 sensores AS5600).
-* **4x** Tornillos M3 $\times 6\text{ mm}$ (fijación de la placa Nucleo a los separadores internos).
-* **4x** Tornillos M3 $\times 12\text{ mm}$ avellanados (cierre de la tapa de la caja).
+* **4x** Tornillos M3 $\times 12\text{ mm}$ (unión base inferior y torre superior).
+* **4x** Tornillos M3 $\times 10\text{ mm}$ avellanados (fijación de la tapa superior del motor).
 * **2x** Tornillos M2 $\times 5\text{ mm}$ (fijación frontal del motor Namiki a la placa superior).
 * **1x** Tornillo M3 $\times 16\text{ mm}$ con tuerca autoblocante M3 (fijación de la masa ajustable).
 * **4x** Tornillos M5 $\times 25\text{ mm}$ con tuercas mariposa (anclaje de la base a la mesa de trabajo).

@@ -46,17 +46,11 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 ├── cad/                              # Diseño CAD paramétrico (FreeCAD 1.1), ensamblajes, scripts y renders
 │   ├── 01_pendulo_furuta/            # Ensamblaje completo del péndulo
 │   ├── 02_motor_namiki_as5600/       # Motor Namiki 22CL + encoder AS5600
-│   ├── 03_caja_nucleo_f446re/        # Caja para STM32 Nucleo-F446RE
-│   ├── 04_caja_driver_l298n/         # Caja para driver L298N
-│   ├── 05_caja_esp32/                # Caja para ESP32 (expansión opcional)
-│   └── referencias/                  # Modelos STEP de referencia (motor, rodamiento, tornillos)
+│   └── referencias/                  # Modelos STEP de referencia (motor, rodamiento)
 │
 ├── IMPRESION_3D/                     # Piezas imprimibles (.stl/.step) y placas listas para Cura (SUP = 0)
-│   ├── 01_Caja_STM32_Nucleo/
-│   ├── 02_Pendulo_Furuta/
-│   ├── 03_Caja_L298N/
-│   ├── 04_Caja_ESP32/
-│   ├── Placas_Cura_Listas/           # Proyectos .3mf, perfiles .curaprofile y .gcode listos
+│   ├── 02_Pendulo_Furuta/            # Piezas individuales del péndulo de Furuta (.stl y .step)
+│   ├── Placas_Cura_Listas/           # Proyectos .3mf, perfiles .curaprofile y .gcode listos (Placas 1 a 4)
 │   └── GUIA_IMPRESION_3D_CURA.md
 │
 └── .gitignore
@@ -133,12 +127,8 @@ Todas las piezas fueron diseñadas bajo estrictos principios **DfAM** (Design fo
 | **Placa 2** | `Torre_Superior_Motor_Furuta` | **`2h 56m 10s`** | **`34.45 g`** | **`SUP = 0`** | **Boca abajo**: brida $52 \times 52\text{ mm}$ en cama, arcos ojivales a $37.8^\circ$ |
 | **Placa 3** | `Brazo_Horizontal_L88`, `Barra_Pendulo`, `Tapa_Motor` | `2h 45m 34s` | `27.42 g` | **`SUP = 0`** | Caras planas continuas apoyadas sobre cama ($0.16\text{ mm}$) |
 | **Placa 4** | `Acoplador_Motor_AS5600`, `Eje_Portaiman`, `Portaiman` | `1h 14m 09s` | `8.60 g` | **`SUP = 0`** | Orientación vertical concéntrica de alta precisión ($0.12\text{ mm}$, 100% infill) |
-| **Placa 5** | `Caja_Base_Nucleo` + `Tapa_Caja_Nucleo` | `3h 13m 55s` | `42.16 g` | **`SUP = 0`** | Tapas invertidas en cama sin soportes |
-| **Placa 6** | `Caja_Base_L298N` + `Tapa_Caja_L298N` | `2h 09m 23s` | `27.68 g` | **`SUP = 0`** | Base plana y tapa invertida |
-| **Placa 7** *(Opcional)* | `Caja_Base_ESP32` + `Tapa_Caja_ESP32` | `2h 54m 27s` | `37.31 g` | **`SUP = 0`** | Carcasa de expansión Wi-Fi / IoT |
 
-- **Total Placas 1 a 6 (Sistema Principal Furuta + Nucleo + L298N):** **`20h 33m 02s`** · **`247.97 g`** (`83.13 m`).
-- **Total Placas 1 a 7 (Incluyendo carcasa opcional ESP32):** **`23h 27m 29s`** · **`285.28 g`** (`95.64 m`).
+- **Total Placas 1 a 4 (Péndulo de Furuta completo):** **`15h 09m 44s`** · **`178.13 g`** (`59.72 m`).
 
 ### Impresión rápida (G-code listo)
 
@@ -148,10 +138,7 @@ Si tienes una **Anycubic Kobra 2**, puedes copiar directamente los archivos `.gc
 IMPRESION_3D/Placas_Cura_Listas/GCode/
 ├── Placa_1_Base_Inferior_Torre.gcode
 ├── Placa_2_Torre_Superior_Motor.gcode
-├── Placa_4_Precision_Encoder_AS5600.gcode
-├── Placa_5_Caja_Nucleo.gcode
-├── Placa_6_Caja_L298N.gcode
-└── Placa_7_Caja_ESP32.gcode
+└── Placa_4_Precision_Encoder_AS5600.gcode
 ```
 
 *(Nota: la **Placa 3** (`Brazo_Horizontal_L88`, `Barra_Pendulo_Furuta`, `Tapa_Motor_Torre_Furuta`) se distribuye como proyecto preconfigurado [`Placa_3_Brazo_Barra_y_Tapa.3mf`](IMPRESION_3D/Placas_Cura_Listas/Proyectos_3MF/Placa_3_Brazo_Barra_y_Tapa.3mf) para laminar directamente en Cura.)*
@@ -181,12 +168,6 @@ Los modelos se pueden reconstruir desde los archivos `.FCStd` con FreeCAD 1.1 y 
 
 # Motor + Encoder
 & "C:\...\FreeCAD 1.1\bin\python.exe" cad/02_motor_namiki_as5600/scripts/build_full_project.py
-
-# Caja L298N
-& "C:\...\FreeCAD 1.1\bin\python.exe" cad/04_caja_driver_l298n/scripts/build_caja_l298n.py
-
-# Caja ESP32
-& "C:\...\FreeCAD 1.1\bin\python.exe" cad/05_caja_esp32/scripts/build_caja_esp32.py
 ```
 
 ### Renderizar vistas
@@ -244,9 +225,6 @@ El dueño del repositorio puede agregar colaboradores en:
 | [`docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md`](docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md) | Arquitectura mecánica, modelo matemático y estrategia de control |
 | [`cad/01_pendulo_furuta/GUIA_FABRICACION_Y_CONTROL_FURUTA.md`](cad/01_pendulo_furuta/GUIA_FABRICACION_Y_CONTROL_FURUTA.md) | Guía de fabricación y montaje del péndulo |
 | [`cad/02_motor_namiki_as5600/GUIA_MONTAJE_Y_FABRICACION.md`](cad/02_motor_namiki_as5600/GUIA_MONTAJE_Y_FABRICACION.md) | Guía del subsistema motor + encoder |
-| [`cad/03_caja_nucleo_f446re/GUIA_FABRICACION_CAJA_NUCLEO.md`](cad/03_caja_nucleo_f446re/GUIA_FABRICACION_CAJA_NUCLEO.md) | Guía de la caja del Nucleo |
-| [`cad/04_caja_driver_l298n/GUIA_FABRICACION_CAJA_L298N.md`](cad/04_caja_driver_l298n/GUIA_FABRICACION_CAJA_L298N.md) | Guía de la caja del L298N |
-| [`cad/05_caja_esp32/GUIA_FABRICACION_CAJA_ESP32.md`](cad/05_caja_esp32/GUIA_FABRICACION_CAJA_ESP32.md) | Guía de la caja del ESP32 |
 | [`IMPRESION_3D/GUIA_IMPRESION_3D_CURA.md`](IMPRESION_3D/GUIA_IMPRESION_3D_CURA.md) | Guía completa de impresión 3D con Cura |
 
 ---

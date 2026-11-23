@@ -7,7 +7,7 @@ Esta sección detalla de forma reproducible el diseño mecánico para fabricaci�
 
 \subsection{Diseño Mecánico DfAM y Materiales}\label{subsec:dfam}
 
-La estructura física del péndulo de Furuta y sus envolventes electrónicas se modelaron paramétricamente en \texttt{FreeCAD~1.1} aplicando criterios de diseño para fabricación aditiva (DfAM) con cero material de soporte ($\text{SUP}=0$). Frente a un primer diseño monolítico que requería $1\,365$ segmentos de soporte, generaba tres colisiones de montaje ($\qty{0.44}{}$ a $\qty{1.06}{\cubic\milli\meter}$) y demandaba más de \qty{10}{\hour} de tirada continua en una sola torre, se adoptó una arquitectura modular en cuatro subconjuntos ensamblados con tornillería estándar M5/M3/M2 (Fig.~\ref{fig:cad_composicion}), manufacturada en ácido poliláctico (PLA de \qty{1.75}{\milli\meter}) sobre una impresora Anycubic Kobra~2 (cama de $220\times 220\times\qty{250}{\milli\meter}$, extrusor \textit{Direct Drive}, boquilla de \qty{0.4}{\milli\meter}, cama a \qty{60}{\celsius} y boquilla a \qty{210}{\celsius} en primera capa / \qty{205}{\celsius} en régimen; laminado en UltiMaker Cura~5.14+).
+La estructura física del péndulo de Furuta se modeló paramétricamente en \texttt{FreeCAD~1.1} aplicando criterios de diseño para fabricación aditiva (DfAM) con cero material de soporte ($\text{SUP}=0$). Frente a un primer diseño monolítico que requería $1\,365$ segmentos de soporte, generaba tres colisiones de montaje ($\qty{0.44}{}$ a $\qty{1.06}{\cubic\milli\meter}$) y demandaba más de \qty{10}{\hour} de tirada continua en una sola torre, se adoptó una arquitectura modular en cuatro subconjuntos ensamblados con tornillería estándar M5/M3/M2 (Fig.~\ref{fig:cad_composicion}), manufacturada en ácido poliláctico (PLA de \qty{1.75}{\milli\meter}) sobre una impresora Anycubic Kobra~2 (cama de $220\times 220\times\qty{250}{\milli\meter}$, extrusor \textit{Direct Drive}, boquilla de \qty{0.4}{\milli\meter}, cama a \qty{60}{\celsius} y boquilla a \qty{210}{\celsius} en primera capa / \qty{205}{\celsius} en régimen; laminado en UltiMaker Cura~5.14+).
 
 \begin{figure*}[!t]
     \centering
@@ -39,10 +39,10 @@ La estructura física del péndulo de Furuta y sus envolventes electrónicas se 
     \textit{(i)~Necesidad:} materializar la inercia pendular permitiendo ajustar el centro de masa $l_1$ y completar giros de \qty{360}{\degree} sin colisionar contra la mesa de trabajo.
     \textit{(ii)~Elección:} varilla de cara coplanar con corredera pasante y contrapeso bipartito sujeto por un único tornillo M3, eliminando soportes y concentraciones asimétricas de masa.
     \textit{(iii)~Diseño:} sección rectangular de $8.0\times\qty{5.5}{\milli\meter}$ con cubo en~D pasante sin tornillos parásitos, ranura longitudinal de \qty{50}{\milli\meter} para el contrapeso cilíndrico ($\varnothing\qty{18}{\milli\meter}$) y pivote en $Z_{\text{piv}}=\qty{182.8}{\milli\meter}$ (\qty{152.8}{\milli\meter} pivote--punta redondeada), asegurando exactamente \qty{30}{\milli\meter} de despeje libre sobre el plano mesa ($Z=0$).
-    \textit{(iv)~Implementación:} impresa plana en P3 junto con el brazo y la tapa. Adicionalmente, se manufacturaron las envolventes convectivas de protección para la tarjeta Nucleo (P5, $80\times 93\times\qty{28}{\milli\meter}$ con plénum inferior de \qty{10}{\milli\meter} y 11 ranuras de admisión) y el módulo L298N (P6, $65\times 55\times\qty{29}{\milli\meter}$ con chimenea lateral y superior).
+    \textit{(iv)~Implementación:} impresa plana en P3 junto con el brazo y la tapa.
 \end{enumerate}
 
-Las verificaciones booleanas automatizadas en \texttt{freecad-py} confirmaron cero interferencias volumétricas tanto en el ensamble completo ($0/23$ pares, $\qty{0.0000}{\cubic\milli\meter}$) como en el subconjunto motor--encoder ($0/6$ pares). La Tabla~\ref{tab:placas_impresion} consolida los parámetros y consumos de laminado de las seis placas principales ($\text{SUP}=0$ en todas ellas).
+Las verificaciones booleanas automatizadas en \texttt{freecad-py} confirmaron cero interferencias volumétricas tanto en el ensamble completo ($0/23$ pares, $\qty{0.0000}{\cubic\milli\meter}$) como en el subconjunto motor--encoder ($0/6$ pares). La Tabla~\ref{tab:placas_impresion} consolida los parámetros y consumos de laminado de las cuatro placas del péndulo ($\text{SUP}=0$ en todas ellas).
 
 \begin{table}[!t]
     \centering
@@ -54,18 +54,16 @@ Las verificaciones booleanas automatizadas en \texttt{freecad-py} confirmaron ce
         \toprule
         \textbf{Placa} & \textbf{Componentes} & \textbf{Tiempo} & \textbf{Masa} & \textbf{Sop.} \\
         \midrule
-        P1 & \texttt{Base\_Inferior\_Torre} & 8h 13m & \qty{107.66}{\gram} & $\text{SUP}=0$ \\
+        P1 & \texttt{Base\_Inferior\_Torre} & 8h 14m & \qty{107.66}{\gram} & $\text{SUP}=0$ \\
         P2 & \texttt{Torre\_Superior\_Motor} & 2h 56m & \qty{34.45}{\gram} & $\text{SUP}=0$ \\
-        P3 & \texttt{Brazo\_L88, Barra, Tapa} & 2h 45m & \qty{27.42}{\gram} & $\text{SUP}=0$ \\
+        P3 & \texttt{Brazo\_L88, Barra, Tapa} & 2h 46m & \qty{27.42}{\gram} & $\text{SUP}=0$ \\
         P4 & \texttt{Acoplador, Eje, Portaimán} & 1h 14m & \qty{8.60}{\gram} & $\text{SUP}=0$ \\
-        P5 & \texttt{Caja\_Nucleo (+Tapa)} & 3h 14m & \qty{42.16}{\gram} & $\text{SUP}=0$ \\
-        P6 & \texttt{Caja\_L298N (+Tapa)} & 2h 09m & \qty{27.68}{\gram} & $\text{SUP}=0$ \\
         \midrule
-        \textbf{P1--P6} & \textbf{Total sistema principal} & \textbf{20h 33m} & \textbf{\qty{247.97}{\gram}} & \textbf{0} \\
+        \textbf{P1--P4} & \textbf{Total péndulo de Furuta} & \textbf{15h 10m} & \textbf{\qty{178.13}{\gram}} & \textbf{0} \\
         \bottomrule
     \end{tabular}\par
     \vspace{2pt}
-    \raggedright\scriptsize\textit{Nota:} Filamento acumulado P1--P6: \qty{83.13}{\meter}. Placa~7 opcional (carcasa ESP32): \qty{37.31}{\gram}, 2h 54m, $\text{SUP}=0$.
+    \raggedright\scriptsize\textit{Nota:} Filamento acumulado P1--P4: \qty{59.72}{\meter} (tiempo exacto de laminado: 15h 09m 44s; $\text{SUP}=0$ en todas las placas).
 \end{table}
 
 \subsection{Componentes Electrónicos e Instrumentación Embebida}\label{subsec:electronica}

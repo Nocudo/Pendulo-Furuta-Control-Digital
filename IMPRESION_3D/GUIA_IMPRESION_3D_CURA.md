@@ -51,9 +51,9 @@ La torre principal se dividió mecánicamente en el plano **$Z = 70.0\text{ mm}$
 
 ---
 
-## 2. Placas Listas para Anycubic Kobra 2 (7 Lotes de Impresión)
+## 2. Placas Listas para Anycubic Kobra 2 (4 Lotes de Impresión)
 
-Las 7 placas caben holgadamente dentro del área útil de `220 × 220 × 250 mm` y están ubicadas en [Placas_Cura_Listas](Placas_Cura_Listas).
+Las 4 placas del péndulo de Furuta caben holgadamente dentro del área útil de `220 × 220 × 250 mm` y están ubicadas en [Placas_Cura_Listas](Placas_Cura_Listas).
 
 | Placa | Piezas incluidas y orientación en cama | Altura capa / Relleno | Paredes / Adhesión | Tiempo estimado | Filamento | Capas / Soportes | Archivos directos |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -61,12 +61,8 @@ Las 7 placas caben holgadamente dentro del área útil de `220 × 220 × 250 mm`
 | **Placa 2**<br>*Torre Superior Motor* | `Torre_Superior_Motor_Furuta` (centrada, brida plana $52\times52$ boca abajo en cama) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`2h 56m 10s`** | `34.45 g`<br>(`11.55 m`) | `430` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_2_Torre_Superior_Motor.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_2_Torre_Superior_Motor.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_2_Torre_Superior_Motor.curaprofile) |
 | **Placa 3**<br>*Brazo, Barra y Tapa* | `Brazo_Horizontal_L88` (plana)<br>`Barra_Pendulo_Furuta` (`+90°` Y)<br>`Tapa_Motor_Torre_Furuta` (plana) | `0.16 mm` (`0.20 mm` cap. 1)<br>`45% Gyroid` | `5` paredes<br>`Brim 5 mm` | **`2h 45m 34s`** | `27.42 g`<br>(`9.19 m`) | `245` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_3_Brazo_Barra_y_Tapa.3mf) (Listo para Cura) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_3_Brazo_Barra_y_Tapa.curaprofile) |
 | **Placa 4**<br>*Precisión Encoder AS5600* | `Acoplador_Motor_AS5600` (plana)<br>`Eje_Portaiman_Pendulo` (`+90°` Y)<br>`Portaiman_AS5600` (invertida `180°` X) | `0.12 mm` (`0.20 mm` cap. 1)<br>`100% Lines` (sólido) | `6` paredes<br>`Brim 6 mm` | **`1h 14m 09s`** | `8.60 g`<br>(`2.88 m`) | `219` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_4_Precision_Encoder_AS5600.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_4_Precision_Encoder_AS5600.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_4_Precision_Encoder_AS5600.curaprofile) |
-| **Placa 5**<br>*Caja Nucleo* | `Caja_Base_Nucleo` (plana)<br>`Tapa_Caja_Nucleo` (invertida `180°` X) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`3h 13m 55s`** | `42.16 g`<br>(`14.13 m`) | `125` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_5_Caja_Nucleo.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_5_Caja_Nucleo.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_5_Caja_Nucleo.curaprofile) |
-| **Placa 6**<br>*Caja L298N* | `Caja_Base_L298N` (plana)<br>`Tapa_Caja_L298N` (invertida `180°` X) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`2h 09m 23s`** | `27.68 g`<br>(`9.28 m`) | `130` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_6_Caja_L298N.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_6_Caja_L298N.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_6_Caja_L298N.curaprofile) |
-| **Placa 7** *(Opcional)*<br>*Caja ESP32* | `Caja_Base_ESP32` (plana)<br>`Tapa_Caja_ESP32` (invertida `180°` X) | `0.20 mm` (`0.24 mm` cap. 1)<br>`25% Gyroid` | `4` paredes<br>`Skirt` (3 líneas) | **`2h 54m 27s`** | `37.31 g`<br>(`12.51 m`) | `130` capas<br>**`SUP = 0`** | [3MF](Placas_Cura_Listas/Proyectos_3MF/Placa_7_Caja_ESP32.3mf) · [GCode](Placas_Cura_Listas/GCode/Placa_7_Caja_ESP32.gcode) · [Perfil](Placas_Cura_Listas/Perfiles_Cura/Placa_7_Caja_ESP32.curaprofile) |
 
-- **Total Placas 1 a 6 (sistema principal STM32 Nucleo + L298N + Péndulo Furuta modular):** **`20h 33m 02s`** y **`247.97 g`** (`83.13 m`).
-- **Total Placas 1 a 7 (incluyendo carcasa opcional ESP32):** **`23h 27m 29s`** y **`285.28 g`** (`95.64 m`).
+- **Total Placas 1 a 4 (Péndulo de Furuta modular completo):** **`15h 09m 44s`** y **`178.13 g`** (`59.72 m`).
 
 ---
 
@@ -78,7 +74,7 @@ Los proyectos `.3mf` y perfiles `.curaprofile` utilizan la definición oficial *
 - **Temperaturas PLA:** Boquilla **`210 °C`** en capa 1 → **`205 °C`** en impresión (`cool_min_temperature = 200 °C`); cama **`60 °C`**.
 - **Retracción Direct Drive Kobra 2:** **`2.0 mm` a `70 mm/s`**.
 - **Velocidades según placa:**
-  - *Placas 1, 2, 5, 6 y 7 (Estructural / Cajas, `0.20 mm`):* `80 mm/s` relleno/paredes internas (`45 mm/s` pared exterior, `35 mm/s` capas superior/inferior, `125 mm/s` desplazamiento), `cool_min_layer_time = 5.0 s`.
+  - *Placas 1 y 2 (Estructural, `0.20 mm`):* `80 mm/s` relleno/paredes internas (`45 mm/s` pared exterior, `35 mm/s` capas superior/inferior, `125 mm/s` desplazamiento), `cool_min_layer_time = 5.0 s`.
   - *Placa 3 (Cinemática dinámica, `0.16 mm`):* `65 mm/s` (`35 mm/s` pared exterior, `30 mm/s` superior/inferior, `120 mm/s` desplazamiento), `cool_min_layer_time = 7.0 s`.
   - *Placa 4 (Precisión Encoder/Ajustes, `0.12 mm`):* `45 mm/s` (`25 mm/s` pared exterior, `22 mm/s` superior/inferior, `110 mm/s` desplazamiento; `40 mm/s` en eje y portaimán), `cool_min_layer_time = 10.0 s`.
 
@@ -88,7 +84,7 @@ Los proyectos `.3mf` y perfiles `.curaprofile` utilizan la definición oficial *
 
 ### Opción A — Impresión directa desde microSD (Más rápida)
 1. Asegúrate de tener el cabezal y cama PEI limpios (alcohol isopropílico) y el *Auto-Level / Z-Offset* calibrado para PLA a `60 °C`.
-2. Copia directamente los archivos de [GCode](Placas_Cura_Listas/GCode) (`Placa_1_Base_Inferior_Torre.gcode` a `Placa_6_Caja_L298N.gcode`, más `Placa_7_Caja_ESP32.gcode` si usarás la caja ESP32) a la tarjeta microSD de tu Anycubic Kobra 2.
+2. Copia directamente los archivos de [GCode](Placas_Cura_Listas/GCode) (`Placa_1_Base_Inferior_Torre.gcode`, `Placa_2_Torre_Superior_Motor.gcode` y `Placa_4_Precision_Encoder_AS5600.gcode`; lamina `Placa_3_Brazo_Barra_y_Tapa.3mf` desde Cura) a la tarjeta microSD de tu Anycubic Kobra 2.
 3. Se recomienda imprimir primero **Placa 4** (`1h 14m`) o **Placa 3** (`2h 45m`) para validar tolerancias de encaje del encoder y motor antes de las piezas estructurales mayores.
 
 ### Opción B — Ajustar o re-laminar en UltiMaker Cura 5.14+
@@ -116,7 +112,4 @@ Debido al diseño modular DfAM sin soportes, el ensamble de la torre requiere la
 ## 6. Estructura de Archivos Individuales (`.step` y `.stl`)
 
 Si deseas laminar piezas sueltas en el futuro, todos los modelos individuales actualizados se encuentran organizados en:
-- [01_Caja_STM32_Nucleo](01_Caja_STM32_Nucleo) (`Caja_Base_Nucleo`, `Tapa_Caja_Nucleo`)
 - [02_Pendulo_Furuta](02_Pendulo_Furuta) (`Base_Inferior_Torre_Furuta`, `Torre_Superior_Motor_Furuta`, `Tapa_Motor_Torre_Furuta`, `Brazo_Horizontal_L88`, `Eje_Portaiman_Pendulo`, `Barra_Pendulo_Furuta`, `Masa_Ajustable_Pendulo`, `Acoplador_Motor_AS5600`, `Portaiman_AS5600`)
-- [03_Caja_L298N](03_Caja_L298N) (`Caja_Base_L298N`, `Tapa_Caja_L298N`)
-- [04_Caja_ESP32](04_Caja_ESP32) (`Caja_Base_ESP32`, `Tapa_Caja_ESP32`)
