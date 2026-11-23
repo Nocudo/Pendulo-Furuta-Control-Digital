@@ -1,349 +1,402 @@
 % ==============================================================================
-% Figura: Máquina de Estados Finitos (FSM) del Firmware furuta_control.c (1 kHz)
+% Figura: Máquina de Estados Finitos (FSM) Completa — 10 Estados (Furuta_State_t)
 % Diseño por construcción (Layout by Construction): posicionamiento relativo,
-% anclas exactas, contenedores elásticos (fit) y cero cruces de transiciones.
-% Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc, babel, bending.
+% anclas exactas, contenedores elásticos (fit), paleta armonizada con Figs. 6-11
+% y enrutamiento 100% planar (cero cruces en todas las transiciones).
+% Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
+%                              backgrounds, babel, bending.
 % ==============================================================================
 \begin{figure*}[!t]
 \centering
-% --- Paleta semántica suave (ámbito local al entorno figure*) ---
-\definecolor{fsmIdleFill}{HTML}{F1F5F9}%
-\definecolor{fsmIdleBdr}{HTML}{475569}%
-\definecolor{fsmIdleHdr}{HTML}{334155}%
-\definecolor{fsmServFill}{HTML}{EFF6FF}%
-\definecolor{fsmServBdr}{HTML}{2563EB}%
-\definecolor{fsmServHdr}{HTML}{1D4ED8}%
-\definecolor{fsmServZoneBdr}{HTML}{60A5FA}%
-\definecolor{fsmServZonePill}{HTML}{DBEAFE}%
-\definecolor{fsmServZoneTxt}{HTML}{1E3A8A}%
-\definecolor{fsmWarmFill}{HTML}{FFF7ED}%
-\definecolor{fsmWarmBdr}{HTML}{EA580C}%
-\definecolor{fsmWarmHdr}{HTML}{C2410C}%
-\definecolor{fsmHeroFill}{HTML}{DCFCE7}%
-\definecolor{fsmHeroBdr}{HTML}{059669}%
-\definecolor{fsmHeroHdr}{HTML}{065F46}%
-\definecolor{fsmAutoZoneBdr}{HTML}{0D9488}%
-\definecolor{fsmAutoZonePill}{HTML}{CCFBF1}%
-\definecolor{fsmAutoZoneTxt}{HTML}{115E59}%
-\definecolor{fsmStopFill}{HTML}{FEF2F2}%
-\definecolor{fsmStopBdr}{HTML}{DC2626}%
-\definecolor{fsmStopHdr}{HTML}{B91C1C}%
-\definecolor{fsmAlertFill}{HTML}{FFF1F2}%
-\definecolor{fsmAlertBdr}{HTML}{E11D48}%
-\definecolor{fsmAlertTxt}{HTML}{9F1239}%
+% --- Paleta semántica armónica (idéntica a Figs. 6-11) ---
 \definecolor{fsmInk}{HTML}{1E293B}%
 \definecolor{fsmMuted}{HTML}{475569}%
+\definecolor{fsmIdleBdr}{HTML}{243447}%
+\definecolor{fsmIdleFill}{HTML}{ECEFF4}%
+\definecolor{fsmServBdr}{HTML}{33658A}%
+\definecolor{fsmServFill}{HTML}{EEF5FA}%
+\definecolor{fsmMotorBdr}{HTML}{0F766E}%
+\definecolor{fsmMotorFill}{HTML}{E6F7F5}%
+\definecolor{fsmSwingBdr}{HTML}{B45309}%
+\definecolor{fsmSwingFill}{HTML}{FEF6EB}%
+\definecolor{fsmBalBdr}{HTML}{1B4965}%
+\definecolor{fsmBalFill}{HTML}{EAF4FB}%
+\definecolor{fsmRecBdr}{HTML}{A63429}%
+\definecolor{fsmRecFill}{HTML}{FDF0EE}%
+\definecolor{fsmFaultBdr}{HTML}{9F1239}%
+\definecolor{fsmFaultFill}{HTML}{FFF1F2}%
+\definecolor{fsmAutoZone}{HTML}{0F766E}%
+
 % --- Parámetros centralizados de geometría (Single Source of Truth) ---
-\def\fsmNodePadX{7pt}%
-\def\fsmColGapL{3.10cm}%
-\def\fsmColGapR{3.35cm}%
-\def\fsmIdleW{2.60cm}%
-\def\fsmIdleH{2.20cm}%
-\def\fsmServW{3.55cm}%
-\def\fsmServH{1.00cm}%
-\def\fsmServGapY{0.78cm}%
-\def\fsmAutoW{2.85cm}%
-\def\fsmAutoH{1.15cm}%
-\def\fsmAutoGapX{2.05cm}%
-\def\fsmAutoGapY{1.35cm}%
-\def\fsmLaneStep{0.38cm}%
-\resizebox{0.88\textwidth}{!}{%
+\def\fsmNodePadX{6pt}%
+\def\fsmColGapL{3.35cm}%
+\def\fsmColGapR{3.95cm}%
+\def\fsmIdleW{2.55cm}%
+\def\fsmIdleH{2.22cm}%
+\def\fsmLeftW{3.55cm}%
+\def\fsmLeftH{0.82cm}%
+\def\fsmAutoW{2.95cm}%
+\def\fsmAutoH{1.06cm}%
+\def\fsmAutoGapX{2.25cm}%
+\def\fsmAutoGapY{1.34cm}%
+\def\fsmLaneStep{0.44cm}%
+
+\resizebox{0.90\textwidth}{!}{%
 \begin{tikzpicture}[
     font=\sffamily,
-    % --- Estilos de nodos de estado (Layout by Construction) ---
+    % --- Estilos de nodos de estado (solo nombres cortos de Furuta_State_t) ---
     fsmNode/.style={
         rectangle,
-        rounded corners=7pt,
+        rounded corners=6pt,
         align=center,
         inner xsep=\fsmNodePadX,
-        inner ysep=6pt,
+        inner ysep=5pt,
         text=fsmInk,
-        line width=1.05pt
+        line width=1.1pt
     },
     stateIdle/.style={
         fsmNode,
         fill=fsmIdleFill,
         draw=fsmIdleBdr,
-        line width=1.35pt,
+        line width=1.45pt,
         text width=\fsmIdleW,
         minimum height=\fsmIdleH
+    },
+    stateFault/.style={
+        fsmNode,
+        fill=fsmFaultFill,
+        draw=fsmFaultBdr,
+        line width=1.25pt,
+        text width=\fsmIdleW,
+        minimum height=0.88cm
     },
     stateServ/.style={
         fsmNode,
         fill=fsmServFill,
         draw=fsmServBdr,
-        text width=\fsmServW,
-        minimum height=\fsmServH
+        text width=\fsmLeftW,
+        minimum height=\fsmLeftH
     },
-    stateWarm/.style={
+    stateMotor/.style={
         fsmNode,
-        fill=fsmWarmFill,
-        draw=fsmWarmBdr,
-        line width=1.1pt,
+        fill=fsmMotorFill,
+        draw=fsmMotorBdr,
+        text width=\fsmLeftW,
+        minimum height=\fsmLeftH
+    },
+    stateSwing/.style={
+        fsmNode,
+        fill=fsmSwingFill,
+        draw=fsmSwingBdr,
+        line width=1.15pt,
         text width=\fsmAutoW,
         minimum height=\fsmAutoH
     },
-    stateHero/.style={
+    stateBal/.style={
         fsmNode,
-        fill=fsmHeroFill,
-        draw=fsmHeroBdr,
-        line width=1.85pt,
+        fill=fsmBalFill,
+        draw=fsmBalBdr,
+        line width=1.80pt,
         text width=\fsmAutoW,
         minimum height=\fsmAutoH
+    },
+    stateRec/.style={
+        fsmNode,
+        fill=fsmRecFill,
+        draw=fsmRecBdr,
+        line width=1.15pt,
+        minimum height=1.06cm
     },
     stateStop/.style={
         fsmNode,
-        fill=fsmStopFill,
-        draw=fsmStopBdr,
-        line width=1.1pt,
+        fill=fsmRecFill,
+        draw=fsmRecBdr,
+        line width=1.20pt,
         text width=3.10cm,
-        minimum height=1.05cm
+        minimum height=0.98cm
     },
-    % --- Estilos de transiciones (flechas canónicas) ---
-    transMain/.style={
-        -{Stealth[length=2.5mm, width=1.8mm]},
-        line width=1.15pt,
-        draw=fsmAutoZoneTxt,
-        shorten >=1.5pt,
-        shorten <=1.0pt
-    },
-    transWarm/.style={
-        -{Stealth[length=2.5mm, width=1.8mm]},
-        line width=1.10pt,
-        draw=fsmWarmHdr,
-        shorten >=1.5pt,
-        shorten <=1.0pt
-    },
-    transServ/.style={
+    % --- Flechas canónicas ---
+    trans/.style={
         -{Stealth[length=2.3mm, width=1.7mm]},
-        line width=0.95pt,
-        draw=fsmServHdr,
-        shorten >=1.5pt,
-        shorten <=1.0pt
-    },
-    transRet/.style={
-        -{Stealth[length=2.3mm, width=1.7mm]},
-        line width=0.90pt,
-        draw=fsmIdleBdr,
-        shorten >=1.5pt,
+        line width=1.05pt,
+        shorten >=1.4pt,
         shorten <=1.0pt
     },
     transShort/.style={
-        -{Stealth[length=2.0mm, width=1.5mm]},
-        line width=1.10pt,
-        shorten >=1.5pt,
-        shorten <=1.0pt
-    },
-    transBypass/.style={
-        -{Stealth[length=2.5mm, width=1.8mm]},
+        -{Stealth[length=1.9mm, width=1.45mm]},
         line width=1.05pt,
-        draw=fsmHeroBdr,
-        dashed,
-        dash pattern=on 5pt off 3pt,
-        shorten >=1.5pt,
+        shorten >=1.4pt,
         shorten <=1.0pt
     },
-    transStop/.style={
-        -{Stealth[length=2.5mm, width=1.8mm]},
-        line width=1.10pt,
-        draw=fsmStopHdr,
-        shorten >=1.5pt,
-        shorten <=1.0pt
+    transDash/.style={
+        trans,
+        densely dashed
     },
-    % --- Etiquetas de transición ---
+    % --- Etiquetas de transición ultra breves ---
     elbl/.style={
-        font=\small\sffamily,
+        font=\footnotesize\sffamily,
         text=fsmInk,
         align=center,
-        inner sep=1.8pt
+        inner sep=1.6pt
     },
-    % --- Contenedores y encabezados ---
-    zoneServ/.style={
-        draw=fsmServZoneBdr,
-        dashed,
+    % --- Contenedores de zona y pastillas (idénticos a Figs. 6-11) ---
+    zoneBox/.style={
+        rectangle,
+        rounded corners=8pt,
+        draw=#1,
+        densely dashed,
         line width=0.95pt,
-        rounded corners=10pt,
-        fill=none,
-        inner xsep=0.34cm,
-        inner ysep=0.44cm
-    },
-    zoneAuto/.style={
-        draw=fsmAutoZoneBdr,
-        dashed,
-        line width=1.10pt,
-        rounded corners=10pt,
-        fill=none,
-        inner xsep=0.36cm,
-        inner ysep=0.48cm
+        fill=#1,
+        fill opacity=0.035,
+        text opacity=1
     },
     zonePill/.style={
         rectangle,
-        rounded corners=3.5pt,
+        rounded corners=3pt,
+        draw=#1,
+        line width=0.8pt,
+        fill=white,
         font=\small\bfseries\sffamily,
-        inner xsep=7pt,
-        inner ysep=2.5pt
+        text=#1,
+        inner xsep=6pt,
+        inner ysep=2.2pt
     }
 ]
 
 % ==============================================================================
-% 1. COLOCACIÓN RELATIVA DE ESTADOS (ÚNICO ORIGEN EN IDLE)
+% 1. COLOCACIÓN POR CONSTRUCCIÓN DE LOS 10 ESTADOS DE Furuta_State_t
 % ==============================================================================
 
-% --- Núcleo central: IDLE ---
+% --- Núcleo central: IDLE (0) y FAULT_STOP (7) ---
 \node[stateIdle] (idle) at (0,0) {{\large\bfseries IDLE}};
+\node[stateFault, above=1.42cm of idle] (fault) {{\small\bfseries\color{fsmFaultBdr} FAULT\_STOP}};
 
-% --- Rama Izquierda: Servicio ---
-\node[stateServ, left=\fsmColGapL of idle] (char) {{\small\bfseries CHARACTERIZATION}};
-\node[stateServ, above=\fsmServGapY of char] (cal) {{\small\bfseries CALIBRATING}};
-\node[stateServ, below=\fsmServGapY of char] (pid) {{\small\bfseries MOTOR\_PID}};
+% --- Columna Izquierda Superior: Servicio — CALIBRATING (1), CHARACTERIZATION (2) ---
+\node[stateServ, left=\fsmColGapL of idle, yshift=0.18cm] (char) {{\small\bfseries CHARACTERIZATION}};
+\node[stateServ, above=0.76cm of char] (cal) {{\small\bfseries CALIBRATING}};
 
-% --- Rama Derecha: Ciclo Autónomo ---
-\node[stateWarm, right=\fsmColGapR of idle, yshift={0.5*(\fsmAutoH+\fsmAutoGapY)}] (swing)
-    {{\normalsize\bfseries SWING\_UP}};
-\node[stateHero, right=\fsmAutoGapX of swing] (balance)
-    {{\normalsize\bfseries\color{fsmHeroHdr} BALANCE\_PID}};
+% --- Columna Izquierda Inferior: Control Motor — MOTOR_PID_VEL (3), MOTOR_PID_POS (4) ---
+\node[stateMotor, below=1.04cm of char] (pid_vel) {{\small\bfseries MOTOR\_PID\_VEL}};
+\node[stateMotor, below=0.72cm of pid_vel] (pid_pos) {{\small\bfseries MOTOR\_PID\_POS}};
+
+% --- Columna Derecha: Ciclo Autónomo — SWING_UP (5), BALANCE_PID (6), RECOVER_HOME (8) ---
+\node[stateSwing, right=\fsmColGapR of idle, yshift=0.86cm] (swing) {{\normalsize\bfseries SWING\_UP}};
+\node[stateBal, right=\fsmAutoGapX of swing] (balance) {{\normalsize\bfseries\color{fsmBalBdr} BALANCE\_PID}};
 
 \coordinate (auto_row1_mid) at ($(swing.south west)!0.5!(balance.south east)$);
 \path let \p1 = (swing.west), \p2 = (balance.east),
-          \n1 = {\x2 - \x1 - 2*\fsmNodePadX - 1.50pt} in
-    node[stateWarm, text width=\n1, anchor=north] (recover)
+          \n1 = {\x2 - \x1 - 2*\fsmNodePadX - 1.80pt} in
+    node[stateRec, text width=\n1, anchor=north] (recover)
         at ($(auto_row1_mid)+(0,-\fsmAutoGapY)$) {{\normalsize\bfseries RECOVER\_HOME}};
 
 % ==============================================================================
-% 2. CONTENEDORES ELÁSTICOS (FIT) CON ENCABEZADOS TIPO PILL
+% 2. CONTENEDORES SEMÁNTICOS (FIT EN CAPA DE FONDO)
 % ==============================================================================
+\begin{scope}[on background layer]
+    \coordinate (serv_top_pad) at ($(cal.north)+(0,0.16cm)$);
+    \node[zoneBox=fsmServBdr, inner xsep=0.32cm, inner ysep=0.34cm,
+          fit=(cal)(char)(serv_top_pad)] (serv_zone) {};
+    \node[zonePill=fsmServBdr, anchor=west]
+          at ([xshift=0.28cm]serv_zone.north west) {Servicio};
 
-\coordinate (serv_top_pad) at ($(cal.north)+(0,0.18cm)$);
-\node[zoneServ, fit=(cal)(char)(pid)(serv_top_pad)] (serv_zone) {};
-\node[zonePill, fill=fsmServZonePill, draw=fsmServZoneBdr, text=fsmServZoneTxt]
-    at (serv_zone.north) {Servicio};
+    \coordinate (motor_top_pad) at ($(pid_vel.north)+(0,0.14cm)$);
+    \node[zoneBox=fsmMotorBdr, inner xsep=0.32cm, inner ysep=0.28cm,
+          fit=(pid_vel)(pid_pos)(motor_top_pad)] (motor_zone) {};
+    \node[zonePill=fsmMotorBdr, anchor=west]
+          at ([xshift=0.28cm]motor_zone.north west) {Control Motor};
 
-\coordinate (auto_top_pad) at ($(swing.north)+(0,0.22cm)$);
-\node[zoneAuto, fit=(swing)(balance)(recover)(auto_top_pad)] (auto_zone) {};
-\node[zonePill, fill=fsmAutoZonePill, draw=fsmAutoZoneBdr, text=fsmAutoZoneTxt, anchor=west]
-    at ([xshift=0.40cm]auto_zone.north west) {Ciclo Autónomo};
+    \coordinate (auto_top_pad) at ($(swing.north)+(0,0.18cm)$);
+    \node[zoneBox=fsmAutoZone, inner xsep=0.36cm, inner ysep=0.36cm,
+          fit=(swing)(balance)(recover)(auto_top_pad)] (auto_zone) {};
+    \node[zonePill=fsmAutoZone, anchor=west]
+          at ([xshift=0.38cm]auto_zone.north west) {Ciclo Aut\'onomo};
+\end{scope}
 
-% --- Parada Ordenada: STOP_HOME ---
-\node[stateStop, below=1.05cm of auto_zone.south] (stophome) {{\normalsize\bfseries STOP\_HOME}};
+% --- Parada Ordenada: STOP_HOME (9) ---
+\node[stateStop, below=1.08cm of auto_zone.south] (stophome) {{\normalsize\bfseries STOP\_HOME}};
 
 % ==============================================================================
-% 3. TRANSICIONES Y ETIQUETAS ULTRA BREVES (CERO CRUCES)
+% 3. ENTRADAS GLOBALES Y LÓGICA DE FAULT_STOP (CERO CRUCES)
 % ==============================================================================
 
 % --- Entrada inicial (Inicio -> IDLE) ---
-\coordinate (init_dot) at ([xshift=-0.70cm, yshift=0.78cm]idle.north);
-\fill[fsmIdleHdr] (init_dot) circle (3.0pt);
-\draw[transShort, draw=fsmIdleHdr]
-    (init_dot) -- ([xshift=-0.70cm]idle.north);
-\node[elbl, above=2.5pt, font=\small\bfseries\sffamily, text=fsmIdleHdr]
+\coordinate (init_dot) at ([xshift=-0.88cm, yshift=0.60cm]idle.north);
+\fill[fsmIdleBdr] (init_dot) circle (2.8pt);
+\draw[transShort, draw=fsmIdleBdr] (init_dot) -- ([xshift=-0.88cm]idle.north);
+\node[elbl, above=2pt, font=\footnotesize\bfseries\sffamily, text=fsmIdleBdr]
     at (init_dot) {Inicio};
 
 % --- Entrada global de emergencia (STOP / B1 -> IDLE) ---
-\coordinate (stop_b1_dot) at ([xshift=-0.70cm, yshift=-0.78cm]idle.south);
-\draw[draw=fsmAlertBdr, fill=white, line width=1.05pt] (stop_b1_dot) circle (3.2pt);
-\fill[fsmAlertBdr] (stop_b1_dot) circle (1.5pt);
-\draw[transShort, draw=fsmAlertBdr]
-    ([yshift=3.2pt]stop_b1_dot) -- ([xshift=-0.70cm]idle.south);
-\node[elbl, below=3pt, text=fsmAlertTxt]
+\coordinate (stop_b1_dot) at ([xshift=-0.72cm, yshift=-0.62cm]idle.south);
+\draw[draw=fsmFaultBdr, fill=white, line width=1.05pt] (stop_b1_dot) circle (3.1pt);
+\fill[fsmFaultBdr] (stop_b1_dot) circle (1.45pt);
+\draw[transShort, draw=fsmFaultBdr]
+    ([yshift=3.1pt]stop_b1_dot) -- ([xshift=-0.72cm]idle.south);
+\node[elbl, below=2pt, text=fsmFaultBdr]
     at (stop_b1_dot) {\texttt{STOP / B1}};
 
-% --- Carriles ortogonales en brecha izquierda (Servicio <-> IDLE) ---
-\coordinate (laneL_near) at ($(idle.west)+(-\fsmLaneStep,0)$);
-\coordinate (laneL_far)  at ($(idle.west)+(-2*\fsmLaneStep,0)$);
-\coordinate (gapL_mid)   at ($(serv_zone.east)!0.5!(laneL_far)$);
+% --- Entrada global de fallo crítico (Fallo -> FAULT_STOP) ---
+\coordinate (fault_dot) at ([yshift=0.52cm]fault.north);
+\draw[draw=fsmFaultBdr, fill=white, line width=1.05pt] (fault_dot) circle (3.1pt);
+\fill[fsmFaultBdr] (fault_dot) circle (1.45pt);
+\draw[transShort, draw=fsmFaultBdr]
+    ([yshift=-3.1pt]fault_dot) -- (fault.north);
+\node[elbl, above=2pt, font=\footnotesize\bfseries\sffamily, text=fsmFaultBdr]
+    at (fault_dot) {Fallo};
 
-% IDLE <-> CALIBRATING
-\coordinate (cal_in)  at ([yshift=0.22cm]cal.east);
-\coordinate (cal_out) at ([yshift=-0.22cm]cal.east);
-\draw[transServ, rounded corners=6pt]
-    ([yshift=0.78cm]idle.west) -- ([yshift=0.78cm]idle.west -| laneL_near)
-    -- (cal_in -| laneL_near)
-    -- (cal_in);
-\node[elbl, above=2pt] at (cal_in -| gapL_mid) {\texttt{ZERO / B1}};
+% --- FAULT_STOP -> IDLE (STOP) ---
+\draw[trans, draw=fsmFaultBdr]
+    (fault.south) -- node[midway, right=3.5pt, elbl, text=fsmFaultBdr] {\texttt{STOP}}
+    (idle.north);
 
-\draw[transRet, rounded corners=6pt]
-    (cal_out) -- (cal_out -| laneL_far)
-    -- ([yshift=0.45cm]idle.west -| laneL_far)
-    -- ([yshift=0.45cm]idle.west);
+% --- FAULT_STOP -> CALIBRATING (ZERO / B1, sobre serv_zone.north sin cruzar nada) ---
+\coordinate (cal_fault_in) at ([xshift=0.65cm]cal.north);
+\draw[trans, draw=fsmServBdr, rounded corners=6pt]
+    (fault.west) -| (cal_fault_in);
+\node[elbl, above=2.5pt, text=fsmServBdr]
+    at ($(fault.west)!0.38!(fault.west -| serv_zone.east)$) {\texttt{ZERO / B1}};
+
+% ==============================================================================
+% 4. CARRILES IZQUIERDOS: IDLE <-> SERVICIO & CONTROL MOTOR (100% PLANAR)
+% ==============================================================================
+\coordinate (laneL1)   at ($(idle.west)+(-\fsmLaneStep,0)$);
+\coordinate (laneL2)   at ($(idle.west)+(-2*\fsmLaneStep,0)$);
+\coordinate (gapL_mid) at ($(serv_zone.east)!0.50!(laneL2)$);
+
+% --- IDLE <-> CALIBRATING ---
+\coordinate (cal_in)  at ([yshift= 0.18cm]cal.east);
+\coordinate (cal_out) at ([yshift=-0.18cm]cal.east);
+
+\draw[trans, draw=fsmServBdr, rounded corners=6pt]
+    ([yshift=0.92cm]idle.west) -- ([yshift=0.92cm]idle.west -| laneL1)
+    -- (cal_in -| laneL1) -- (cal_in);
+\node[elbl, above=2pt, text=fsmServBdr] at (cal_in -| gapL_mid) {\texttt{ZERO / B1}};
+
+\draw[trans, draw=fsmMuted, rounded corners=6pt]
+    (cal_out) -- (cal_out -| laneL2)
+    -- ([yshift=0.64cm]idle.west -| laneL2) -- ([yshift=0.64cm]idle.west);
 \node[elbl, below=2pt, text=fsmMuted] at (cal_out -| gapL_mid) {Listo};
 
-% IDLE <-> CHARACTERIZATION
-\draw[transServ]
-    ([yshift=0.16cm]idle.west) -- ([yshift=0.16cm]char.east);
-\node[elbl, above=2pt] at ([yshift=0.16cm]gapL_mid) {\texttt{CHAR}};
+% --- IDLE <-> CHARACTERIZATION (rectas paralelas limpias) ---
+\coordinate (char_in)  at ([yshift= 0.16cm]char.east);
+\coordinate (char_out) at ([yshift=-0.16cm]char.east);
 
-\draw[transRet]
-    ([yshift=-0.16cm]char.east) -- ([yshift=-0.16cm]idle.west);
-\node[elbl, below=2pt, text=fsmMuted] at ([yshift=-0.16cm]gapL_mid) {Fin};
+\draw[trans, draw=fsmServBdr] (char_in -| idle.west) -- (char_in);
+\node[elbl, above=2pt, text=fsmServBdr] at (char_in -| gapL_mid) {\texttt{CHAR}};
 
-% IDLE -> MOTOR_PID
-\draw[transServ, rounded corners=6pt]
-    ([yshift=-0.75cm]idle.west) -- ([yshift=-0.75cm]idle.west -| laneL_near)
-    -- (pid.east -| laneL_near)
-    -- (pid.east);
-\node[elbl, above=2pt] at (pid.east -| gapL_mid) {\texttt{VEL / POS}};
+\draw[trans, draw=fsmMuted] (char_out) -- (char_out -| idle.west);
+\node[elbl, below=2pt, text=fsmMuted] at (char_out -| gapL_mid) {Fin};
 
-% --- Carril derecho (IDLE -> Ciclo Autónomo) ---
-\coordinate (laneR)    at ($(idle.east)+(\fsmLaneStep,0)$);
-\coordinate (gapR_mid) at ($(laneR)!0.5!(auto_zone.west)$);
+% --- IDLE -> MOTOR_PID_VEL (VEL=, usa laneL2) ---
+\draw[trans, draw=fsmMotorBdr, rounded corners=6pt]
+    ([yshift=-0.46cm]idle.west) -- ([yshift=-0.46cm]idle.west -| laneL2)
+    -- (pid_vel.east -| laneL2) -- (pid_vel.east);
+\node[elbl, above=2pt, text=fsmMotorBdr] at (pid_vel.east -| gapL_mid) {\texttt{VEL=}};
 
-% IDLE -> SWING_UP
-\draw[transMain, rounded corners=6pt]
-    ([yshift=0.55cm]idle.east) -- ([yshift=0.55cm]idle.east -| laneR)
-    -- (swing.west -| laneR)
-    -- (swing.west);
-\node[elbl, above=2pt] at (swing.west -| gapR_mid) {\texttt{START}};
+% --- IDLE -> MOTOR_PID_POS (POS=, usa laneL1, estrictamente anidado sin cruces) ---
+\draw[trans, draw=fsmMotorBdr, rounded corners=6pt]
+    ([yshift=-0.86cm]idle.west) -- ([yshift=-0.86cm]idle.west -| laneL1)
+    -- (pid_pos.east -| laneL1) -- (pid_pos.east);
+\node[elbl, above=2pt, text=fsmMotorBdr] at (pid_pos.east -| gapL_mid) {\texttt{POS=}};
 
-% IDLE -> RECOVER_HOME
-\draw[transWarm, rounded corners=6pt]
-    ([yshift=-0.55cm]idle.east) -- ([yshift=-0.55cm]idle.east -| laneR)
-    -- (recover.west -| laneR)
-    -- (recover.west);
-\node[elbl, above=2pt] at (recover.west -| gapR_mid) {\texttt{START} ($\theta \neq 0$)};
+% --- Conmutación directa interna: MOTOR_PID_VEL <-> MOTOR_PID_POS ---
+\draw[transShort, draw=fsmMotorBdr]
+    ([xshift=-0.55cm]pid_vel.south) -- node[midway, left=3pt, elbl, text=fsmMotorBdr] {\texttt{POS=}}
+    ([xshift=-0.55cm]pid_pos.north);
+\draw[transShort, draw=fsmMotorBdr]
+    ([xshift= 0.55cm]pid_pos.north) -- node[midway, right=3pt, elbl, text=fsmMotorBdr] {\texttt{VEL=}}
+    ([xshift= 0.55cm]pid_vel.south);
 
-% IDLE -> BALANCE_PID (riel superior)
-\coordinate (top_rail) at ($(auto_zone.north)+(0,0.58cm)$);
-\coordinate (bal_exit) at ([xshift=0.70cm]idle.north);
-\draw[transBypass, rounded corners=7pt]
-    (bal_exit) -- (bal_exit |- top_rail)
-    -- node[pos=0.55, above=2.5pt, elbl, text=fsmHeroHdr] {\texttt{BALANCE}}
-       (balance.north |- top_rail)
-    -- (balance.north);
+% ==============================================================================
+% 5. CARRILES DERECHOS: IDLE <-> CICLO AUTÓNOMO (ARCOS ANIDADOS, CERO CRUCES)
+% ==============================================================================
+\coordinate (laneR1)   at ($(idle.east)+(\fsmLaneStep,0)$);
+\coordinate (laneR2)   at ($(idle.east)+(2*\fsmLaneStep,0)$);
+\coordinate (laneR3)   at ($(idle.east)+(3*\fsmLaneStep,0)$);
+\coordinate (gapR_mid) at ($(laneR3)!0.50!(auto_zone.west)$);
 
-% --- Transiciones internas del Ciclo Autónomo ---
+\coordinate (top_rail_in)  at ($(auto_zone.north)+(0, 0.56cm)$);
+\coordinate (top_rail_out) at ($(auto_zone.north)+(0, 1.16cm)$);
 
-% SWING_UP -> BALANCE_PID
-\draw[transMain, draw=fsmHeroBdr, line width=1.30pt]
-    (swing.east) -- node[midway, above=3pt, elbl, font=\small\bfseries\sffamily, text=fsmHeroHdr] {Captura}
+% --- Arco exterior: IDLE -> BALANCE_PID (BALANCE, modo manual) ---
+\coordinate (bal_in_top) at ([xshift= 0.48cm]balance.north);
+\draw[transDash, draw=fsmBalBdr, rounded corners=7pt]
+    ([yshift=0.92cm]idle.east) -- ([yshift=0.92cm]idle.east -| laneR1)
+    -- (laneR1 |- top_rail_out)
+    -- (bal_in_top |- top_rail_out)
+    -- (bal_in_top);
+\node[elbl, above=2pt, text=fsmBalBdr]
+    at ($(swing.north |- top_rail_out)!0.50!(balance.north |- top_rail_out)$) {\texttt{BALANCE}};
+
+% --- Arco interior: BALANCE_PID -> IDLE (Caída manual, sin auto-recuperación) ---
+\coordinate (bal_out_top) at ([xshift=-0.48cm]balance.north);
+\draw[transDash, draw=fsmMuted, rounded corners=7pt]
+    (bal_out_top) -- (bal_out_top |- top_rail_in)
+    -- (laneR2 |- top_rail_in)
+    -- ([yshift=0.52cm]idle.east -| laneR2)
+    -- ([yshift=0.52cm]idle.east);
+\node[elbl, above=2pt, text=fsmMuted]
+    at ($(swing.east |- top_rail_in)!0.45!(balance.west |- top_rail_in)$) {Ca\'ida (manual)};
+
+% --- IDLE -> SWING_UP (START) ---
+\draw[trans, draw=fsmAutoZone, rounded corners=6pt]
+    ([yshift=0.02cm]idle.east) -- ([yshift=0.02cm]idle.east -| laneR3)
+    -- (swing.west -| laneR3) -- (swing.west);
+\node[elbl, above=2pt, text=fsmAutoZone] at (swing.west -| gapR_mid) {\texttt{START}};
+
+% --- IDLE -> RECOVER_HOME (START cuando theta != 0) ---
+\draw[trans, draw=fsmRecBdr, rounded corners=6pt]
+    ([yshift=-0.68cm]idle.east) -- ([yshift=-0.68cm]idle.east -| laneR3)
+    -- (recover.west -| laneR3) -- (recover.west);
+\node[elbl, above=2pt, text=fsmRecBdr] at (recover.west -| gapR_mid) {\texttt{START} ($\theta \neq 0$)};
+
+% ==============================================================================
+% 6. TRANSICIONES INTERNAS DEL CICLO AUTÓNOMO Y PARADA ORDENADA STOP_HOME
+% ==============================================================================
+
+% --- SWING_UP -> BALANCE_PID (Captura) ---
+\draw[trans, draw=fsmBalBdr, line width=1.35pt]
+    (swing.east) -- node[midway, above=3pt, elbl, font=\small\bfseries\sffamily, text=fsmBalBdr] {Captura}
     (balance.west);
 
-% SWING_UP -> RECOVER_HOME (Timeout)
-\coordinate (sw_tmo_top) at ([xshift=-0.42cm]swing.south);
+% --- SWING_UP -> RECOVER_HOME (Timeout) ---
+\coordinate (sw_tmo_top) at ([xshift=-0.48cm]swing.south);
 \coordinate (sw_tmo_bot) at (sw_tmo_top |- recover.north);
-\draw[transWarm]
-    (sw_tmo_top) -- node[midway, left=3pt, elbl, text=fsmWarmHdr] {Timeout} (sw_tmo_bot);
+\draw[trans, draw=fsmSwingBdr]
+    (sw_tmo_top) -- node[midway, left=3pt, elbl, text=fsmSwingBdr] {Timeout} (sw_tmo_bot);
 
-% RECOVER_HOME -> SWING_UP (Calma)
-\coordinate (sw_rel_top) at ([xshift=0.42cm]swing.south);
+% --- RECOVER_HOME -> SWING_UP (Calma) ---
+\coordinate (sw_rel_top) at ([xshift= 0.48cm]swing.south);
 \coordinate (sw_rel_bot) at (sw_rel_top |- recover.north);
-\draw[transMain, line width=1.15pt]
-    (sw_rel_bot) -- node[midway, right=3pt, elbl, text=fsmAutoZoneTxt] {Calma} (sw_rel_top);
+\draw[trans, draw=fsmAutoZone, line width=1.15pt]
+    (sw_rel_bot) -- node[midway, right=3pt, elbl, text=fsmAutoZone] {Calma} (sw_rel_top);
 
-% BALANCE_PID -> RECOVER_HOME (Caída)
+% --- BALANCE_PID -> RECOVER_HOME (Caída en modo autónomo) ---
 \coordinate (bal_wd_bot) at (balance.south |- recover.north);
-\draw[transWarm, line width=1.15pt]
-    (balance.south) -- node[midway, left=4pt, elbl, text=fsmWarmHdr] {Caída} (bal_wd_bot);
+\draw[trans, draw=fsmRecBdr, line width=1.15pt]
+    (balance.south) -- node[midway, left=4pt, elbl, text=fsmRecBdr] {Ca\'ida (auto)} (bal_wd_bot);
 
-% --- Parada ordenada: Ciclo Autónomo -> STOP_HOME -> IDLE ---
-\draw[transStop]
-    (auto_zone.south) -- node[midway, right=4pt, elbl, text=fsmStopHdr] {\texttt{STOPHOME}} (stophome.north);
+% --- Ciclo Autónomo -> STOP_HOME (STOPHOME) ---
+\draw[trans, draw=fsmRecBdr]
+    (auto_zone.south) -- node[midway, right=4pt, elbl, text=fsmRecBdr] {\texttt{STOPHOME}} (stophome.north);
 
-\draw[transStop, rounded corners=7pt]
-    (stophome.west) -| node[pos=0.25, above=2.5pt, elbl, text=fsmStopHdr] {En $0^\circ$}
-    ([xshift=0.70cm]idle.south);
+% --- Control Motor -> STOP_HOME (STOPHOME por corredor inferior limpio) ---
+\coordinate (sh_in_motor) at ([yshift=-0.24cm]stophome.west);
+\coordinate (sh_out_idle) at ([yshift= 0.24cm]stophome.west);
+\draw[trans, draw=fsmRecBdr, rounded corners=7pt]
+    (motor_zone.south) |- (sh_in_motor);
+\node[elbl, below=2pt, text=fsmRecBdr]
+    at ($(motor_zone.south |- sh_in_motor)!0.52!(idle.center |- sh_in_motor)$) {\texttt{STOPHOME}};
+
+% --- STOP_HOME -> IDLE (En 0°) ---
+\coordinate (idle_sh_in) at ([xshift=0.72cm]idle.south);
+\draw[trans, draw=fsmRecBdr, rounded corners=7pt]
+    (sh_out_idle) -| (idle_sh_in);
+\node[elbl, above=2pt, text=fsmRecBdr]
+    at ($(sh_out_idle)!0.52!(sh_out_idle -| idle_sh_in)$) {En $0^\circ$};
 
 \end{tikzpicture}%
 }%
-\caption{Máquina de estados finitos (FSM) del firmware de control digital (\texttt{furuta\_control.c}, lazo isócrono \texttt{TIM6} a \qty{1.0}{\kilo\hertz}). Comprende el estado inicial de reposo \texttt{IDLE}, la rama de servicio (\texttt{CALIBRATING}, \texttt{CHARACTERIZATION} y \texttt{MOTOR\_PID}), el ciclo autónomo cerrado (\texttt{SWING\_UP}, \texttt{BALANCE\_PID} y \texttt{RECOVER\_HOME}) y la parada ordenada \texttt{STOP\_HOME}. La transición global de emergencia mediante el comando UART \texttt{STOP} o el botón \texttt{B1} (\texttt{PC13}) fuerza el retorno inmediato a \texttt{IDLE} desde cualquier estado; la descomposición en subfases de \texttt{RECOVER\_HOME} se presenta en la Fig.~\ref{fig:detalle_recover_home}.}
+\caption{M\'aquina de estados finitos (FSM) completa con los diez modos operativos (\texttt{Furuta\_State\_t}) del firmware de control digital (\texttt{furuta\_control.c}, lazo is\'ocrono \texttt{TIM6} a \qty{1.0}{\kilo\hertz}). Integra el reposo inicial \texttt{IDLE}, la parada de seguridad \texttt{FAULT\_STOP}, los modos de servicio (\texttt{CALIBRATING}, \texttt{CHARACTERIZATION}), los lazos aislados de motor (\texttt{MOTOR\_PID\_VEL} y \texttt{MOTOR\_PID\_POS}, con conmutaci\'on directa \texttt{VEL=}/\texttt{POS=}), el ciclo aut\'onomo completo (\texttt{SWING\_UP}, \texttt{BALANCE\_PID} ---distinguiendo ca\'ida aut\'onoma frente a retorno manual--- y \texttt{RECOVER\_HOME}) y la parada ordenada \texttt{STOP\_HOME} accesible tanto desde el ciclo aut\'onomo como desde los modos de motor. La transici\'on global de emergencia \texttt{STOP / B1} fuerza el retorno inmediato a \texttt{IDLE} desde cualquier estado activo; cada estado de control en lazo cerrado cuenta con su diagrama de bloques at\'omico dedicado (Figs.~\ref{fig:diagrama_bloques_control}--\ref{fig:detalle_recover_home}).}
 \label{fig:fsm_firmware}
 \end{figure*}
