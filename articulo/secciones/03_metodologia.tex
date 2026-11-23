@@ -223,7 +223,7 @@ La Fig.~\ref{fig:diagrama_bloques_control} desglosa la arquitectura atómica del
     \end{equation}
     Simultáneamente, el bloque \texttt{Índice dist} evalúa la severidad instantánea de perturbación y \texttt{Mezcla} pondera ambas ramas:
     \begin{equation}
-    \resizebox{0.95\linewidth}{!}{$\displaystyle
+    \resizebox{0.85\linewidth}{!}{$\displaystyle
         \begin{aligned}
             \mathrm{dist}[k] &= \min\!\left(1,\; \max\!\left(\frac{|\tilde{\alpha}[k]|}{\qty{4.5}{\degree}},\; \frac{|\dot{\alpha}_{f1}[k]|}{\qty{2.5}{\radian\per\second}}\right)\right), \\
             u_{\text{sh}}[k] &= u_{n11}[k] + (1 - \mathrm{dist}[k])\bigl(u_{n6}[k] - u_{n11}[k]\bigr).
@@ -231,7 +231,7 @@ La Fig.~\ref{fig:diagrama_bloques_control} desglosa la arquitectura atómica del
     $}
         \label{eq:mezcla_dist}
     \end{equation}
-    \textit{(iv)~Implementación:} tanto \texttt{Furuta\_ApplyNotch11Hz} como \texttt{Furuta\_ApplyNotch6Hz} utilizan la estructura TDF-II~\eqref{eq:tdf2_biquad}~\cite{Oppenheim2010} en precisión \texttt{double} de 64~bits, indispensable debido a que los polos biquad residen próximos al círculo unitario ($|z|\approx 0.972\text{--}0.981$) y la precisión simple de 32~bits degradaría la ubicación espectral de las muescas.
+    \mbox{\textit{(iv)~Implementación:}} tanto \texttt{Furuta\_\allowbreak ApplyNotch11Hz} como \texttt{Furuta\_\allowbreak ApplyNotch6Hz} utilizan la estructura TDF-II~\eqref{eq:tdf2_biquad}~\cite{Oppenheim2010} en precisión \texttt{double} de 64~bits, indispensable debido a que los polos biquad residen próximos al círculo unitario ($|z|\approx 0.972\text{--}0.981$) y la precisión simple de 32~bits degradaría la ubicación espectral de las muescas.
 
     \item \textbf{Acondicionamiento adaptativo (\texttt{Sat. Adap.}, \texttt{Slew Adap.}) y cascada de actuación:}
     \textit{(i)~Necesidad:} evitar saltos bruscos de corriente en quietud vertical sin limitar el par disponible frente a perturbaciones fuertes, y traducir $u[k]$ en pulsos PWM lineales.
@@ -246,7 +246,7 @@ La Fig.~\ref{fig:diagrama_bloques_control} desglosa la arquitectura atómica del
 \textit{(i)~Necesidad:} elevar autónomamente el péndulo desde el equilibrio colgante estable ($\alpha=\qty{0}{\degree}$) hasta el cono linealizable superior en torno a $\alpha=\qty{180}{\degree}$ (banda de $\pm\qty{20}{\degree}$) venciendo la pérdida de controlabilidad en la horizontal y la saturación de \qty{12.0}{\volt}.
 \textit{(ii)~Elección:} dado que los reguladores lineales locales no pueden cruzar el hemisferio inferior sin rotar indefinidamente el brazo, se adoptó un esquema en \textbf{cascada pura} (Fig.~\ref{fig:bloques_swingup}) basado en energía normalizada~\cite{astrom2000,spong1995} con conmutación en cuadratura de fase acotada en carrera, realimentado en ambas ramas únicamente hasta \texttt{LPF IIR 1} ($\dot{\theta}_{f1}, \dot{\alpha}_{f1}$, sin \texttt{LPF IIR 2}) para eliminar cualquier retardo de fase en los cruces por el punto muerto inferior.
 \textit{(iii)~Diseño:} el bloque \texttt{Energía} evalúa~\eqref{eq:energia_swingup} tomando el valor experimental $\omega_n=\qty{8.8484}{\radian\per\second}$ sobre $\dot{\alpha}_{f1}$ y $\tilde{\alpha}$. El bloque \texttt{Cuadratura} aplica primero un pulso inicial suave de $\theta_{\text{sw}}=+\qty{40}{\degree}$ durante \qty{280}{\milli\second}; posteriormente, cada vez que la barra cruza la región inferior con $|\alpha|$ menor a \qty{48}{\degree} y rapidez $|\dot{\alpha}_{f1}|$ superior a \qty{0.55}{\radian\per\second}, conmuta $\theta_{\text{sw}}$ en el sentido de $\dot{\alpha}_{f1}$ modulando la carrera y el techo de tensión en tres escalones según la energía $E_{\text{norm}}$: $\pm\qty{50}{\degree}$ con $\pm\qty{6.8}{\volt}$ en el tramo inicial (hasta $-0.32$), $\pm\qty{36}{\degree}$ con $\pm\qty{6.0}{\volt}$ en el tramo intermedio (entre $-0.32$ y $-0.10$) y $\pm\qty{22}{\degree}$ con $\pm\qty{5.2}{\volt}$ en el tramo superior (por encima de $-0.10$). El error de seguimiento del brazo en $\Sigma_3$ entre la referencia $\theta_{\text{sw}}$ y la posición medida $\theta$ alimenta en cascada a \texttt{PD Swing-Up} ($K_p=13.50$, $K_d=1.20$ sobre $\dot{\theta}_{f1}$), \texttt{Sat. Swing} ($\pm v_{\text{cap}}$), \texttt{Slew Swing} ($\qty{0.12}{\volt\per\milli\second}$) y la cadena L298N. Al ingresar dentro de la banda de captura ($|\tilde{\alpha}|$ menor a \qty{20}{\degree} y $|\dot{\alpha}_{f1}|$ inferior a \qty{4.8}{\radian\per\second}), se ejecuta transferencia sin saltos (\textit{bumpless})~\cite{Peng1996} hacia \texttt{BALANCE\_PID}, reiniciando acumuladores y precargando los filtros de velocidad.
-\textit{(iv)~Implementación:} funciones \texttt{Furuta\_ComputePendulumEnergy} y \texttt{Furuta\_ComputeSwingUpVoltage} en \texttt{furuta\_control.c} (con reinicio automático si tras \qty{1.4}{\second} la barra queda estancada por debajo de \qty{5}{\degree}).
+\textit{(iv)~Implementación:} funciones \texttt{Furuta\_\allowbreak ComputePendulumEnergy} y \texttt{Furuta\_\allowbreak ComputeSwingUpVoltage} en \texttt{furuta\_control.c} (con reinicio automático si tras \qty{1.4}{\second} la barra queda estancada por debajo de \qty{5}{\degree}).
 
 \subsubsection{Estado \texttt{MOTOR\_PID\_POS} / \texttt{STOP\_HOME} / Fase F1 de \texttt{RECOVER\_HOME} (Servo \qty{0}{\degree} con Reinicio de Clegg)}
 
@@ -254,20 +254,20 @@ La Fig.~\ref{fig:diagrama_bloques_control} desglosa la arquitectura atómica del
 
 \textit{(i)~Necesidad:} posicionar el brazo horizontal con error estacionario cercano a cero venciendo la fricción estática asimétrica del reductor $80:1$ y el par elástico del cableado distal, evitando el sobreimpulso por \textit{windup} y el ciclado alrededor de la consigna.
 \textit{(ii)~Elección:} un integrador lineal continuo en viajes largos acumularía energía excesiva durante la fase de aceleración; combinar una ventana integral estrecha con el \textbf{reinicio instantáneo de Clegg}~\cite{clegg1958} y enclavamiento por histéresis con freno electromagnético activo~\cite{L298N_Datasheet} elimina el sobreimpulso y suprime completamente la vibración residual.
-\textit{(iii)~Diseño:} la Fig.~\ref{fig:detalle_servo_clegg} muestra los 11 bloques atómicos del lazo, realimentado únicamente por el brazo ($\theta$ y $\dot{\theta}_{f1}$ hasta \texttt{LPF IIR 1}). El error angular del brazo $e_\theta$ calculado en $\Sigma_p$ respecto a $\theta_{\text{ref}}$ bifurca hacia tres ramas paralelas sumadas en $\Sigma_c$: \texttt{Proporcional} ($K_p=13.50$), la rama integral no lineal compuesta por \texttt{Ventana $\pm 5^\circ$} $\to$ \texttt{Integrador} ($K_i=65.00$) $\to$ \texttt{Clamp Integral} ($\pm\qty{6.5}{\volt}$) gobernada lateralmente por \texttt{Reinicio Clegg}~\eqref{eq:clegg_teoria}:
+\textit{(iii)~Diseño:} la Fig.~\ref{fig:detalle_servo_clegg} muestra los 11 bloques atómicos del lazo, realimentado únicamente por el brazo ($\theta$ y $\dot{\theta}_{f1}$ hasta \texttt{LPF IIR 1}). El error angular del brazo $e_\theta$ calculado en $\Sigma_p$ respecto a $\theta_{\text{ref}}$ bifurca hacia tres ramas paralelas sumadas en $\Sigma_c$: \texttt{Proporcional} ($K_p=13.50$), \texttt{Derivativo} ($K_d=1.45$) aplicado directamente sobre la medición filtrada negada ($-\dot{\theta}_{f1}$) para evitar impulsos derivativos, y la rama integral no lineal compuesta por \texttt{Ventana $\pm 5^\circ$} $\to$ \texttt{Integrador} ($K_i=65.00$) $\to$ \texttt{Clamp Integral} ($\pm\qty{6.5}{\volt}$) gobernada lateralmente por \texttt{Reinicio Clegg}~\eqref{eq:clegg_teoria}, cuya ley discreta resulta:
 \begin{equation}
-\resizebox{0.92\columnwidth}{!}{$\displaystyle
+\resizebox{0.85\columnwidth}{!}{$\displaystyle
     I_p[k] =
     \begin{cases}
         0, & |e_\theta[k]| > \qty{5}{\degree}, \\
         0, & e_\theta[k]e_\theta[k-1] \le 0, \\[2pt]
-        \mathrm{sat}_{\pm 6.5}\!\bigl(I_p[k-1] + K_i T_s e_\theta[k]\bigr), & \text{en otro caso},
+        \mathrm{sat}_{\pm 6.5}\!\bigl(I_p[k-1] + K_i T_s e_\theta[k]\bigr), & \text{en otro caso}.
     \end{cases}
 $}
     \label{eq:clegg_pos}
 \end{equation}
-y \texttt{Derivativo} ($K_d=1.45$) aplicado directamente sobre la medición filtrada $-\dot{\theta}_{f1}$ para evitar impulsos derivativos. La salida de $\Sigma_c$ atraviesa en cascada \texttt{Saturación} ($\pm\qty{5.8}{\volt}$), \texttt{Slew-Rate} ($\qty{0.055}{\volt\per\milli\second}$) y \texttt{Selector Freno}. Paralelamente, \texttt{Histéresis} supervisa $e_\theta$ y $\dot{\theta}_{f1}$: en \texttt{Furuta\_DriveArmToZero\_1kHz} (\texttt{RECOVER\_HOME}/\texttt{STOP\_HOME}) enclava cuando la magnitud de $e_\theta$ no supera \qty{0.08}{\degree} y la rapidez $|\dot{\theta}_{f1}|$ cae por debajo de \qty{0.16}{\radian\per\second} (liberando si el error excede \qty{0.14}{\degree}; en \texttt{MOTOR\_PID\_POS} emplea umbrales de \qty{0.045}{\degree}, \qty{0.12}{\radian\per\second} y liberación en \qty{0.10}{\degree}), enviando la señal \texttt{reset} al integrador y \texttt{lock} para activar \texttt{Freno Activo} (\texttt{L298N\_Brake}).
-\textit{(iv)~Implementación:} \texttt{Furuta\_DriveArmToZero\_1kHz} y caso \texttt{FURUTA\_STATE\_MOTOR\_PID\_POS} en \texttt{furuta\_control.c}.
+La salida de $\Sigma_c$ atraviesa en cascada \texttt{Saturación} ($\pm\qty{5.8}{\volt}$), \texttt{Slew-Rate} ($\qty{0.055}{\volt\per\milli\second}$) y \texttt{Selector Freno}. Paralelamente, \texttt{Histéresis} supervisa $e_\theta$ y $\dot{\theta}_{f1}$: en \texttt{Furuta\_\allowbreak DriveArmToZero\_\allowbreak 1kHz} (\texttt{RECOVER\_HOME}/\texttt{STOP\_HOME}) enclava cuando la magnitud de $e_\theta$ no supera \qty{0.08}{\degree} y la rapidez $|\dot{\theta}_{f1}|$ cae por debajo de \qty{0.16}{\radian\per\second} (liberando si el error excede \qty{0.14}{\degree}; en \texttt{MOTOR\_PID\_POS} emplea umbrales de \qty{0.045}{\degree}, \qty{0.12}{\radian\per\second} y liberación en \qty{0.10}{\degree}), enviando la señal \texttt{reset} al integrador y \texttt{lock} para activar \texttt{Freno Activo} (\texttt{L298N\_Brake}).
+\textit{(iv)~Implementación:} \texttt{Furuta\_\allowbreak DriveArmToZero\_\allowbreak 1kHz} y caso \texttt{FURUTA\_\allowbreak STATE\_\allowbreak MOTOR\_\allowbreak PID\_\allowbreak POS} en \texttt{furuta\_control.c}.
 
 \subsubsection{Estado \texttt{MOTOR\_PID\_VEL} (Control de Velocidad con Anti-Windup)}
 
