@@ -1,0 +1,296 @@
+% ==============================================================================
+% Figura: Diagrama de Bloques Atómico — Estado FURUTA_STATE_MOTOR_PID_VEL (1 kHz)
+% Estrategia: 1 función = 1 bloque atómico, solo nombre corto en cajas, solo
+% símbolos puros de señal en cables (sin ganancias ni ecuaciones en bloques).
+% Fiel a furuta_control.c (líneas 362-369), pid_controller.c, l298n_motor.c
+% y as5600.c.
+% Archivo modular listo para \input{} en IEEEtran dos columnas (figure* [!t]).
+% Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
+%                            shapes.geometric, backgrounds, babel, bending.
+% ==============================================================================
+\begin{figure*}[!t]
+\centering
+% --- Paleta semántica armónica (idéntica a fig:diagrama_bloques_control) ---
+\definecolor{blkInk}{HTML}{1E293B}
+\definecolor{blkPendEdge}{HTML}{1B4965}
+\definecolor{blkPendFill}{HTML}{EAF4FB}
+\definecolor{blkArmEdge}{HTML}{0F766E}
+\definecolor{blkArmFill}{HTML}{E6F7F5}
+\definecolor{blkCondEdge}{HTML}{B45309}
+\definecolor{blkCondFill}{HTML}{FEF6EB}
+\definecolor{blkDistEdge}{HTML}{7E2268}
+\definecolor{blkDistFill}{HTML}{FBF0F8}
+\definecolor{blkActEdge}{HTML}{A63429}
+\definecolor{blkActFill}{HTML}{FDF0EE}
+\definecolor{blkPlantEdge}{HTML}{243447}
+\definecolor{blkPlantFill}{HTML}{ECEFF4}
+\definecolor{blkZoneZ1}{HTML}{33658A}
+\definecolor{blkZoneL2}{HTML}{A63429}
+\definecolor{blkZoneL3}{HTML}{2A6B43}
+
+% --- Parámetros centralizados de ritmo geométrico (Layout by Construction) ---
+\def\bvBoxH{0.86cm}
+\def\bvSubH{0.80cm}
+\def\bvSumSz{0.58cm}
+\def\bvHopRad{0.095cm}
+\def\bvRefLeadX{1.48cm}
+\def\bvOutLeadX{1.34cm}
+\def\bvErrSplitX{0.64cm}
+\def\bvErrTapX{0.76cm}
+\def\bvSumCGapX{1.02cm}
+\def\bvSatGapX{0.54cm}
+\def\bvBranchGapY{0.56cm}
+\def\bvPropGapY{0.46cm}
+\def\bvZoneGapX{1.62cm}
+\def\bvActGapX{0.54cm}
+\def\bvVmGapX{0.78cm}
+\def\bvSensGapX{0.44cm}
+\def\bvZoneThreeDropY{0.68cm}
+\def\bvEncBackX{0.58cm}
+
+\resizebox{0.97\textwidth}{!}{%
+\begin{tikzpicture}[
+    >=Stealth,
+    font=\sffamily,
+    % --- Estilos de bloques atómicos (1 función = 1 bloque, solo nombre corto) ---
+    baseblk/.style={
+        rectangle,
+        rounded corners=3.5pt,
+        align=center,
+        inner xsep=3.5pt,
+        inner ysep=3pt,
+        text=blkInk,
+        font=\normalsize\sffamily\bfseries,
+        minimum height=\bvBoxH
+    },
+    armblk/.style={baseblk, draw=blkArmEdge, line width=1.1pt, fill=blkArmFill, text width=2.16cm},
+    condblk/.style={baseblk, draw=blkCondEdge, line width=1.1pt, fill=blkCondFill, text width=1.52cm},
+    distblk/.style={baseblk, draw=blkDistEdge, line width=1.05pt, fill=blkDistFill, text width=2.16cm, minimum height=\bvSubH},
+    actblk/.style={baseblk, draw=blkActEdge, line width=1.1pt, fill=blkActFill, text width=1.74cm},
+    plantblk/.style={baseblk, draw=blkPlantEdge, line width=1.35pt, fill=blkPlantFill, text width=1.46cm},
+    sensTblk/.style={baseblk, draw=blkArmEdge, line width=1.1pt, fill=blkArmFill, text width=2.24cm},
+    sum/.style={
+        circle,
+        draw=blkInk,
+        line width=1.05pt,
+        fill=white,
+        minimum size=\bvSumSz,
+        inner sep=0pt,
+        font=\small\bfseries,
+        text=blkInk
+    },
+    dot/.style={circle, fill=#1, inner sep=1.55pt},
+    % --- Flechas y trazos canónicos ---
+    wire/.style={line width=1.0pt, draw=blkInk},
+    sig/.style={-{Stealth[length=4.8pt, width=3.5pt]}, line width=1.0pt, draw=blkInk},
+    sigshort/.style={-{Stealth[length=3.9pt, width=2.9pt]}, line width=1.0pt, draw=blkInk},
+    fbT/.style={-{Stealth[length=4.4pt, width=3.2pt]}, line width=0.95pt, draw=blkArmEdge},
+    lineT/.style={line width=0.95pt, draw=blkArmEdge},
+    adapt/.style={-{Stealth[length=3.9pt, width=2.9pt]}, line width=0.95pt, densely dashed, draw=blkDistEdge},
+    lineDist/.style={line width=0.95pt, densely dashed, draw=blkDistEdge},
+    % --- Contenedores y etiquetas ---
+    zonebox/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=#1,
+        densely dashed,
+        line width=0.95pt,
+        fill=#1,
+        fill opacity=0.035,
+        text opacity=1
+    },
+    zonetitle/.style={
+        rectangle,
+        rounded corners=3pt,
+        draw=#1,
+        line width=0.8pt,
+        fill=white,
+        inner xsep=5.5pt,
+        inner ysep=2.2pt,
+        font=\small\sffamily\bfseries,
+        text=#1
+    },
+    signlbl/.style={font=\footnotesize\bfseries, text=blkInk, inner sep=1pt},
+    wirelbl/.style={font=\small\sffamily, text=blkInk, inner sep=1.5pt}
+]
+
+% ==============================================================================
+% ZONA 1: CONTROL PID DE VELOCIDAD (PARALELO) — ÚNICO ANCLAJE (0,0)
+% ==============================================================================
+\node[sum] (sig_v) at (0,0) {$\Sigma_v$};
+\coordinate[right=\bvErrSplitX of sig_v.east] (split_e);
+
+\node[armblk, right=\bvErrTapX of split_e] (int_tustin) {Integrador\\Tustin};
+\node[distblk, above=\bvBranchGapY of int_tustin] (anti_windup) {Anti-Windup};
+\node[armblk, above=\bvPropGapY of anti_windup] (prop_blk) {Proporcional};
+\node[armblk, below=\bvBranchGapY of int_tustin] (deriv_blk) {Derivativo\\Filtrado};
+
+\node[sum, right=\bvSumCGapX of int_tustin] (sig_c) {$\Sigma_c$};
+\node[condblk, right=\bvSatGapX of sig_c] (sat_vel) {Sat. Vel.};
+
+\coordinate (z1_top_pad)   at ([yshift=0.46cm]prop_blk.north);
+\coordinate (z1_bot_pad)   at ([yshift=-0.28cm]deriv_blk.south);
+\coordinate (z1_left_pad)  at ([xshift=-0.56cm]sig_v.west);
+\coordinate (z1_right_pad) at ([xshift=0.28cm]sat_vel.east);
+
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneZ1, inner sep=0pt,
+          fit=(z1_top_pad)(z1_bot_pad)(z1_left_pad)(z1_right_pad)] (zone1) {};
+\end{scope}
+\node[zonetitle=blkZoneZ1, anchor=west] at ([xshift=0.35cm]zone1.north west)
+    {Control PID de Velocidad (Paralelo)};
+
+% ==============================================================================
+% ZONA 2: ACTUACIÓN Y MOTOR (CASCADA)
+% ==============================================================================
+\node[actblk, right=\bvZoneGapX of sat_vel] (banda) {Banda\\Silenciosa};
+\node[actblk, right=\bvActGapX of banda] (rampa) {Rampa\\L298N};
+\node[actblk, right=\bvActGapX of rampa] (pwm) {Modulador\\PWM};
+\node[actblk, right=\bvActGapX of pwm] (puente) {Puente H\\L298N};
+\node[plantblk, right=\bvVmGapX of puente] (motor) {Motor\\80:1};
+
+\coordinate (l2_top_pad)   at ([yshift=0.42cm]banda.north);
+\coordinate (l2_bot_pad)   at ([yshift=-0.28cm]banda.south);
+\coordinate (l2_left_pad)  at ([xshift=-0.28cm]banda.west);
+\coordinate (l2_right_pad) at ([xshift=0.28cm]motor.east);
+
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneL2, inner sep=0pt,
+          fit=(l2_top_pad)(l2_bot_pad)(l2_left_pad)(l2_right_pad)] (zoneL2) {};
+\end{scope}
+\node[zonetitle=blkZoneL2, anchor=west] at ([xshift=0.32cm]zoneL2.north west)
+    {Actuaci\'on y Motor (Cascada)};
+
+% ==============================================================================
+% ZONA 3: SENSADO BASE Y LPF IIR 1 (DERECHA -> IZQUIERDA)
+% ==============================================================================
+\coordinate (l3_y) at ([yshift=-\bvZoneThreeDropY]zone1.south);
+\coordinate (as5600_east_x) at ([xshift=-\bvEncBackX]motor.south);
+
+\node[sensTblk, anchor=east] (as5600_base) at (as5600_east_x |- l3_y) {AS5600\\Base};
+\node[sensTblk, left=\bvSensGapX of as5600_base] (desenv) {Desenvoltura};
+\node[sensTblk, left=\bvSensGapX of desenv] (deriv_t) {Derivador $\theta$};
+\node[sensTblk, left=\bvSensGapX of deriv_t] (lpf1_t) {LPF IIR 1};
+
+\coordinate (l3_top_pad)   at ([yshift=0.42cm]lpf1_t.north);
+\coordinate (l3_bot_pad)   at ([yshift=-0.30cm]lpf1_t.south);
+\coordinate (l3_left_pad)  at ([xshift=-0.28cm]lpf1_t.west);
+\coordinate (l3_right_pad) at ([xshift=0.28cm]as5600_base.east);
+
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneL3, inner sep=0pt,
+          fit=(l3_top_pad)(l3_bot_pad)(l3_left_pad)(l3_right_pad)] (zoneL3) {};
+\end{scope}
+\node[zonetitle=blkZoneL3, anchor=west] at ([xshift=0.32cm]zoneL3.north west)
+    {Sensado Base y LPF IIR 1};
+
+% ==============================================================================
+% CONEXIONES ZONA 1 (PID PARALELO + SUPERVISIÓN ANTI-WINDUP)
+% ==============================================================================
+\coordinate[left=\bvRefLeadX of sig_v.west] (ref_in);
+
+% Entrada de referencia omega_ref (centrada fuera del contenedor Zona 1)
+\draw[sig] (ref_in) -- (sig_v.west);
+\node[wirelbl, anchor=south]
+    at ($(ref_in)!0.50!(zone1.west |- sig_v.west) + (0, 2pt)$) {$\omega_{\mathrm{ref}}$};
+\node[signlbl, anchor=south] at ([xshift=-0.14cm, yshift=0.07cm]sig_v.west) {$+$};
+
+% Error e_omega y bifurcación paralela hacia P, I y Anti-Windup
+\draw[wire] (sig_v.east) -- (split_e)
+    node[wirelbl, midway, above=2pt] {$e_\omega$};
+\node[dot=blkInk] at (split_e) {};
+
+\draw[sigshort] (split_e) -- (int_tustin.west);
+
+\coordinate (aw_tap) at (split_e |- anti_windup.west);
+\draw[wire] (split_e) -- (aw_tap);
+\node[dot=blkInk] at (aw_tap) {};
+
+\draw[sigshort] (aw_tap) -- (anti_windup.west)
+    node[wirelbl, midway, above=2pt] {$e_\omega$};
+\draw[sig, rounded corners=4pt] (aw_tap) |- (prop_blk.west);
+
+% Supervisión Anti-Windup -> clamp hacia Integrador Tustin
+\draw[adapt] (anti_windup.south) -- (int_tustin.north)
+    node[wirelbl, text=blkDistEdge, midway, right=3pt] {$\mathrm{clamp}$};
+
+% Convergencia paralela en Sigma_c
+\draw[sig, rounded corners=4pt] (prop_blk.east) -| (sig_c.north)
+    node[wirelbl, pos=0.25, above=2pt] {$u_p$};
+\node[signlbl, anchor=south west] at ([xshift=0.08cm, yshift=0.07cm]sig_c.north) {$+$};
+
+\draw[sigshort] (int_tustin.east) -- (sig_c.west)
+    node[wirelbl, pos=0.38, above=2pt] {$u_i$};
+\node[signlbl, anchor=south] at ([xshift=-0.14cm, yshift=0.07cm]sig_c.west) {$+$};
+
+\draw[sig, rounded corners=4pt] (deriv_blk.east) -| (sig_c.south)
+    node[wirelbl, pos=0.25, below=2pt] {$u_d$};
+\node[signlbl, anchor=north west] at ([xshift=0.08cm, yshift=-0.07cm]sig_c.south) {$+$};
+
+% Salida de Sigma_c -> Sat. Vel. y realimentación sat -> Anti-Windup (con puente sobre u_p)
+\draw[sigshort] (sig_c.east) -- (sat_vel.west);
+
+\coordinate (sat_hop_x) at (sig_c.center);
+\coordinate (sat_bus_y) at (anti_windup.east);
+\draw[lineDist, rounded corners=4pt]
+    (sat_vel.north) |- ($(sat_hop_x |- sat_bus_y)+(\bvHopRad,0)$)
+    node[wirelbl, text=blkDistEdge, pos=0.72, above=2pt] {$\mathrm{sat}$};
+\draw[lineDist]
+    ($(sat_hop_x |- sat_bus_y)+(\bvHopRad,0)$)
+    arc[start angle=0, end angle=180, radius=\bvHopRad];
+\draw[adapt]
+    ($(sat_hop_x |- sat_bus_y)+(-\bvHopRad,0)$) -- (anti_windup.east);
+
+% ==============================================================================
+% CONEXIONES ZONA 2 (CASCADA L298N -> MOTOR 80:1 -> SALIDA omega_m)
+% ==============================================================================
+\draw[sig] (sat_vel.east) -- (banda.west);
+\node[wirelbl, anchor=south]
+    at ($(zone1.east |- sat_vel.east)!0.50!(zoneL2.west |- banda.west) + (0, 2pt)$) {$u_v[k]$};
+
+\draw[sigshort] (banda.east) -- (rampa.west);
+\draw[sigshort] (rampa.east) -- (pwm.west);
+\draw[sigshort] (pwm.east) -- (puente.west);
+\draw[sigshort] (puente.east) -- (motor.west)
+    node[wirelbl, midway, above=2pt] {$V_m$};
+
+\coordinate[right=\bvOutLeadX of motor.east] (omega_out);
+\draw[sig] (motor.east) -- (omega_out);
+\node[wirelbl, anchor=south]
+    at ($(zoneL2.east |- motor.east)!0.50!(omega_out) + (0, 2pt)$) {$\omega_m$};
+
+% ==============================================================================
+% CONEXIONES ZONA 3 (ENCODER BASE -> LPF IIR 1 -> RETORNO \dot{\theta}_{f1})
+% ==============================================================================
+\draw[fbT, rounded corners=4pt] (motor.south) |- (as5600_base.east);
+\node[wirelbl, text=blkArmEdge, anchor=west]
+    at ([xshift=0.08cm]$(motor.south |- zoneL2.south)!0.48!(motor.south |- zoneL3.north)$) {$\theta(t)$};
+
+\draw[fbT] (as5600_base.west) -- (desenv.east);
+\draw[fbT] (desenv.west) -- (deriv_t.east);
+\draw[fbT] (deriv_t.west) -- (lpf1_t.east);
+
+% Retorno limpio de \dot{\theta}_{f1} por debajo de Zona 1 (CERO cruces)
+\coordinate (vel_tap) at (sig_v.south |- deriv_blk.west);
+
+\draw[lineT, rounded corners=4pt]
+    (lpf1_t.west) -| (vel_tap);
+\node[wirelbl, text=blkArmEdge, anchor=north]
+    at ($(lpf1_t.west)!0.42!(sig_v.south |- lpf1_t.west) + (0, -0.04cm)$) {$\dot{\theta}_{f1}$};
+
+\node[dot=blkArmEdge] at (vel_tap) {};
+
+\draw[fbT] (vel_tap) -- (sig_v.south);
+\node[signlbl, text=blkArmEdge, anchor=north west]
+    at ([xshift=0.08cm, yshift=-0.07cm]sig_v.south) {$-$};
+\node[wirelbl, text=blkArmEdge, anchor=east]
+    at ([xshift=-0.08cm]$(vel_tap)!0.50!(sig_v.south)$) {$\dot{\theta}_{f1}$};
+
+\draw[fbT] (vel_tap) -- (deriv_blk.west)
+    node[wirelbl, text=blkArmEdge, pos=0.56, above=2pt] {$-\dot{\theta}_{f1}$};
+
+\end{tikzpicture}%
+}
+\caption{Diagrama de bloques at\'omico del estado \texttt{FURUTA\_STATE\_MOTOR\_PID\_VEL} a \qty{1.0}{\kilo\hertz} (\texttt{PID\_Compute} en \texttt{pid\_controller.c} y \texttt{L298N\_SetVoltage} en \texttt{l298n\_motor.c}). Muestra el esquema paralelo discretizado por Tustin con derivada directa sobre la medici\'on negada y supervisi\'on \textit{anti-windup} por congelamiento condicional (\texttt{clamp}) ante saturaci\'on en $\pm\qty{12.0}{\volt}$, la cascada de potencia L298N hacia el motor $80:1$ y la rama \'unica de sensado base AS5600 hasta \texttt{LPF IIR 1}.}
+\label{fig:bloques_velocidad}
+\end{figure*}

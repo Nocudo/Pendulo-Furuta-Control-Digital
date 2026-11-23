@@ -1,0 +1,347 @@
+% ==============================================================================
+% SECCION III: METODOLOGIA
+% ==============================================================================
+\section{Metodología}\label{sec:metodologia}
+
+Esta sección detalla de forma reproducible el diseño mecánico para fabricación aditiva, la instrumentación electrónica, el protocolo experimental y los métodos de análisis, la arquitectura de firmware en cinco capas con diagramas de bloques atómicos por estado y el gemelo digital~3D en MATLAB. Para cada componente físico, filtro y ley de control se especifican: \textit{(i)}~la necesidad que suple, \textit{(ii)}~el criterio técnico de elección, \textit{(iii)}~su diseño paramétrico o función de transferencia discreta en~$z$ y \textit{(iv)}~su implementación concreta en hardware o código~C. Los fundamentos teóricos y las derivaciones continuas de la planta se omiten por brevedad y se referencian desde la Sección~\ref{sec:marco_teorico}.
+
+\subsection{Diseño Mecánico DfAM y Materiales}\label{subsec:dfam}
+
+La estructura física del péndulo de Furuta y sus envolventes electrónicas se modelaron paramétricamente en \texttt{FreeCAD~1.1} aplicando criterios de diseño para fabricación aditiva (DfAM) con cero material de soporte ($\text{SUP}=0$). Frente a un primer diseño monolítico que requería $1\,365$ segmentos de soporte, generaba tres colisiones de montaje ($\qty{0.44}{}$ a $\qty{1.06}{\cubic\milli\meter}$) y demandaba más de \qty{10}{\hour} de tirada continua en una sola torre, se adoptó una arquitectura modular en cuatro subconjuntos ensamblados con tornillería estándar M5/M3/M2 (Fig.~\ref{fig:cad_composicion}), manufacturada en ácido poliláctico (PLA de \qty{1.75}{\milli\meter}) sobre una impresora Anycubic Kobra~2 (cama de $220\times 220\times\qty{250}{\milli\meter}$, extrusor \textit{Direct Drive}, boquilla de \qty{0.4}{\milli\meter}, cama a \qty{60}{\celsius} y boquilla a \qty{210}{\celsius} en primera capa / \qty{205}{\celsius} en régimen; laminado en UltiMaker Cura~5.14+).
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=0.90\textwidth]{fig_cad_composicion_mecanica.png}
+    \caption{Composición mecánica paramétrica en \texttt{FreeCAD~1.1} bajo criterios DfAM ($\text{SUP}=0$, $0/23$ colisiones en el ensamble completo y $0/6$ en el subensamble motor--encoder): (a)~ensamble completo, (b)~corte de torre mostrando el motor Namiki~22CL y el encoder AS5600 base, (c)~articulación distal con rodamiento \texttt{608ZZ} y (d)~despiece modular.}
+    \label{fig:cad_composicion}
+\end{figure*}
+
+\begin{enumerate}
+    \item \textbf{Base y torre dividida ($H=\qty{160}{\milli\meter}$):}
+    \textit{(i)~Necesidad:} elevar el plano de giro por encima de la longitud pendular, absorber los pares torsores de arranque, proteger el motor y permitir acceso manual al cableado.
+    \textit{(ii)~Elección:} particionar la torre coaxialmente en el plano $Z=\qty{70}{\milli\meter}$ elimina los puentes horizontales extensos del diseño monolítico y reduce el riesgo de fallo de impresión en placas independientes.
+    \textit{(iii)~Diseño:} la base ($120\times\qty{120}{\milli\meter}$, espesor \qty{8}{\milli\meter}, cuatro taladros M5) integra cuatro aletas triangulares de refuerzo ($Z=8\text{--}\qty{68}{\milli\meter}$, $29.5^\circ$ respecto a la vertical), espiga macho coaxial ($\varnothing\qty{31.6}{\milli\meter}\times\qty{12}{\milli\meter}$ con chaflán guía a \qty{45}{\degree}) y barreno central pasante de $\varnothing\qty{24.0}{\milli\meter}$ para los arneses. La torre superior ($Z=70\text{--}\qty{156}{\milli\meter}$) presenta barreno hembra de $\varnothing\qty{32.0}{\milli\meter}$ y cuatro ventanas laterales con doble arco ojival autoportante a $37.8^\circ$ (inferior) y $40.3^\circ$ (superior), ensanchándose en una brida superior de $52\times\qty{52}{\milli\meter}$ cerrada por una tapa desmontable de \qty{5.0}{\milli\meter} (con faldón de \qty{3.5}{\milli\meter} y taladros avellanados M2 rotados \qty{45}{\degree} hacia los ejes cardinales para dirigir el cableado por las ventanas).
+    \textit{(iv)~Implementación:} la base se imprimió plana en la placa~P1 (\qty{0.20}{\milli\meter} de capa, $25\%$ Gyroid, 4 paredes); la torre superior se imprimió invertida («boca abajo» sobre su brida de $52\times\qty{52}{\milli\meter}$, logrando $\qty{18.9}{\square\centi\meter}$ de adherencia sin alabeo) en P2, y la tapa en P3, uniéndose mediante cuatro tornillos $\text{M3}\times\qty{12}{\milli\meter}$ accesibles por los vanos laterales.
+
+    \item \textbf{Brazo horizontal monolítico ($L_0=\qty{88.5}{\milli\meter}$):}
+    \textit{(i)~Necesidad:} transmitir el par motriz hasta el pivote distal con alta rigidez flexional, sostener el PCB del encoder distal y canalizar sus cuatro hilos sin roce contra la torre.
+    \textit{(ii)~Elección:} una viga monolítica con cara inferior coplanar elimina los escalones colgantes de diseños previos y maximiza la resistencia mecánica a flexión en el plano XY sin soportes.
+    \textit{(iii)~Diseño:} base continua situada en $Z=\qty{163}{\milli\meter}$ ($\qty{3.0}{\milli\meter}$ de despeje axial anti-roce sobre la torre de $H=\qty{160}{\milli\meter}$), cubo hembra en~D para el eje motor ($\varnothing\qty{4.0}{\milli\meter}$) con techo cónico interno a $39^\circ$, canaleta superior abierta (\texttt{wire\_groove}, $3.6\times\qty{3.0}{\milli\meter}$) y cajera rasante para el PCB AS5600 con pendiente superior de $40^\circ$.
+    \textit{(iv)~Implementación:} impreso horizontalmente sobre la cama en P3 (\qty{0.16}{\milli\meter}, $45\%$ Gyroid, 5 paredes) con la cara posterior abierta para atornillar el PCB mediante cuatro tornillos M3.
+
+    \item \textbf{Articulación distal (\texttt{608ZZ} y portaimán sin tornillos):}
+    \textit{(i)~Necesidad:} garantizar rotación pendular de mínima fricción con alineación coaxial exacta frente al imán diametral sin holguras ni desbalanceo por prisioneros radiales.
+    \textit{(ii)~Elección:} sustituir barrenos cilíndricos horizontales por perfiles en lágrima autoportantes y reemplazar tornillos de fijación por un acople eje--barra en~D con porta-imán coaxial.
+    \textit{(iii)~Diseño:} alojamiento con perfil en lágrima (techo ojival a $41^\circ$) calibrado a $\varnothing\qty{22.20}{\milli\meter}$ para compensar la contracción térmica del PLA e insertar manualmente el rodamiento \texttt{608ZZ} ($22\times 8\times\qty{7}{\milli\meter}$), chaflán guía a \qty{45}{\degree}, hombro de apoyo exclusivo sobre la pista exterior ($\varnothing\qty{14.0}{\milli\meter}$) y dos ranuras traseras de expulsión; el eje portaimán integra cono de transición ($32.7^\circ\text{--}41.2^\circ$), rampa en~D a $40.6^\circ$, cuello $\varnothing\qty{7.96}{\milli\meter}$ y copa frontal para el imán diametral con entrehierro nominal de $\sim\qty{0.8}{\milli\meter}$ frente al sensor distal.
+    \textit{(iv)~Implementación:} el eje portaimán, el acoplador trasero del motor (unido con cianoacrilato capilar de $\qty{0.08}{\milli\meter}$ de holgura radial) y el portaimán del rotor se imprimieron verticalmente en P4 a \qty{0.12}{\milli\meter} con relleno sólido del $100\%$ (6 paredes) para asegurar concentricidad.
+
+    \item \textbf{Barra pendular ($L_1=\qty{155}{\milli\meter}$):}
+    \textit{(i)~Necesidad:} materializar la inercia pendular permitiendo ajustar el centro de masa $l_1$ y completar giros de \qty{360}{\degree} sin colisionar contra la mesa de trabajo.
+    \textit{(ii)~Elección:} varilla de cara coplanar con corredera pasante y contrapeso bipartito sujeto por un único tornillo M3, eliminando soportes y concentraciones asimétricas de masa.
+    \textit{(iii)~Diseño:} sección rectangular de $8.0\times\qty{5.5}{\milli\meter}$ con cubo en~D pasante sin tornillos parásitos, ranura longitudinal de \qty{50}{\milli\meter} para el contrapeso cilíndrico ($\varnothing\qty{18}{\milli\meter}$) y pivote en $Z_{\text{piv}}=\qty{182.8}{\milli\meter}$ (\qty{152.8}{\milli\meter} pivote--punta redondeada), asegurando exactamente \qty{30}{\milli\meter} de despeje libre sobre el plano mesa ($Z=0$).
+    \textit{(iv)~Implementación:} impresa plana en P3 junto con el brazo y la tapa. Adicionalmente, se manufacturaron las envolventes convectivas de protección para la tarjeta Nucleo (P5, $80\times 93\times\qty{28}{\milli\meter}$ con plénum inferior de \qty{10}{\milli\meter} y 11 ranuras de admisión) y el módulo L298N (P6, $65\times 55\times\qty{29}{\milli\meter}$ con chimenea lateral y superior).
+\end{enumerate}
+
+Las verificaciones booleanas automatizadas en \texttt{freecad-py} confirmaron cero interferencias volumétricas tanto en el ensamble completo ($0/23$ pares, $\qty{0.0000}{\cubic\milli\meter}$) como en el subconjunto motor--encoder ($0/6$ pares). La Tabla~\ref{tab:placas_impresion} consolida los parámetros y consumos de laminado de las seis placas principales ($\text{SUP}=0$ en todas ellas).
+
+\begin{table}[!t]
+    \centering
+    \caption{Placas de impresión 3D DfAM en Anycubic Kobra~2 (PLA \qty{1.75}{\milli\meter}, boquilla \qty{0.4}{\milli\meter}).}
+    \label{tab:placas_impresion}
+    \scriptsize
+    \setlength{\tabcolsep}{2.6pt}
+    \begin{tabular}{@{}llccc@{}}
+        \toprule
+        \textbf{Placa} & \textbf{Componentes} & \textbf{Tiempo} & \textbf{Masa} & \textbf{Sop.} \\
+        \midrule
+        P1 & \texttt{Base\_Inferior\_Torre} & 8h 13m & \qty{107.66}{\gram} & $\text{SUP}=0$ \\
+        P2 & \texttt{Torre\_Superior\_Motor} & 2h 56m & \qty{34.45}{\gram} & $\text{SUP}=0$ \\
+        P3 & \texttt{Brazo\_L88, Barra, Tapa} & 2h 45m & \qty{27.42}{\gram} & $\text{SUP}=0$ \\
+        P4 & \texttt{Acoplador, Eje, Portaimán} & 1h 14m & \qty{8.60}{\gram} & $\text{SUP}=0$ \\
+        P5 & \texttt{Caja\_Nucleo (+Tapa)} & 3h 14m & \qty{42.16}{\gram} & $\text{SUP}=0$ \\
+        P6 & \texttt{Caja\_L298N (+Tapa)} & 2h 09m & \qty{27.68}{\gram} & $\text{SUP}=0$ \\
+        \midrule
+        \textbf{P1--P6} & \textbf{Total sistema principal} & \textbf{20h 33m} & \textbf{\qty{247.97}{\gram}} & \textbf{0} \\
+        \bottomrule
+    \end{tabular}\par
+    \vspace{2pt}
+    \raggedright\scriptsize\textit{Nota:} Filamento acumulado P1--P6: \qty{83.13}{\meter}. Placa~7 opcional (carcasa ESP32): \qty{37.31}{\gram}, 2h 54m, $\text{SUP}=0$.
+\end{table}
+
+\subsection{Componentes Electrónicos e Instrumentación Embebida}\label{subsec:electronica}
+
+La arquitectura electrónica integra el microcontrolador, la etapa de potencia y los dos sensores angulares mediante 12 puentes directos 1-a-1 hacia los conectores Arduino de la placa Nucleo sin emplear protoboard (Fig.~\ref{fig:esquematico_electronico} y Tabla~\ref{tab:pinout_stm32}). A continuación se describe cada subsistema bajo los cuatro pilares de diseño.
+
+\input{figuras/fig_esquematico_electronico.tex}
+
+\begin{table}[!t]
+    \centering
+    \caption{Mapeo completo de los 12 enlaces hardware e interfaces en STM32 Nucleo-F446RE.}
+    \label{tab:pinout_stm32}
+    \scriptsize
+    \setlength{\tabcolsep}{2.6pt}
+    \resizebox{\columnwidth}{!}{%
+    \begin{tabular}{@{}llll@{}}
+        \toprule
+        \textbf{Pin / Conector} & \textbf{Destino} & \textbf{Periférico / Modo} & \textbf{Función en Sistema} \\
+        \midrule
+        \texttt{PA8} (\texttt{CN9-8}) & \texttt{L298N ENA} & \texttt{TIM1\_CH1} (\texttt{AF1}) & PWM \qty{20.0}{\kilo\hertz} ($0\text{--}900$) \\
+        \texttt{PB4} (\texttt{CN9-6}) & \texttt{L298N IN1} & \texttt{GPIO\_Output} PP & Sentido giro A / freno \\
+        \texttt{PB5} (\texttt{CN9-5})$^*$ & \texttt{L298N IN2} & \texttt{GPIO\_Output} PP & Sentido giro B / freno \\
+        \texttt{GND} (\texttt{CN6-7}) & \texttt{L298N GND} & Masa común \qty{0}{\volt} & Unión estrella con \qty{12.0}{\volt} \\
+        \texttt{PB8} (\texttt{CN5-10}) & \texttt{AS5600 Base SCL} & Soft-$\text{I}^2\text{C}_1$ OD & Reloj $\sim\qty{450}{\kilo\hertz}$ ($\theta$) \\
+        \texttt{PB9} (\texttt{CN5-9}) & \texttt{AS5600 Base SDA} & Soft-$\text{I}^2\text{C}_1$ OD & Datos 12~bits brazo $\theta$ \\
+        \texttt{3V3} (\texttt{CN6-4}) & \texttt{AS5600 Base VCC} & Riel \qty{3.3}{\volt} & Alimentación encoder~1 \\
+        \texttt{GND} (\texttt{CN5-7}) & \texttt{AS5600 Base GND} & Masa \qty{0}{\volt} & Retorno encoder~1 \\
+        \texttt{PB10} (\texttt{CN9-7}) & \texttt{AS5600 Distal SCL} & Soft-$\text{I}^2\text{C}_2$ OD & Reloj $\sim\qty{450}{\kilo\hertz}$ ($\alpha$) \\
+        \texttt{PB3} (\texttt{CN9-4}) & \texttt{AS5600 Distal SDA} & Soft-$\text{I}^2\text{C}_2$ OD & Datos 12~bits péndulo $\alpha$ \\
+        \texttt{IOREF} (\texttt{CN6-2}) & \texttt{AS5600 Distal VCC} & Riel \qty{3.3}{\volt} & Alimentación encoder~2 \\
+        \texttt{GND} (\texttt{CN6-6}) & \texttt{AS5600 Distal GND} & Masa \qty{0}{\volt} & Retorno encoder~2 \\
+        \midrule
+        \texttt{PA2} / \texttt{PA3} & ST-LINK VCP & \texttt{USART2} + \texttt{DMA1\_S5} & CLI / CSV \qty{115200}{\baud} \\
+        \texttt{PC13} / \texttt{PA5} & Botón \texttt{B1} / \texttt{LD2} & \texttt{EXTI15\_10} / GPIO & Parada--\textit{zero} / estado \\
+        \bottomrule
+        \multicolumn{4}{@{}l@{}}{\scriptsize $^*$Incluye espejos redundantes de \texttt{IN2} configurados en \texttt{PA9} (\texttt{D8}) y \texttt{PA10} (\texttt{D2}).}
+    \end{tabular}%
+    }
+\end{table}
+
+\begin{enumerate}
+    \item \textbf{Unidad de procesamiento STM32 Nucleo-F446RE~\cite{STM32F446RE_Datasheet}:}
+    \textit{(i)~Necesidad:} ejecutar con determinismo estricto a \qty{1.0}{\kilo\hertz} la lectura simultánea de dos sensores, desenvoltura angular, múltiples lazos PID/PD, filtrado biquad de 64~bits y recepción asíncrona de comandos sin introducir \textit{jitter}.
+    \textit{(ii)~Elección:} frente a microcontroladores de 8~bits sin unidad de punto flotante (FPU), el núcleo ARM Cortex-M4F con FPU FPv4-SP y controlador DMA dedicado resuelve aritmética trigonométrica y recursiva en pocos ciclos, integrando además el puente ST-LINK/V2-1 para depuración y puerto COM virtual USB.
+    \textit{(iii)~Diseño:} el reloj externo \texttt{HSE\_BYPASS} de \qty{8}{\mega\hertz} alimenta el PLL principal ($M=4$, $N=180$, $P=2$, modo \textit{Over-Drive}) alcanzando \qty{180}{\mega\hertz} tanto en el reloj del sistema (\texttt{SYSCLK}) como en el bus principal (\texttt{HCLK}) con 5 estados de espera en Flash (\texttt{FLASH\_LATENCY\_5}). Mediante divisores de cuatro sobre \texttt{APB1} (\qty{45}{\mega\hertz}) y de dos sobre \texttt{APB2} (\qty{90}{\mega\hertz}), los relojes internos de temporizadores alcanzan \qty{90}{\mega\hertz} en \texttt{TIM6} y \qty{180}{\mega\hertz} en \texttt{TIM1}. El temporizador \texttt{TIM6} ($\text{PSC}=89$, $\text{ARR}=999$) dispara la interrupción de control cada $T_s=\qty{1.0}{\milli\second}$ ($f_s=\qty{1.0}{\kilo\hertz}$) con prioridad NVIC~1, mientras \texttt{TIM1\_CH1} ($\text{PSC}=9$, $\text{ARR}=899$) sintetiza la portadora PWM ultrasónica de \qty{20.0}{\kilo\hertz} ($0\text{--}900$ cuentas) para evitar zumbido audible y reducir armónicos de conmutación~\cite{Petric2022}.
+    \textit{(iv)~Implementación:} configurado en \texttt{main.c} (\texttt{SystemClock\_Config}, \texttt{MX\_TIM1\_PWM\_Init}, \texttt{MX\_TIM6\_ControlTick\_Init}) y servido por \texttt{TIM6\_DAC\_IRQHandler} en \texttt{stm32f4xx\_it.c}; ante cualquier fallo crítico, \texttt{Error\_Handler} deshabilita inmediatamente el puente~H.
+
+    \item \textbf{Actuador Namiki 22CL-3501PG ($80:1$) y Puente H L298N~\cite{L298N_Datasheet}:}
+    \textit{(i)~Necesidad:} entregar el par angular suficiente para acelerar el brazo en \textit{swing-up} y rechazar perturbaciones, habilitando inversión de giro, rueda libre y frenado activo desde señales lógicas de \qty{3.3}{\volt}.
+    \textit{(ii)~Elección:} la caja planetaria $N_g=80:1$ del motor DC de imán permanente Namiki~22CL amplifica el par motriz y refleja su inercia por un factor $N_g^2=6\,400$, desacoplando por encima de dos órdenes de magnitud la retroacción del péndulo sobre el eje (Sección~\ref{sec:marco_teorico}). El puente~H bipolar L298N acepta directamente niveles TTL de \qty{3.3}{\volt} ($V_{IH}\ge\qty{2.3}{\volt}$) sin requerir convertidores de nivel.
+    \textit{(iii)~Diseño:} la topología Darlington BJT del L298N impone una caída de saturación interna aproximada de $V_{\text{sat}}\approx\qty{2.0}{\volt}$ ($\qty{1.8}{}\text{--}\qty{2.5}{\volt}$) y asimetría de conducción entre ramas NPN/PNP; se alimenta desde una fuente regulada de \qty{12.0}{\volt} DC (\qty{2}{}\text{--}\qty{3}{\ampere}) uniendo sólidamente las masas de potencia y lógica en topología estrella sobre \texttt{CN6-7}. Al retirar el puente plástico de \texttt{ENA}, \texttt{PA8} modula la amplitud mientras \texttt{PB4} (\texttt{IN1}) y \texttt{PB5} (\texttt{IN2}) seleccionan giro horario (\texttt{01}), antihorario (\texttt{10}), rueda libre (\texttt{00}) o freno electromagnético en cortocircuito de armadura (\texttt{11}, $\text{ENA}=100\%$).
+    \textit{(iv)~Implementación:} encapsulado en \texttt{l298n\_motor.c} mediante las funciones \texttt{L298N\_SetRawPWM}, \texttt{L298N\_SetVoltage}, \texttt{L298N\_Brake} y \texttt{L298N\_Coast}; se añaden los espejos redundantes \texttt{PA9}/\texttt{PA10} sincronizados con \texttt{PB5} para inmunidad frente a falsos contactos en \texttt{IN2}.
+
+    \item \textbf{Encoders magnéticos sin contacto AS5600 ($2\times$)~\cite{ams2018}:}
+    \textit{(i)~Necesidad:} medir con alta precisión las coordenadas $\theta$ y $\alpha$ en cada milisegundo sin introducir pares de rozamiento parásitos sobre el pivote pendular.
+    \textit{(ii)~Elección:} al emplear acoplamiento magnético Hall de 12~bits ($4\,096\text{ c/rev}$), el AS5600 suprime el rozamiento de escobillas y el peso de encoders ópticos convencionales. Dado que el integrado posee una dirección esclava fija de fábrica (\texttt{0x36} en 7~bits), ambos sensores no pueden coexistir en un único bus $\text{I}^2\text{C}$ sin multiplexor externo; para evitar hardware adicional y latencias de conmutación o bloqueos del periférico hardware HAL, se diseñó un \textbf{doble bus Soft-$\text{I}^2\text{C}$} independiente por manipulación directa de registros \texttt{GPIOB->BSRR} a $\sim\qty{450}{\kilo\hertz}$, completando cada lectura de 2~bytes en menos de \qty{45}{\micro\second} con auto-detección y caché de polaridad cruzada \texttt{SCL}/\texttt{SDA} en \texttt{as5600.c}.
+    \textit{(iii)~Diseño:} el \textbf{AS5600 Base} (\texttt{I2C1}: \texttt{PB8}/\texttt{PB9}, \texttt{direction = -1}) se montó en el eje trasero del rotor ($\varnothing\qty{2.0}{\milli\meter}$) \textbf{antes} de la reductora $80:1$, elevando la resolución efectiva del brazo en un factor $80$ hasta $327\,680\text{ c/rev}$ ($\qty{0.0011}{\degree}/\text{c}$) y mitigando drásticamente el ruido derivativo de $\dot{\theta}$. El \textbf{AS5600 Distal} (\texttt{I2C2}: \texttt{PB10}/\texttt{PB3}, \texttt{direction = +1}) lee directamente el eje \texttt{608ZZ} con resolución nativa de $4\,096\text{ c/rev}$ ($\qty{0.0879}{\degree}/\text{c}$). De los 7 pines de cada placa solo se cablean 4 (\texttt{VCC}, \texttt{GND}, \texttt{SCL}, \texttt{SDA} con \textit{pull-up}), dejando libres \texttt{OUT}, \texttt{DIR} y \texttt{GPO}.
+    \textit{(iv)~Implementación:} en cada ciclo de \qty{1.0}{\kilo\hertz}, \texttt{AS5600\_Update} lee \texttt{RAW\_ANGLE} (\texttt{0x0C}--\texttt{0x0D}), ejecuta desenvolvimiento multi-vuelta (\textit{unwrapping}) detectando cruces de frontera $0\leftrightarrow 4\,095$ cuando el salto entre cuentas consecutivas supera medio giro ($2\,048$ cuentas) para actualizar \texttt{full\_turns}, escala según la relación \texttt{gear\_ratio} ($80.0$ o $1.0$) y aplica la función \texttt{AS5600\_WrapToPi} para acotar $\alpha$ al intervalo $[-\pi, +\pi]$ y obtener el desplazamiento angular $\tilde{\alpha}$ respecto a la vertical invertida. El cero de referencia se fija en reposo colgante mediante \texttt{AS5600\_CalibrateZero} calculando el promedio circular trigonométrico de 64 muestras mediante la arcotangente de dos argumentos sobre las medias de seno y coseno.
+\end{enumerate}
+
+\subsection{Protocolo Experimental, Muestra y Métodos de Análisis}\label{subsec:identificacion}
+
+Debido a la presencia de fricción seca asimétrica, holgura planetaria, caída Darlington y distribución real de masa en PLA, la parametrización final se obtuvo mediante identificación experimental en banco sobre el prototipo físico alimentado a \qty{12.0}{\volt} DC. Asimismo, dado que el equilibrio invertido diverge en lazo abierto, los parámetros pendulares se identificaron en el equilibrio colgante estable y se mapearon analíticamente a la vertical superior conforme a la Sección~\ref{sec:marco_teorico}.
+
+\subsubsection{Población y Muestra Experimental (\texorpdfstring{$N = 3\,726$}{N = 3726} Muestras)}
+La muestra experimental total asciende a $N = 3\,726$ registros temporales adquiridos en vivo por el puerto serie virtual \texttt{COM13} a \qty{100}{\hertz} (\texttt{USART2}, \qty{115200}{\baud}) mediante las rutinas automatizadas de \texttt{caracterizacion.c} y la interfaz de telemetría:
+\begin{enumerate}
+    \item \textbf{\texttt{CHAR1} --- Rampa de ruptura estática ($n=918$ muestras, \qty{9.17}{\second}):} ejecuta el modo \texttt{CHAR\_MODE\_DEADZONE\_RAMP} aplicando incrementos escalonados lentos de $1\%$~PWM cada \qty{100}{\milli\second} en lazo abierto hasta $\pm 40\%$ (con pausa intermedia de \qty{1.0}{\second} y corte automático al detectar movimiento $|\dot{\theta}|>\qty{0.35}{\radian\per\second}$ o $|\theta|>\qty{0.06}{\radian}$) para determinar los umbrales reales de arranque en sentido antihorario (CCW) y horario (CW) sin enredar el arnés.
+    \item \textbf{\texttt{CHAR2} --- Escalones bidireccionales del actuador ($n=538$ muestras, \qty{5.37}{\second}):} aplica ocho escalones simétricos de excitación ($\pm 20\%, \pm 25\%, \pm 30\%, \pm 35\%$~PWM de $150\text{--}\qty{180}{\milli\second}$ separados por pausas de \qty{450}{\milli\second}) para excitar la dinámica transitoria del conjunto motor--reductor--brazo y ajustar los parámetros $(K_v, \tau_m)$ del modelo de primer orden $G_v(s)$~\eqref{eq:gv_actuador} mediante optimización no lineal por mínimos cuadrados (Levenberg--Marquardt / \texttt{L-BFGS-B} sobre integración temporal en \texttt{analizar\_caracterizacion\_\allowbreak real\_motor.py}), discriminando además las constantes de tiempo de aceleración y desaceleración libre.
+    \item \textbf{\texttt{CHAR4} --- Doblete acoplado y decaimiento libre frenado ($n=768$ muestras, \qty{7.67}{\second}):} inyecta dos dobletes bipolares suaves ($+28\%/-28\%$ durante \qty{150}{\milli\second} y $-34\%/+34\%$ durante \qty{160}{\milli\second}) para excitar la oscilación pendular sin colisionar contra la torre, seguidos inmediatamente de freno electromagnético activo \texttt{L298N\_Brake} ($\ddot{\theta}=0$ exacto durante \qty{1.90}{\second} y \qty{4.58}{\second}). La ventana frenada desacopla por completo la ecuación del péndulo para estimar $\omega_n$, $\zeta$ y la ganancia de acople inercial $K_{\text{acople}}$, complementada por el ajuste del modelo mixto de disipación viscosa y fricción seca de Coulomb en caída libre (soportado también manualmente por \texttt{CHAR3}):
+    \begin{equation}
+        \ddot{\alpha} + 2\zeta_v\omega_n\dot{\alpha} + c_c\operatorname{sgn}(\dot{\alpha}) + \omega_n^2\sin\alpha = 0.
+        \label{eq:friccion_mixta}
+    \end{equation}
+    \item \textbf{Validación en lazo cerrado ($n=1\,502$ muestras, \qty{15.001}{\second}):} registra el ciclo completo autónomo desde reposo colgante hasta levantamiento y equilibrio sostenido bajo el perfil \texttt{M4 Ultra-Silk} con \qty{12.0}{\volt} DC, evaluando el desempeño mediante el coeficiente de determinación $R^2$, el error cuadrático medio normalizado ($\mathrm{NRMSE}$), el tiempo de levantamiento $t_{\text{swing}}$, el conteo de caídas y los valores eficaces ($\mathrm{RMS}$) en régimen establecido ($t\ge\qty{3.0}{\second}$) de $\tilde{\alpha}$, $\dot{\alpha}$, $\theta$, $u$ y ciclo útil PWM. Las trazas gráficas y los valores numéricos medidos de identificación y validación se reportan íntegramente en la Sección~\ref{sec:resultados}.
+\end{enumerate}
+
+\subsubsection{Compensador de Zona Muerta L298N}
+\textit{(i)~Necesidad:} neutralizar la caída interna Darlington y la fricción estática asimétrica detectada por \texttt{CHAR1}, evitando tanto zonas muertas efectivas de baja señal como vibraciones por conmutación abrupta en cero.
+\textit{(ii)~Elección:} un compensador discontinuo de tipo relé genera oscilaciones límite de alta frecuencia alrededor de $u=\qty{0}{\volt}$; por ello se diseñó una ley lineal continua por tramos ($C^0$) con banda silenciosa central y rodilla de transición suave.
+\textit{(iii)~Diseño:} calibrado en \texttt{l298n\_motor.c} con $\mathrm{dz}^+=9.2\%$ (CCW), $\mathrm{dz}^-=16.0\%$ (CW), banda silenciosa $|u|<\qty{0.06}{\volt}$, tensión de rodilla $V_k=\qty{0.65}{\volt}$ y límite nominal $V_{\max}=\qty{12.0}{\volt}$:
+\begin{equation}
+\resizebox{0.96\columnwidth}{!}{$\displaystyle
+    |\mathrm{PWM}(u)| =
+    \begin{cases}
+        0, & |u| < \qty{0.06}{\volt}, \\[3pt]
+        \mathrm{dz}^{\pm}\dfrac{|u| - 0.06}{V_k - 0.06}, & \qty{0.06}{\volt} \le |u| < V_k, \\[6pt]
+        \mathrm{dz}^{\pm} + (100 - \mathrm{dz}^{\pm})\dfrac{|u| - V_k}{V_{\max} - V_k}, & V_k \le |u| \le V_{\max}.
+    \end{cases}
+$}
+    \label{eq:comp_l298n}
+\end{equation}
+\textit{(iv)~Implementación:} ejecutada en cada ciclo en \texttt{L298N\_SetVoltage}, aplicando el signo de $u$ sobre \texttt{IN1}/\texttt{IN2} y ajustando en caliente sus porcentajes mediante el comando ASCII \texttt{DZ=}.
+
+\subsubsection{Discretización ZOH y Síntesis Física M4 Ultra-Silk}
+A partir de la realización continua en variables de estado~\eqref{eq:matriz_ac}--\eqref{eq:matrices_bc_cc}, el análisis de estabilidad modal y la simulación discreta a \qty{1.0}{\kilo\hertz} emplean la discretización exacta por retenedor de orden cero (ZOH)~\eqref{eq:zoh_teorico} con $T_s=\qty{1.0}{\milli\second}$~\cite{Astrom1997,Franklin2015}. Inicialmente, la optimización numérica fuera de línea mediante \texttt{L-BFGS-B} (\texttt{analizar\_y\_optimizar\_\allowbreak sistema\_furuta.py}) minimizando ITAE y esfuerzo energético sobre un modelo ideal sin holgura ni cuantización arrojó ganancias agresivas ($K_{p,\alpha}=52.01$, $K_{i,\alpha}=16.06$, $K_{d,\alpha}=2.23$; $K_{p,\theta}=-2.73$, $K_{i,\theta}=-2.00$, $K_{d,\theta}=-2.58$). Al trasladarse a la planta física, dicha sintonía resultó inestable debido a tres mecanismos acoplados: competencia integral SIMO ($K_{i,\alpha}>0$), amplificación de ruido de cuantización de 12~bits por ganancia derivativa alta y excitación del ciclo límite de la reductora $80:1$. En consecuencia, se diseñó la sintonía física híbrida \texttt{M4 Ultra-Silk}, imponiendo $K_{i,\alpha}=0$ estricto, moderando las ganancias duales con saturación subordinada en el brazo ($\pm\qty{2.2}{\volt}$) y acoplando doble filtrado IIR de velocidad, cascada biquad \textit{Dual-Notch} y modelado adaptativo de pendiente.
+
+\subsection{Arquitectura de Firmware, FSM, Controladores y Filtros Digitales}\label{subsec:firmware_control}
+
+\subsubsection{Arquitectura Modular en 5 Capas y Máquina de Estados}
+
+\input{figuras/fig_arquitectura_firmware.tex}
+\input{figuras/fig_fsm_firmware.tex}
+
+\textit{(i)~Necesidad:} garantizar ejecución estrictamente periódica cada \qty{1.0}{\milli\second} sin pérdida de comandos seriales ni bloqueos de E/S.
+\textit{(ii)~Elección:} separar el firmware en cinco capas jerárquicas desacopladas (Fig.~\ref{fig:arquitectura_firmware}) evita que la transmisión de texto por UART interfiera con la interrupción de control.
+\textit{(iii)~Diseño y (iv)~Implementación:} la \textbf{Capa~1 (Hardware)} aloja el núcleo Cortex-M4F, Flash/SRAM, el puente~H/motor y los dos encoders AS5600; la \textbf{Capa~2 (HAL y Periféricos)} agrupa \texttt{TIM6} (prioridad NVIC~1), \texttt{TIM1 PWM} (\qty{20.0}{\kilo\hertz}) y \texttt{DMA1 / EXTI} (\texttt{DMA1\_Stream5} canal~4 en modo circular de \qty{128}{\byte} para \texttt{USART2\_RX} a \qty{115200}{\baud}, más la interrupción externa \texttt{EXTI15\_10} del botón \texttt{B1} con antirrebote de \qty{40}{\milli\second}); la \textbf{Capa~3 (Drivers)} encapsula \texttt{Soft-I2C}, \texttt{AS5600} y \texttt{Driver L298N}; la \textbf{Capa~4 (Comunicación)} ejecuta en el superlazo de fondo de \texttt{main.c} la lectura no bloqueante \texttt{UART DMA} (\texttt{UART\_PollCommandRX}), el \texttt{Parser CLI} (\texttt{Furuta\_ProcessCommand}) y el envío de \texttt{Telemetría CSV} de 9 canales decimada cada 10 ticks (\qty{100}{\hertz}); finalmente, la \textbf{Capa~5 (Control y FSM)} opera íntegramente dentro de \texttt{Furuta\_ControlISR\_1kHz} (\texttt{furuta\_control.c}).
+
+La máquina de estados finitos (Fig.~\ref{fig:fsm_firmware}) coordina diez modos operativos (\texttt{Furuta\_State\_t}):
+\begin{itemize}
+    \item \textbf{Estados pasivos y de servicio:} \texttt{IDLE} (\texttt{0}) mantiene el puente~H en rueda libre (\texttt{L298N\_Coast}) y reinicia los acumuladores de pendiente, sirviendo además como destino seguro inmediato ante cualquier comando global \texttt{STOP} o pulsación de emergencia de \texttt{B1} (\texttt{PC13}); \texttt{FAULT\_STOP} (\texttt{7}) se reserva para parada segura de fallo. \texttt{CALIBRATING} (\texttt{1}, comando \texttt{ZERO}/\texttt{B1}) pausa temporalmente la lectura $\text{I}^2\text{C}$ de \texttt{TIM6} para evitar colisiones de bus mientras \texttt{AS5600\_CalibrateZero} promedia circularmente 64 muestras en reposo colgante y retorna a \texttt{IDLE}. \texttt{CHARACTERIZATION} (\texttt{2}, comando \texttt{CHAR}) ejecuta las rutinas cronometradas \texttt{CHAR1}--\texttt{CHAR5B} de \texttt{caracterizacion.c} devolviendo el control a \texttt{IDLE} al concluir. \texttt{MOTOR\_PID\_VEL} (\texttt{3}) y \texttt{MOTOR\_PID\_POS} (\texttt{4}) ejecutan los lazos cerrados aislados del actuador mediante los comandos \texttt{VEL=} y \texttt{POS=}.
+    \item \textbf{Ciclo autónomo y parada ordenada:} el comando \texttt{START}/\texttt{SWING} verifica si el brazo parte alineado ($|\theta|<\qty{2.5}{\degree}$) y el péndulo en calma ($|\alpha|<\qty{12}{\degree}$, $|\dot{\alpha}|<\qty{0.85}{\radian\per\second}$) para iniciar directamente \texttt{SWING\_UP} (\texttt{5}), o bien transita primero por \texttt{RECOVER\_HOME} (\texttt{8}) cuando $\theta\neq\qty{0}{\degree}$. Al ingresar al cono lineal, \texttt{SWING\_UP} conmuta sin saltos a \texttt{BALANCE\_PID} (\texttt{6}, accesible también manualmente vía \texttt{BALANCE} sin auto-recuperación). Si ocurre un \textit{timeout} de levantamiento (\qty{5.5}{\second}) o una caída en equilibrio ($|\tilde{\alpha}|>\qty{32}{\degree}$, sin límite angular en $\theta$), el sistema entra a \texttt{RECOVER\_HOME} para aparcar, esperar calma y relanzar \texttt{SWING\_UP}. Finalmente, \texttt{STOPHOME} transita a \texttt{STOP\_HOME} (\texttt{9}) para regresar suavemente a $\qty{0}{\degree}$ durante \qty{150}{\milli\second} estables (cota \qty{3.5}{\second}) antes de desenergizar en \texttt{IDLE}.
+\end{itemize}
+
+\subsubsection{Estado \texttt{BALANCE\_PID} (M4 Ultra-Silk) y Filtros Digitales}
+
+\input{figuras/fig_diagrama_bloques_control.tex}
+
+La Fig.~\ref{fig:diagrama_bloques_control} desglosa la arquitectura atómica del estado \texttt{BALANCE\_PID}, organizada en lazo dual paralelo, acondicionamiento espectral adaptativo, cascada de actuación y doble rama paralela de realimentación filtrada:
+
+\begin{itemize}
+    \item \textbf{Lazos de control en paralelo (\texttt{PD Péndulo} $\parallel$ \texttt{PID Brazo} $\to$ \texttt{Sat. Brazo}):}
+    \textit{(i)~Necesidad:} estabilizar simultáneamente la vertical inestable $\tilde{\alpha}=0$ y centrar el brazo horizontal $\theta=0$ con un único actuador escalar.
+    \textit{(ii)~Elección:} conectar las leyes del péndulo y del brazo en \textbf{paralelo} superpone directamente ambas acciones de tensión en el sumador $\Sigma_u$, evitando la degradación de ancho de banda de un lazo en cascada clásico y permitiendo acotar la autoridad del brazo sin comprometer la verticalidad.
+    \textit{(iii)~Diseño:} la rama superior evalúa el error vertical $e_\alpha$ en $\Sigma_1$ respecto a la referencia $\tilde{\alpha}_{\text{ref}}$ y ejecuta \texttt{PD Péndulo} (\texttt{pid\_pend\_alpha}: $K_{p,\alpha}=14.50$, $K_{i,\alpha}=0.00$, $K_{d,\alpha}=1.50$, $N=30$) derivando sobre la velocidad filtrada $\dot{\alpha}_{f2}$. Imponer $K_{i,\alpha}=0$ resulta obligatorio en sistemas SIMO: un integrador sobre $\alpha$ competiría contra el integrador del brazo ante cualquier sesgo geométrico mínimo o par residual del cableado distal. En paralelo, la rama inferior calcula el error acimutal $e_\theta$ en $\Sigma_2$ respecto a la consigna $\theta_{\text{ref}}$ y ejecuta \texttt{PID Brazo} (\texttt{pid\_arm\_theta}: $K_{p,\theta}=-1.45$, $K_{i,\theta}=-0.75$, $K_{d,\theta}=-0.85$, $N=20$, derivada sobre $-\dot{\theta}_{f2}$), donde las ganancias negativas responden a la dinámica de \textbf{fase no mínima}~\eqref{eq:pendulo_linealizado}--\eqref{eq:ft_pendulo_up} (acelerar brevemente en sentido contrario al error para inclinar la barra hacia el origen), con integración condicional limitada a $|e_\theta|<\qty{45}{\degree}$ (acotada a $\pm\qty{1.6}{\volt}$) sin límite angular de giro, seguida en cascada por \texttt{Sat. Brazo} ($\pm\qty{2.2}{\volt}$). La salida neta en $\Sigma_u$ es:
+    \begin{equation}
+        u_{\text{raw}}[k] = K_{p,\alpha}\tilde{\alpha}[k] + K_{d,\alpha}\dot{\alpha}_{f2}[k] + \mathrm{sat}_{\pm 2.2}\!\bigl(u_{\theta}[k]\bigr).
+        \label{eq:m4_dual}
+    \end{equation}
+    \textit{(iv)~Implementación:} ejecutado a \qty{1.0}{\kilo\hertz} dentro del caso \texttt{FURUTA\_STATE\_BALANCE\_PID} en \texttt{furuta\_control.c}.
+
+    \item \textbf{Ramas paralelas de sensado y doble cascada LPF IIR (\texttt{LPF IIR 1} $\to$ \texttt{LPF IIR 2}):}
+    \textit{(i)~Necesidad:} atenuar los picos derivativos introducidos por saltos de $1\,\mathrm{LSB}$ de los encoders de 12~bits al diferenciar a $T_s=\qty{1.0}{\milli\second}$ ($\pm\qty{1.534}{\radian\per\second}$ en el brazo pendular).
+    \textit{(ii)~Elección:} un filtro pasa-bajos IIR de primer orden~\eqref{eq:lpf_iir} con constante de tiempo $\tau=\qty{6.0}{\milli\second}$ y polo discreto $\gamma\approx 0.8571$ (coeficiente directo de $0.1429$) corre permanentemente en el driver \texttt{as5600.c} (\texttt{LPF IIR 1}) para todos los estados; exclusivamente en \texttt{BALANCE\_PID} se añade en cascada una segunda etapa idéntica (\texttt{LPF IIR 2}, ganancia directa de $0.1430$) para duplicar la atenuación en alta frecuencia a $\qty{-40}{\decibel}$/década ($f_c\approx\qty{15.8}{\hertz}$) sin restar margen de fase durante el \textit{Swing-Up}.
+    \textit{(iii)~Diseño:} particularizando~\eqref{eq:lpf_iir} a $f_s=\qty{1.0}{\kilo\hertz}$, las funciones de transferencia numéricas exactas de la etapa~1 ($\dot{\theta}_{f1}, \dot{\alpha}_{f1}$) y de la cascada completa ($\dot{\theta}_{f2}, \dot{\alpha}_{f2}$) son:
+    \begin{equation}
+    \resizebox{0.95\linewidth}{!}{$\displaystyle
+        H_{\text{LPF1}}(z) = \frac{0.1429}{1 - 0.8571\,z^{-1}}, \quad
+        H_{\text{LPF2}}(z) = \frac{0.0204}{\left(1 - 0.8571\,z^{-1}\right)^2}.
+    $}
+        \label{eq:lpf_num_z}
+    \end{equation}
+    \textit{(iv)~Implementación:} \texttt{AS5600\_Update} evalúa~\eqref{eq:lpf_num_z} para ambas ramas paralelas ($\theta$ con \texttt{Desenvoltura} y $\alpha$ con \texttt{Envoltura}), mientras \texttt{furuta\_control.c} actualiza las variables estáticas \texttt{s\_bal\_alpha\_vel\_f} y \texttt{s\_bal\_theta\_vel\_f}.
+
+    \item \textbf{Cascada \textit{Dual-Notch} adaptativa (\texttt{Notch 1}, \texttt{Notch 2}, \texttt{Índice dist}, \texttt{Mezcla}):}
+    \textit{(i)~Necesidad:} suprimir el ciclo límite de holgura del reductor $80:1$ en \qty{11.0}{\hertz} y las micro-vibraciones torsionales en \qty{6.2}{\hertz} sin comprometer la rapidez de respuesta ante golpes externos.
+    \textit{(ii)~Elección:} emplear filtros selectivos \textit{biquad}~\eqref{eq:dual_notch} en lugar de reducir $f_c$ del pasa-bajos evita sacrificar margen de fase cerca de $f_n=\qty{1.4083}{\hertz}$; adicionalmente, ubicar \texttt{Notch 2} en una bifurcación paralela ponderada permite atenuarlo dinámicamente cuando crece el error.
+    \textit{(iii)~Diseño:} \texttt{Notch 1} (\qty{11.0}{\hertz}, $Q=1.2$) permanece fijo sobre $u_{\text{raw}}[k]$ con función de transferencia numérica a $f_s=\qty{1.0}{\kilo\hertz}$:
+    \begin{equation}
+        H_{n11}(z) = \frac{0.9720 - 1.9394\,z^{-1} + 0.9720\,z^{-2}}{1 - 1.9394\,z^{-1} + 0.9440\,z^{-2}},
+        \label{eq:hz_n11}
+    \end{equation}
+    cuya salida $u_{n11}[k]$ se bifurca en paralelo hacia la entrada directa de \texttt{Mezcla} y hacia \texttt{Notch 2} (atenuador parcial RBJ de \qty{-6.0}{\decibel} en \qty{6.2}{\hertz}, $Q=1.4$):
+    \begin{equation}
+        H_{n6}(z) = \frac{0.9904 - 1.9600\,z^{-1} + 0.9711\,z^{-2}}{1 - 1.9600\,z^{-1} + 0.9615\,z^{-2}}.
+        \label{eq:hz_n6}
+    \end{equation}
+    Simultáneamente, el bloque \texttt{Índice dist} evalúa la severidad instantánea de perturbación y \texttt{Mezcla} pondera ambas ramas:
+    \begin{equation}
+    \resizebox{0.95\linewidth}{!}{$\displaystyle
+        \begin{aligned}
+            \mathrm{dist}[k] &= \min\!\left(1,\; \max\!\left(\frac{|\tilde{\alpha}[k]|}{\qty{4.5}{\degree}},\; \frac{|\dot{\alpha}_{f1}[k]|}{\qty{2.5}{\radian\per\second}}\right)\right), \\
+            u_{\text{sh}}[k] &= u_{n11}[k] + (1 - \mathrm{dist}[k])\bigl(u_{n6}[k] - u_{n11}[k]\bigr).
+        \end{aligned}
+    $}
+        \label{eq:mezcla_dist}
+    \end{equation}
+    \textit{(iv)~Implementación:} tanto \texttt{Furuta\_ApplyNotch11Hz} como \texttt{Furuta\_ApplyNotch6Hz} utilizan la estructura TDF-II~\eqref{eq:tdf2_biquad}~\cite{Oppenheim2010} en precisión \texttt{double} de 64~bits, indispensable debido a que los polos biquad residen próximos al círculo unitario ($|z|\approx 0.972\text{--}0.981$) y la precisión simple de 32~bits degradaría la ubicación espectral de las muescas.
+
+    \item \textbf{Acondicionamiento adaptativo (\texttt{Sat. Adap.}, \texttt{Slew Adap.}) y cascada de actuación:}
+    \textit{(i)~Necesidad:} evitar saltos bruscos de corriente en quietud vertical sin limitar el par disponible frente a perturbaciones fuertes, y traducir $u[k]$ en pulsos PWM lineales.
+    \textit{(ii)~Elección:} escalar continuamente el techo de tensión y la pendiente máxima según $\mathrm{dist}[k]$ proporciona suavidad en régimen estacionario y apertura instantánea en transitorios.
+    \textit{(iii)~Diseño y (iv)~Implementación:} \texttt{Sat. Adap.} varía linealmente entre $\pm\qty{6.5}{\volt}$ ($\mathrm{dist}=0$) y $\pm\qty{8.5}{\volt}$ ($\mathrm{dist}=1$), mientras \texttt{Slew Adap.} (\texttt{Furuta\_ApplySmoothSlew}) varía la rampa máxima entre $\qty{0.065}{}$ y $\qty{0.40}{\volt\per\milli\second}$. La señal resultante $u[k]$ recorre en cascada \texttt{Banda Silenciosa} ($|u|<\qty{0.06}{\volt}$), \texttt{Rampa L298N}~\eqref{eq:comp_l298n}, \texttt{Modulador PWM} (\texttt{TIM1\_CH1} a \qty{20.0}{\kilo\hertz}), \texttt{Puente H L298N} ($V_m$), \texttt{Motor 80:1} ($\tau_0$) y \texttt{Péndulo Furuta}; ante paradas o frenado comandados por la FSM, el desvío directo \texttt{Freno / Libre} puentea la rampa actuando sobre \texttt{IN1}/\texttt{IN2}.
+\end{itemize}
+
+\subsubsection{Estado \texttt{SWING\_UP} (Levantamiento Resonante en Cascada)}
+
+\input{figuras/fig_bloques_swingup.tex}
+
+\textit{(i)~Necesidad:} elevar autónomamente el péndulo desde el equilibrio colgante estable ($\alpha=\qty{0}{\degree}$) hasta el cono linealizable superior en torno a $\alpha=\qty{180}{\degree}$ (banda de $\pm\qty{20}{\degree}$) venciendo la pérdida de controlabilidad en la horizontal y la saturación de \qty{12.0}{\volt}.
+\textit{(ii)~Elección:} dado que los reguladores lineales locales no pueden cruzar el hemisferio inferior sin rotar indefinidamente el brazo, se adoptó un esquema en \textbf{cascada pura} (Fig.~\ref{fig:bloques_swingup}) basado en energía normalizada~\cite{astrom2000,spong1995} con conmutación en cuadratura de fase acotada en carrera, realimentado en ambas ramas únicamente hasta \texttt{LPF IIR 1} ($\dot{\theta}_{f1}, \dot{\alpha}_{f1}$, sin \texttt{LPF IIR 2}) para eliminar cualquier retardo de fase en los cruces por el punto muerto inferior.
+\textit{(iii)~Diseño:} el bloque \texttt{Energía} evalúa~\eqref{eq:energia_swingup} tomando el valor experimental $\omega_n=\qty{8.8484}{\radian\per\second}$ sobre $\dot{\alpha}_{f1}$ y $\tilde{\alpha}$. El bloque \texttt{Cuadratura} aplica primero un pulso inicial suave de $\theta_{\text{sw}}=+\qty{40}{\degree}$ durante \qty{280}{\milli\second}; posteriormente, cada vez que la barra cruza la región inferior con $|\alpha|$ menor a \qty{48}{\degree} y rapidez $|\dot{\alpha}_{f1}|$ superior a \qty{0.55}{\radian\per\second}, conmuta $\theta_{\text{sw}}$ en el sentido de $\dot{\alpha}_{f1}$ modulando la carrera y el techo de tensión en tres escalones según la energía $E_{\text{norm}}$: $\pm\qty{50}{\degree}$ con $\pm\qty{6.8}{\volt}$ en el tramo inicial (hasta $-0.32$), $\pm\qty{36}{\degree}$ con $\pm\qty{6.0}{\volt}$ en el tramo intermedio (entre $-0.32$ y $-0.10$) y $\pm\qty{22}{\degree}$ con $\pm\qty{5.2}{\volt}$ en el tramo superior (por encima de $-0.10$). El error de seguimiento del brazo en $\Sigma_3$ entre la referencia $\theta_{\text{sw}}$ y la posición medida $\theta$ alimenta en cascada a \texttt{PD Swing-Up} ($K_p=13.50$, $K_d=1.20$ sobre $\dot{\theta}_{f1}$), \texttt{Sat. Swing} ($\pm v_{\text{cap}}$), \texttt{Slew Swing} ($\qty{0.12}{\volt\per\milli\second}$) y la cadena L298N. Al ingresar dentro de la banda de captura ($|\tilde{\alpha}|$ menor a \qty{20}{\degree} y $|\dot{\alpha}_{f1}|$ inferior a \qty{4.8}{\radian\per\second}), se ejecuta transferencia sin saltos (\textit{bumpless})~\cite{Peng1996} hacia \texttt{BALANCE\_PID}, reiniciando acumuladores y precargando los filtros de velocidad.
+\textit{(iv)~Implementación:} funciones \texttt{Furuta\_ComputePendulumEnergy} y \texttt{Furuta\_ComputeSwingUpVoltage} en \texttt{furuta\_control.c} (con reinicio automático si tras \qty{1.4}{\second} la barra queda estancada por debajo de \qty{5}{\degree}).
+
+\subsubsection{Estado \texttt{MOTOR\_PID\_POS} / \texttt{STOP\_HOME} / Fase F1 de \texttt{RECOVER\_HOME} (Servo \qty{0}{\degree} con Reinicio de Clegg)}
+
+\input{figuras/fig_detalle_servo_clegg.tex}
+
+\textit{(i)~Necesidad:} posicionar el brazo horizontal con error estacionario cercano a cero venciendo la fricción estática asimétrica del reductor $80:1$ y el par elástico del cableado distal, evitando el sobreimpulso por \textit{windup} y el ciclado alrededor de la consigna.
+\textit{(ii)~Elección:} un integrador lineal continuo en viajes largos acumularía energía excesiva durante la fase de aceleración; combinar una ventana integral estrecha con el \textbf{reinicio instantáneo de Clegg}~\cite{clegg1958} y enclavamiento por histéresis con freno electromagnético activo~\cite{L298N_Datasheet} elimina el sobreimpulso y suprime completamente la vibración residual.
+\textit{(iii)~Diseño:} la Fig.~\ref{fig:detalle_servo_clegg} muestra los 11 bloques atómicos del lazo, realimentado únicamente por el brazo ($\theta$ y $\dot{\theta}_{f1}$ hasta \texttt{LPF IIR 1}). El error angular del brazo $e_\theta$ calculado en $\Sigma_p$ respecto a $\theta_{\text{ref}}$ bifurca hacia tres ramas paralelas sumadas en $\Sigma_c$: \texttt{Proporcional} ($K_p=13.50$), la rama integral no lineal compuesta por \texttt{Ventana $\pm 5^\circ$} $\to$ \texttt{Integrador} ($K_i=65.00$) $\to$ \texttt{Clamp Integral} ($\pm\qty{6.5}{\volt}$) gobernada lateralmente por \texttt{Reinicio Clegg}~\eqref{eq:clegg_teoria}:
+\begin{equation}
+\resizebox{0.92\columnwidth}{!}{$\displaystyle
+    I_p[k] =
+    \begin{cases}
+        0, & |e_\theta[k]| > \qty{5}{\degree}, \\
+        0, & e_\theta[k]e_\theta[k-1] \le 0, \\[2pt]
+        \mathrm{sat}_{\pm 6.5}\!\bigl(I_p[k-1] + K_i T_s e_\theta[k]\bigr), & \text{en otro caso},
+    \end{cases}
+$}
+    \label{eq:clegg_pos}
+\end{equation}
+y \texttt{Derivativo} ($K_d=1.45$) aplicado directamente sobre la medición filtrada $-\dot{\theta}_{f1}$ para evitar impulsos derivativos. La salida de $\Sigma_c$ atraviesa en cascada \texttt{Saturación} ($\pm\qty{5.8}{\volt}$), \texttt{Slew-Rate} ($\qty{0.055}{\volt\per\milli\second}$) y \texttt{Selector Freno}. Paralelamente, \texttt{Histéresis} supervisa $e_\theta$ y $\dot{\theta}_{f1}$: en \texttt{Furuta\_DriveArmToZero\_1kHz} (\texttt{RECOVER\_HOME}/\texttt{STOP\_HOME}) enclava cuando la magnitud de $e_\theta$ no supera \qty{0.08}{\degree} y la rapidez $|\dot{\theta}_{f1}|$ cae por debajo de \qty{0.16}{\radian\per\second} (liberando si el error excede \qty{0.14}{\degree}; en \texttt{MOTOR\_PID\_POS} emplea umbrales de \qty{0.045}{\degree}, \qty{0.12}{\radian\per\second} y liberación en \qty{0.10}{\degree}), enviando la señal \texttt{reset} al integrador y \texttt{lock} para activar \texttt{Freno Activo} (\texttt{L298N\_Brake}).
+\textit{(iv)~Implementación:} \texttt{Furuta\_DriveArmToZero\_1kHz} y caso \texttt{FURUTA\_STATE\_MOTOR\_PID\_POS} en \texttt{furuta\_control.c}.
+
+\subsubsection{Estado \texttt{MOTOR\_PID\_VEL} (Control de Velocidad con Anti-Windup)}
+
+\input{figuras/fig_bloques_velocidad.tex}
+
+\textit{(i)~Necesidad:} validar en lazo cerrado la regulación precisa de velocidad angular $\dot{\theta}$ frente a escalones e inversiones rápidas de referencia (\texttt{CHAR5A} y \texttt{VEL=}).
+\textit{(ii)~Elección:} la discretización bilineal de Tustin~\eqref{eq:pid_tustin}~\cite{Astrom1997,Ogata2010} con derivada sobre medición y sujeción condicional (\textit{clamping})~\cite{AstromAntiwindup1989,Peng1996} preserva la estabilidad discreta y evita saturación del acumulador integral cuando la consigna exige cambios bruscos hasta $\pm\qty{12.0}{\volt}$.
+\textit{(iii)~Diseño y (iv)~Implementación:} la Fig.~\ref{fig:bloques_velocidad} ilustra el lazo realimentado exclusivamente por el encoder base hasta la primera etapa de filtrado \texttt{LPF IIR 1}. A partir del error de seguimiento $e_\omega$ respecto a la consigna $\omega_{\text{ref}}$, el módulo genérico \texttt{PID\_Compute} en \texttt{pid\_controller.c} evalúa~\eqref{eq:pid_tustin} ($K_p=1.42$, $K_i=27.32$, $K_d=0.005$, $N=40$) derivando directamente sobre la velocidad filtrada $\dot{\theta}_{f1}$, mientras el bloque paralelo \texttt{Anti-Windup} congela la actualización trapezoidal de $I[k]$ cuando la salida candidata excede $\pm\qty{12.0}{\volt}$ en el mismo signo del error, entregando la tensión a la cascada L298N.
+
+\subsubsection{Estado \texttt{RECOVER\_HOME} (Auto-Recuperación Autónoma en 3 Fases)}
+
+\input{figuras/fig_detalle_recover_home.tex}
+
+\textit{(i)~Necesidad:} sostener la autonomía indefinida ante caídas por perturbaciones severas ($|\tilde{\alpha}|$ superior a \qty{32}{\degree}), \textit{timeouts} de levantamiento o inicios fuera del origen, evitando choques de fase o enrollamiento progresivo de cables.
+\textit{(ii)~Elección:} relanzar el bombeo energético mientras la barra oscila residualmente provoca acoplamientos destructivos; una secuencia finita de tres subfases deterministas (Fig.~\ref{fig:detalle_recover_home}) reestablece condiciones iniciales repetibles antes de reiniciar el ciclo.
+\textit{(iii)~Diseño y (iv)~Implementación:} dentro del caso \texttt{FURUTA\_STATE\_RECOVER\_HOME} en \texttt{furuta\_control.c}, el contador interno \texttt{s\_recover\_phase} ejecuta: \textbf{\texttt{F0: Rueda Libre}} (\texttt{L298N\_Coast} durante \qty{300}{\milli\second} para disipar energía cinética inicial); \textbf{\texttt{F1: Retorno 0°}} (\texttt{Furuta\_DriveArmToZero\_1kHz} con reinicio de Clegg hasta lograr una magnitud de $e_\theta$ menor o igual a \qty{0.08}{\degree}, con cota de seguridad de \qty{3.5}{\second}); y \textbf{\texttt{F2: Freno Activo}} (\texttt{L298N\_Brake} bloqueando el brazo en $\qty{0}{\degree}$ hasta que el bloque de decisión \texttt{¿Calma?} confirme ángulo $|\alpha|$ menor a \qty{10}{\degree} y rapidez $|\dot{\alpha}_{f1}|$ inferior a \qty{0.65}{\radian\per\second} de manera sostenida por \qty{250}{\milli\second}, con cota de \qty{5.5}{\second}), tras lo cual reinicia todos los estados y relanza \texttt{SWING\_UP}.
+
+La Tabla~\ref{tab:controladores_m4} consolida la parametrización completa de los controladores digitales, filtros y etapas de acondicionamiento activos en el firmware \texttt{M4 Ultra-Silk}.
+
+\begin{table*}[!t]
+    \centering
+    \caption{Parámetros consolidados de controladores digitales y acondicionamiento (\texttt{M4 Ultra-Silk}, $T_s=\qty{1.0}{\milli\second}$).}
+    \label{tab:controladores_m4}
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{@{}llccccl@{}}
+        \toprule
+        \textbf{Bloque / Controlador} & \textbf{Modo FSM} & $K_p$ & $K_i$ & $K_d$ & \textbf{Parám.} & \textbf{Restricciones y Particularidades Activas} \\
+        \midrule
+        \textbf{PD Péndulo} (\texttt{pid\_pend\_alpha}) & \texttt{BALANCE\_PID} & $14.50$ & $0.00$ & $1.50$ & $N=30$ & Derivada sobre $\dot{\alpha}_{f2}$; $K_{i,\alpha}=0$ obligatorio \\
+        \textbf{PID Brazo} (\texttt{pid\_arm\_theta}) & \texttt{BALANCE\_PID} & $-1.45$ & $-0.75$ & $-0.85$ & $N=20$ & Fase no mín.; int.\ $|e|<\qty{45}{\degree}$ ($\pm\qty{1.6}{\volt}$), sat.\ $\pm\qty{2.2}{\volt}$, sin límite $\theta$ \\
+        \textbf{Swing-Up PD} & \texttt{SWING\_UP} & $13.50$ & --- & $1.20$ & $\omega_n=8.85$ & Carrera $50/36/\qty{22}{\degree}$ ($\pm 6.8/6.0/\qty{5.2}{\volt}$); captura $|\tilde{\alpha}|<\qty{20}{\degree}, |\dot{\alpha}|<4.8$ \\
+        \textbf{PID Servo $\qty{0}{\degree}$} (\texttt{pid\_motor\_pos}) & \texttt{RECOVER/STOP/POS} & $13.50$ & $65.00$ & $1.45$ & $N=35$ & Clegg + int.\ $|e|\le\qty{5}{\degree}$ + \texttt{L298N\_Brake} + slew \qty{0.055}{\volt\per\milli\second} \\
+        \textbf{PID Vel.\ Motor} (\texttt{pid\_motor\_vel}) & \texttt{MOTOR\_PID\_VEL} & $1.42$ & $27.32$ & $0.005$ & $N=40$ & Discretización Tustin + anti-windup clamping ($\pm\qty{12.0}{\volt}$) \\
+        \midrule
+        \textbf{Cascada LPF Vel.\ ($\times 2$)} & \texttt{AS5600} + \texttt{BALANCE} & \multicolumn{4}{c}{IIR 1.er orden ($\tau=\qty{6}{\milli\second}$ c/u)} & Polo doble $z=0.8571$, $f_c\approx\qty{15.8}{\hertz}$ ($-40\text{ dB/déc.}$) \\
+        \textbf{Dual-Notch Biquad (TDF-II)} & \texttt{BALANCE\_PID} & \multicolumn{4}{c}{\qty{11.0}{\hertz} ($Q=1.2$) + \qty{6.2}{\hertz} ($Q=1.4$)} & Aritmética \texttt{double} 64~bits; Notch~2 (\qty{-6}{\decibel}) ponderado por $(1-\mathrm{dist})$ \\
+        \textbf{Slew / Zona Muerta L298N} & Salida PWM \qty{20}{\kilo\hertz} & \multicolumn{4}{c}{$\mathrm{dist}\in[0,1]$; $+9.2\% / -16.0\%$} & Slew $0.065\to\qty{0.40}{\volt\per\milli\second}$, techo $\pm 6.5\to\pm\qty{8.5}{\volt}$; rodilla $V_k=\qty{0.65}{\volt}$ \\
+        \bottomrule
+    \end{tabular}%
+    }
+\end{table*}
+
+\subsection{Interfaz Gráfica MATLAB y Gemelo Digital 3D}\label{subsubsec:gemelo_matlab}
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=0.73\textwidth]{fig_interfaz_matlab_gui.png}
+    \caption{Interfaz gráfica MATLAB (\texttt{app\_telemetria\_sistema\_furuta\_matlab.m}): conexión \texttt{COM13}, control maestro único, seis KPIs y constantes activas (Col.~1), gemelo digital 3D mediante \texttt{hgtransform} con rastro espacial y diales polares (Col.~2) y series temporales sincronizadas en tiempo real (Col.~3).}
+    \label{fig:interfaz_matlab}
+\end{figure*}
+
+\textit{(i)~Necesidad:} supervisar en vivo estados internos rápidos no apreciables visualmente ($\tilde{\alpha}$, $\dot{\alpha}$, esfuerzo $u$ frente a PWM y transiciones de la FSM), comandar el sistema de forma ergonómica y almacenar trazas experimentales CSV reproducibles.
+\textit{(ii)~Elección:} frente a monitores seriales de texto o gráficas 2D aisladas, un gemelo digital~3D estructurado mediante nodos jerárquicos \texttt{hgtransform} en MATLAB actualiza la cinemática espacial mediante transformaciones matriciales rígidas $\mathcal{O}(1)$ sin reconstruir polígonos ni bloquear la recepción serial.
+\textit{(iii)~Diseño e (iv)~Implementación:} programada en \texttt{interfaz\_matlab/app\_telemetria\_sistema\_\allowbreak furuta\_matlab.m} (Fig.~\ref{fig:interfaz_matlab}), la aplicación adopta una distribución en tres columnas sincronizada con el puerto \texttt{COM13} a \qty{115200}{\baud} (terminador \texttt{CR/LF}):
+\begin{itemize}
+    \item \textbf{Columna~1 (Control, telemetría y constantes):} gestiona la conexión serial (\texttt{COM13}), el botón maestro único \texttt{Iniciar/Detener} (despacha ráfaga idempotente \texttt{START} o parada ordenada \texttt{STOPHOME}), el calibrador \texttt{Cero (0°)} (\texttt{ZERO}), el registro en disco \texttt{Exportar CSV} (matriz de 9 columnas), seis mosaicos KPI numéricos en tiempo real ($\theta$, $\omega$, $\alpha$, $\alpha_{\text{err}}$, $\dot{\alpha}$, así como tensión $u$ y ciclo útil PWM) junto con el estado FSM y reloj, y la tabla resumen de constantes activas \texttt{M4 Ultra-Silk}.
+    \item \textbf{Columna~2 (Gemelo digital 3D y diales polares):} anima a \qty{30}{\hertz} el modelo tridimensional con cotas reales ($Z_{\text{piv}}=\qty{182.8}{\milli\meter}$, distancia pivote--punta \qty{152.8}{\milli\meter}) usando el nodo padre \texttt{T\_arm} (\texttt{zrotate} de $\theta$) y el nodo hijo \texttt{T\_pend} (\texttt{translate} al pivote más \texttt{xrotate} de $\alpha$), con selectores de cámara (\texttt{Iso 3D}, \texttt{Frontal}, \texttt{Superior}), rastro tridimensional de 90 puntos de la punta con proyección vertical al plano mesa, cono translúcido de captura ($\pm\qty{20}{\degree}$) y dos diales polares 2D sincronizados para $\theta$ y $\alpha$.
+    \item \textbf{Columna~3 (Series temporales en vivo):} representa tres ventanas deslizantes sincronizadas de $400$ muestras para la posición del brazo $\theta(t)$, la deflexión pendular $\alpha(t)$ superpuesta con su velocidad $\dot{\alpha}(t)$ en doble eje vertical, y la comparación simultánea entre el esfuerzo solicitado $u(t)$ normalizado y el ciclo útil $\mathrm{PWM}(\%)$ efectivo entregado al L298N.
+\end{itemize}
+
+\subsection{Simulador Interactivo 3D de Cinemática Matricial y Repositorio de Reproducibilidad}\label{subsec:simulador_cinematica}
+
+\begin{figure*}[!t]
+    \centering
+    \includegraphics[width=0.78\textwidth]{fig_simulador_cinematica_3d.png}
+    \caption{Simulador interactivo~3D de la cinemática matricial simbólica del péndulo de Furuta (\texttt{simulacion cinematica/index.html}, disponible en \url{https://github.com/Nocudo/Pendulo-Furuta-Control-Digital}). El panel izquierdo renderiza en tiempo real el marco inercial $\mathcal{F}_0$, el marco móvil $\mathcal{F}_1$, el plano móvil de oscilación, el cono de captura y los vectores cinemáticos $\mathbf{r}_{G1}$ y $\mathbf{v}_{G1}$ con control manual y modos guiados; el panel derecho acopla las expresiones matriciales simbólicas correspondientes a~\eqref{eq:marco_movil}--\eqref{eq:dinamica_alpha}.}
+    \label{fig:simulador_cinematica_3d}
+\end{figure*}
+
+\textit{(i)~Necesidad:} mientras el gemelo digital en MATLAB se orienta a la supervisión en vivo de la planta física vía \texttt{COM13}, el estudio y verificación didáctica del modelado cinemático tridimensional~\eqref{eq:marco_movil}--\eqref{eq:dinamica_alpha} requiere inspeccionar libremente cada rotación elemental, el plano móvil de oscilación y los vectores de posición y velocidad sin depender de licencias de software ni del hardware conectado.
+\textit{(ii)~Elección:} se diseñó una aplicación web autónoma en un único archivo ejecutable fuera de línea (\textit{standalone} HTML5 Canvas, CSS y JavaScript puro, sin librerías ni dependencias externas), garantizando portabilidad inmediata en cualquier navegador moderno directamente desde el repositorio oficial del proyecto.
+\textit{(iii)~Diseño:} como se observa en la Fig.~\ref{fig:simulador_cinematica_3d}, la interfaz divide la pantalla en un motor gráfico~3D interactivo a \qty{60}{\hertz} con cámara orbital, acercamiento por rueda y cuatro vistas preestablecidas (isométrica equivalente a la Fig.~\ref{fig:cinematica_furuta}, superior sobre el plano horizontal, vista fijada al plano móvil de oscilación y frontal) junto a un panel sincronizado de cinco tarjetas matriciales puramente simbólicas que muestran el planteamiento, el producto matricial explícito y el resultado de~\eqref{eq:marco_movil}--\eqref{eq:dinamica_alpha}. El usuario puede alternar entre cuatro modos operativos: recorrido guiado en cinco pasos vinculados a cada bloque ecuacional, manipulación manual continua de las coordenadas y velocidades generalizadas ($\theta$, $\alpha$, $\dot{\theta}$ y $\dot{\alpha}$) con poses rápidas, simulación numérica RK4 en vivo de la transición autónoma \texttt{SWING\_UP} hacia \texttt{BALANCE\_PID} y estabilización \texttt{M4 Ultra-Silk} con inyección interactiva de perturbaciones impulsionales, además de conmutación de capas visuales ($\mathcal{F}_0$, $\mathcal{F}_1$, plano móvil, $\mathbf{r}_{G1}$, $\mathbf{v}_{G1}$, cono de captura, rastro del centro de masa, cotas y referencia física de la mesa) y selector de tema claro u oscuro.
+\textit{(iv)~Implementación y repositorio:} el simulador reside en \texttt{simulacion cinematica/\allowbreak index.html} dentro del repositorio público \url{https://github.com/Nocudo/Pendulo-Furuta-Control-Digital}, el cual consolida de manera versionada el diseño CAD (\texttt{cad/}), las placas DfAM listas para laminar (\texttt{IMPRESION\_3D/}), el firmware embebido STM32 (\texttt{firmware\_stm32/}), los registros experimentales y análisis (\texttt{caracterizacion\_\allowbreak y\_\allowbreak validacion/}), la interfaz MATLAB (\texttt{interfaz\_matlab/}), la documentación técnica (\texttt{docs/}) y el presente artículo (\texttt{articulo/}).

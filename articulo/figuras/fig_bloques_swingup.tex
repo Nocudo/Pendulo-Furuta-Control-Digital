@@ -1,0 +1,354 @@
+% ==============================================================================
+% Figura: Diagrama de Bloques Atómico — Estado FURUTA_STATE_SWING_UP (1 kHz)
+% 1 función = 1 bloque atómico (solo nombre corto), señales puras en cables.
+% Fiel a furuta_control.c, as5600.c y l298n_motor.c (solo LPF IIR 1, sin LPF 2).
+% Archivo modular listo para \input{} en IEEEtran dos columnas (figure* [!t]).
+% Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
+%                            shapes.geometric, backgrounds, babel, bending.
+% ==============================================================================
+\begin{figure*}[!t]
+\centering
+% --- Paleta semántica armónica (local al entorno figure*) ---
+\definecolor{blkInk}{HTML}{1E293B}
+\definecolor{blkPendEdge}{HTML}{1B4965}
+\definecolor{blkPendFill}{HTML}{EAF4FB}
+\definecolor{blkArmEdge}{HTML}{0F766E}
+\definecolor{blkArmFill}{HTML}{E6F7F5}
+\definecolor{blkCondEdge}{HTML}{B45309}
+\definecolor{blkCondFill}{HTML}{FEF6EB}
+\definecolor{blkDistEdge}{HTML}{7E2268}
+\definecolor{blkDistFill}{HTML}{FBF0F8}
+\definecolor{blkActEdge}{HTML}{A63429}
+\definecolor{blkActFill}{HTML}{FDF0EE}
+\definecolor{blkPlantEdge}{HTML}{243447}
+\definecolor{blkPlantFill}{HTML}{ECEFF4}
+\definecolor{blkZoneZ1}{HTML}{33658A}
+\definecolor{blkZoneL2}{HTML}{A63429}
+\definecolor{blkZoneL3}{HTML}{2A6B43}
+
+% --- Parámetros centralizados de ritmo geométrico (Layout by Construction) ---
+\def\gapEC{1.02cm}
+\def\gapCSig{1.02cm}
+\def\gapSigPD{1.02cm}
+\def\gapPSat{0.80cm}
+\def\gapSSlew{0.80cm}
+\def\gapLtwoX{0.72cm}
+\def\gapTapX{1.54cm}
+\def\boxH{0.88cm}
+\def\sumSz{0.58cm}
+\def\hopRad{0.095cm}
+\def\trackStepX{0.38cm}
+\def\railStepY{0.42cm}
+
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    >=Stealth,
+    font=\sffamily,
+    % --- Estilos de bloques atómicos (1 función = 1 bloque, solo nombre corto) ---
+    baseblk/.style={
+        rectangle,
+        rounded corners=3.5pt,
+        align=center,
+        inner xsep=3.5pt,
+        inner ysep=3pt,
+        text=blkInk,
+        font=\normalsize\sffamily\bfseries,
+        minimum height=\boxH
+    },
+    pendblk/.style={baseblk, draw=blkPendEdge, line width=1.1pt, fill=blkPendFill, text width=1.80cm},
+    armblk/.style={baseblk, draw=blkArmEdge, line width=1.1pt, fill=blkArmFill, text width=1.94cm},
+    condblk/.style={baseblk, draw=blkCondEdge, line width=1.1pt, fill=blkCondFill, text width=1.78cm},
+    actblk/.style={baseblk, draw=blkActEdge, line width=1.1pt, fill=blkActFill, text width=1.98cm},
+    plantblk/.style={baseblk, draw=blkPlantEdge, line width=1.35pt, fill=blkPlantFill, text width=1.94cm},
+    sensTblk/.style={baseblk, draw=blkArmEdge, line width=1.1pt, fill=blkArmFill, text width=2.24cm},
+    sensAblk/.style={baseblk, draw=blkPendEdge, line width=1.1pt, fill=blkPendFill, text width=2.24cm},
+    sum/.style={
+        circle,
+        draw=blkInk,
+        line width=1.05pt,
+        fill=white,
+        minimum size=\sumSz,
+        inner sep=0pt,
+        font=\small\bfseries,
+        text=blkInk
+    },
+    dot/.style={circle, fill=#1, inner sep=1.5pt},
+    % --- Flechas canónicas ---
+    sig/.style={-{Stealth[length=4.8pt, width=3.5pt]}, line width=1.0pt, draw=blkInk},
+    sigshort/.style={-{Stealth[length=4.0pt, width=3.0pt]}, line width=1.0pt, draw=blkInk},
+    fbA/.style={-{Stealth[length=4.4pt, width=3.2pt]}, line width=0.95pt, draw=blkPendEdge},
+    fbT/.style={-{Stealth[length=4.4pt, width=3.2pt]}, line width=0.95pt, draw=blkArmEdge},
+    lineA/.style={line width=0.95pt, draw=blkPendEdge},
+    lineT/.style={line width=0.95pt, draw=blkArmEdge},
+    adapt/.style={-{Stealth[length=4.2pt, width=3.0pt]}, line width=0.95pt, densely dashed, draw=blkDistEdge},
+    % --- Contenedores y etiquetas ---
+    zonebox/.style={
+        rectangle,
+        rounded corners=5pt,
+        draw=#1,
+        densely dashed,
+        line width=0.95pt,
+        fill=#1,
+        fill opacity=0.035,
+        text opacity=1
+    },
+    zonetitle/.style={
+        rectangle,
+        rounded corners=3pt,
+        draw=#1,
+        line width=0.8pt,
+        fill=white,
+        inner xsep=5.5pt,
+        inner ysep=2.2pt,
+        font=\small\sffamily\bfseries,
+        text=#1
+    },
+    signlbl/.style={font=\footnotesize\bfseries, text=blkInk, inner sep=1pt},
+    wirelbl/.style={font=\small\sffamily, text=blkInk, inner sep=1.5pt}
+]
+
+% ==============================================================================
+% NIVEL 1: CONTROL SWING-UP EN CASCADA — ÚNICO ANCLAJE (0,0)
+% ==============================================================================
+\node[pendblk] (energ) at (0,0) {Energ\'ia};
+\node[pendblk, text width=1.98cm, right=\gapEC of energ] (cuad) {Cuadratura};
+\node[sum, right=\gapCSig of cuad] (sig3) {$\Sigma_3$};
+\node[armblk, right=\gapSigPD of sig3] (pd_sw) {PD\\Swing-Up};
+\node[condblk, right=\gapPSat of pd_sw] (sat_sw) {Sat.\\Swing};
+\node[condblk, right=\gapSSlew of sat_sw] (slew_sw) {Slew\\Swing};
+
+\coordinate (lane_adapt_y) at ([yshift=0.46cm]energ.north);
+\coordinate (y_cuad_da1)   at ([yshift=-0.46cm]energ.south);
+\coordinate (y_cuad_alpha) at ([yshift=-\railStepY]y_cuad_da1);
+\coordinate (y_sig3_fb)    at ([yshift=-\railStepY]y_cuad_alpha);
+\coordinate (y_pd_fb)      at ([yshift=-\railStepY]y_sig3_fb);
+
+\coordinate (z1_top_pad)   at ([yshift=1.12cm]energ.north);
+\coordinate (z1_bot_pad)   at ([yshift=-0.26cm]y_pd_fb);
+\coordinate (z1_left_pad)  at ([xshift=-0.95cm]energ.west);
+\coordinate (z1_right_pad) at ([xshift=0.30cm]slew_sw.east);
+
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneZ1, inner sep=0pt,
+          fit=(z1_top_pad)(z1_bot_pad)(z1_left_pad)(z1_right_pad)] (zone1) {};
+\end{scope}
+\node[zonetitle=blkZoneZ1, anchor=west] at ([xshift=0.35cm]zone1.north west)
+    {Control Swing-Up en Cascada};
+
+% ==============================================================================
+% NIVEL 2: ACTUACIÓN Y PLANTA EN CASCADA
+% ==============================================================================
+\coordinate (l2_y) at ([yshift=-1.92cm]zone1.south);
+\node[actblk, anchor=west] (banda) at (energ.west |- l2_y) {Banda\\Silenciosa};
+\node[actblk, right=\gapLtwoX of banda] (rampa) {Rampa\\L298N};
+\node[actblk, right=\gapLtwoX of rampa] (pwm) {Modulador\\PWM};
+\node[actblk, right=\gapLtwoX of pwm] (puente) {Puente H\\L298N};
+\node[actblk, right=\gapLtwoX of puente] (motor) {Motor\\80:1};
+\node[plantblk, right=\gapLtwoX of motor] (planta) {P\'endulo\\Furuta};
+
+\coordinate (l2_top_pad)   at ([yshift=0.36cm]banda.north);
+\coordinate (l2_bot_pad)   at ([yshift=-0.28cm]banda.south);
+\coordinate (l2_left_pad)  at ([xshift=-0.28cm]banda.west);
+\coordinate (l2_right_pad) at ([xshift=0.28cm]planta.east);
+
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneL2, inner sep=0pt,
+          fit=(l2_top_pad)(l2_bot_pad)(l2_left_pad)(l2_right_pad)] (zoneL2) {};
+\end{scope}
+\node[zonetitle=blkZoneL2, anchor=west] at ([xshift=0.32cm]zoneL2.north west)
+    {Actuaci\'on y Planta (Cascada)};
+
+% ==============================================================================
+% NIVEL 3: SENSADO Y LPF IIR 1 (PARALELO, SIN LPF IIR 2)
+% ==============================================================================
+\coordinate (l3_t_y) at ([yshift=-1.75cm]zoneL2.south);
+\coordinate (as5600_east_x) at ([xshift=-0.95cm]planta.south);
+
+\node[sensTblk, anchor=east] (as5600_base) at (as5600_east_x |- l3_t_y) {AS5600\\Base};
+\node[sensTblk, left=\gapTapX of as5600_base] (desenv) {Desenvoltura};
+\node[sensTblk, left=\gapTapX of desenv] (deriv_t) {Derivador $\theta$};
+\node[sensTblk, left=\gapTapX of deriv_t] (lpf1_t) {LPF IIR 1\\($\theta$)};
+
+\node[sensAblk, below=0.80cm of as5600_base] (as5600_dist) {AS5600\\Distal};
+\node[sensAblk, left=\gapTapX of as5600_dist] (envolt) {Envoltura};
+\node[sensAblk, left=\gapTapX of envolt] (deriv_a) {Derivador $\alpha$};
+\node[sensAblk, left=\gapTapX of deriv_a] (lpf1_a) {LPF IIR 1\\($\alpha$)};
+
+\coordinate (rail_theta_y)  at ([yshift=0.44cm]lpf1_t.north);
+\coordinate (rail_alpha_y)  at ([yshift=-0.46cm]lpf1_a.south);
+\coordinate (rail_atilde_y) at ([yshift=-0.88cm]lpf1_a.south);
+
+\coordinate (l3_top_pad)   at ([yshift=0.72cm]lpf1_t.north);
+\coordinate (l3_bot_pad)   at ([yshift=-1.34cm]lpf1_a.south);
+\coordinate (l3_left_pad)  at ([xshift=-0.95cm]lpf1_t.west);
+\coordinate (l3_right_pad) at ([xshift=0.24cm]as5600_base.east);
+
+\begin{scope}[on background layer]
+    \node[zonebox=blkZoneL3, inner sep=0pt,
+          fit=(l3_top_pad)(l3_bot_pad)(l3_left_pad)(l3_right_pad)] (zoneL3) {};
+\end{scope}
+\node[zonetitle=blkZoneL3, anchor=west] at ([xshift=0.35cm]zoneL3.south west)
+    {Sensado y LPF IIR 1 (Paralelo)};
+
+% ==============================================================================
+% CONEXIONES DE NIVEL 1 (CASCADA ENERGÍA -> CUADRATURA -> PD -> SAT -> SLEW)
+% ==============================================================================
+\draw[sigshort] (energ.east) -- (cuad.west)
+    node[wirelbl, midway, above=2pt] {$E_{\mathrm{norm}}$};
+
+\draw[sigshort] (cuad.east) -- (sig3.west)
+    node[wirelbl, pos=0.38, above=2pt] {$\theta_{\mathrm{sw}}$};
+\node[signlbl, anchor=south] at ([xshift=-0.13cm, yshift=0.06cm]sig3.west) {$+$};
+
+\draw[sigshort] (sig3.east) -- (pd_sw.west)
+    node[wirelbl, midway, above=2pt] {$e_{\theta,\mathrm{sw}}$};
+
+\draw[sigshort] (pd_sw.east) -- (sat_sw.west);
+\draw[sigshort] (sat_sw.east) -- (slew_sw.west);
+
+% Modulación escalonada de tensión por E_norm hacia Sat. Swing
+\draw[adapt, rounded corners=4pt]
+    (energ.north) -- (energ.north |- lane_adapt_y)
+    -- (sat_sw.north |- lane_adapt_y) -- (sat_sw.north);
+\node[wirelbl, text=blkDistEdge, anchor=south]
+    at ($(sig3.center |- lane_adapt_y) + (0, 0.04cm)$) {$E_{\mathrm{norm}}$};
+
+% ==============================================================================
+% CONEXIONES DE NIVEL 2 (u[k] -> ACTUACIÓN L298N -> PLANTA FURUTA)
+% ==============================================================================
+\coordinate (u_right_x) at ([xshift=0.64cm]slew_sw.east);
+\coordinate (lane_u_y)  at ([yshift=0.58cm]zoneL2.north);
+\coordinate (u_in_x)    at ([xshift=-0.52cm]banda.west);
+
+\draw[sig, rounded corners=4pt]
+    (slew_sw.east) -- (u_right_x |- slew_sw.east)
+    -- (u_right_x |- lane_u_y)
+    -- (u_in_x |- lane_u_y)
+    |- (banda.west);
+\node[wirelbl, anchor=south]
+    at ($(motor.east |- lane_u_y)!0.50!(planta.east |- lane_u_y) + (0, 0.04cm)$) {$u[k]$};
+
+\draw[sigshort] (banda.east) -- (rampa.west);
+\draw[sigshort] (rampa.east) -- (pwm.west);
+\draw[sigshort] (pwm.east) -- (puente.west);
+\draw[sigshort] (puente.east) -- (motor.west)
+    node[wirelbl, midway, above=2pt] {$V_m$};
+\draw[sigshort] (motor.east) -- (planta.west)
+    node[wirelbl, midway, above=2pt] {$\tau_0$};
+
+% ==============================================================================
+% CONEXIONES DE NIVEL 3 (PLANTA -> ENCODERS -> LPF IIR 1 -> 5 PISTAS ORDENADAS)
+% ==============================================================================
+\coordinate (pl_t_out) at ([xshift=-0.28cm]planta.south);
+\coordinate (pl_a_out) at ([xshift= 0.28cm]planta.south);
+
+\draw[fbT, rounded corners=4pt] (pl_t_out) |- (as5600_base.east);
+\node[wirelbl, text=blkArmEdge, anchor=east]
+    at ([xshift=-0.06cm]$(pl_t_out |- zoneL2.south)!0.48!(pl_t_out |- zoneL3.north)$) {$\theta(t)$};
+
+\draw[fbA, rounded corners=4pt] (pl_a_out) |- (as5600_dist.east);
+\node[wirelbl, text=blkPendEdge, anchor=west]
+    at ([xshift=0.06cm]$(pl_a_out |- as5600_base.east)!0.50!(pl_a_out |- as5600_dist.east)$) {$\alpha(t)$};
+
+% Rama theta (Derecha -> Izquierda, deteniéndose en LPF IIR 1)
+\draw[fbT] (as5600_base.west) -- (desenv.east);
+\draw[fbT] (desenv.west) -- (deriv_t.east);
+\draw[fbT] (deriv_t.west) -- (lpf1_t.east);
+
+% Rama alpha (Derecha -> Izquierda, deteniéndose en LPF IIR 1)
+\draw[fbA] (as5600_dist.west) -- (envolt.east);
+\draw[fbA] (envolt.west) -- (deriv_a.east);
+\draw[fbA] (deriv_a.west) -- (lpf1_a.east);
+
+% --- 5 pistas verticales ordenadas en el margen izquierdo (escalera sin cruces en N1) ---
+\coordinate (trk_dt1_x)    at ([xshift=-0.42cm]zone1.west);
+\coordinate (trk_theta_x)  at ([xshift=-\trackStepX]trk_dt1_x);
+\coordinate (trk_alpha_x)  at ([xshift=-\trackStepX]trk_theta_x);
+\coordinate (trk_da1_x)    at ([xshift=-\trackStepX]trk_alpha_x);
+\coordinate (trk_atilde_x) at ([xshift=-\trackStepX]trk_da1_x);
+
+% Puntos de derivación en Nivel 3
+\coordinate (tap_theta) at ($(desenv.west)!0.58!(deriv_t.east)$);
+\coordinate (tap_alpha) at ($(envolt.west)!0.58!(deriv_a.east)$);
+
+\node[dot=blkArmEdge]  at (tap_theta) {};
+\node[dot=blkPendEdge] at (tap_alpha) {};
+
+\node[wirelbl, text=blkArmEdge, anchor=west]
+    at ([xshift=0.06cm]$(tap_theta)!0.50!(tap_theta |- rail_theta_y)$) {$\theta$};
+\node[wirelbl, text=blkArmEdge, anchor=south]
+    at ([xshift=-0.52cm, yshift=0.04cm]lpf1_t.west) {$\dot{\theta}_{f1}$};
+
+\node[wirelbl, text=blkPendEdge, anchor=west]
+    at ([xshift=0.06cm]$(tap_alpha)!0.26!(tap_alpha |- rail_alpha_y)$) {$\alpha,\,\tilde{\alpha}$};
+\node[wirelbl, text=blkPendEdge, anchor=south]
+    at ([xshift=-0.52cm, yshift=0.04cm]lpf1_a.west) {$\dot{\alpha}_{f1}$};
+
+% Puertos de entrada en Energía y Cuadratura
+\coordinate (energ_in_top) at ([yshift= 0.17cm]energ.west);
+\coordinate (energ_in_bot) at ([yshift=-0.17cm]energ.west);
+\coordinate (cuad_in_da1)  at ([xshift=-0.28cm]cuad.south);
+\coordinate (cuad_in_alp)  at ([xshift= 0.28cm]cuad.south);
+
+% 1) Pista dtheta_f1 -> PD Swing-Up.south (pista interior, entra por debajo)
+\draw[fbT, rounded corners=4pt]
+    (lpf1_t.west) -- (trk_dt1_x |- lpf1_t.west)
+    -- (trk_dt1_x |- y_pd_fb) -| (pd_sw.south);
+\node[wirelbl, text=blkArmEdge, anchor=west]
+    at ([xshift=0.08cm]$(pd_sw.south)!0.48!(pd_sw.south |- y_pd_fb)$) {$-\dot{\theta}_{f1}$};
+
+% 2) Pista theta -> Sigma_3.south (-) (salta sobre trk_dt1_x en Nivel 3)
+\draw[lineT, rounded corners=4pt]
+    (tap_theta) -- (tap_theta |- rail_theta_y)
+    -- ($(trk_dt1_x |- rail_theta_y)+(\hopRad,0)$)
+    arc[start angle=0, end angle=180, radius=\hopRad];
+\draw[fbT, rounded corners=4pt]
+    ($(trk_dt1_x |- rail_theta_y)+(-\hopRad,0)$) -- (trk_theta_x |- rail_theta_y)
+    -- (trk_theta_x |- y_sig3_fb) -| (sig3.south);
+\node[signlbl, text=blkArmEdge, anchor=north west] at ([xshift=0.08cm, yshift=-0.06cm]sig3.south) {$-$};
+\node[wirelbl, text=blkArmEdge, anchor=west]
+    at ([xshift=0.08cm]$(sig3.south)!0.48!(sig3.south |- y_sig3_fb)$) {$\theta$};
+
+% 3) Pista alpha -> Cuadratura.south (derecha)
+\draw[fbA, rounded corners=4pt]
+    (tap_alpha) -- (tap_alpha |- rail_alpha_y)
+    -- (trk_alpha_x |- rail_alpha_y)
+    -- (trk_alpha_x |- y_cuad_alpha) -| (cuad_in_alp);
+\node[dot=blkPendEdge] at (tap_alpha |- rail_alpha_y) {};
+\node[wirelbl, text=blkPendEdge, anchor=south]
+    at ($(deriv_a.west |- rail_alpha_y)!0.50!(lpf1_a.east |- rail_alpha_y) + (0, 0.03cm)$) {$\alpha$};
+\node[wirelbl, text=blkPendEdge, anchor=west]
+    at ([xshift=0.08cm]$(cuad_in_alp)!0.48!(cuad_in_alp |- y_cuad_alpha)$) {$\alpha$};
+
+% 4) Pista dalpha_f1 -> Cuadratura.south (izquierda) y Energía.west (inferior)
+\draw[lineA]
+    (lpf1_a.west) -- ($(trk_alpha_x |- lpf1_a.west)+(\hopRad,0)$)
+    arc[start angle=0, end angle=180, radius=\hopRad];
+\draw[lineA, rounded corners=4pt]
+    ($(trk_alpha_x |- lpf1_a.west)+(-\hopRad,0)$) -- (trk_da1_x |- lpf1_a.west)
+    -- (trk_da1_x |- energ_in_bot);
+\node[dot=blkPendEdge] at (trk_da1_x |- y_cuad_da1) {};
+\draw[fbA, rounded corners=4pt]
+    (trk_da1_x |- y_cuad_da1) -| (cuad_in_da1);
+\draw[fbA]
+    (trk_da1_x |- energ_in_bot) -- (energ_in_bot);
+\node[wirelbl, text=blkPendEdge, anchor=north]
+    at ([xshift=-0.42cm, yshift=-0.03cm]energ_in_bot) {$\dot{\alpha}_{f1}$};
+\node[wirelbl, text=blkPendEdge, anchor=south]
+    at ($(energ.east |- y_cuad_da1)!0.46!(cuad.west |- y_cuad_da1) + (0, 0.03cm)$) {$\dot{\alpha}_{f1}$};
+
+% 5) Pista alpha_tilde -> Energía.west (superior)
+\draw[fbA, rounded corners=4pt]
+    (tap_alpha |- rail_alpha_y) -- (tap_alpha |- rail_atilde_y)
+    -- (trk_atilde_x |- rail_atilde_y)
+    -- (trk_atilde_x |- energ_in_top) -- (energ_in_top);
+\node[wirelbl, text=blkPendEdge, anchor=south]
+    at ($(deriv_a.west |- rail_atilde_y)!0.50!(lpf1_a.east |- rail_atilde_y) + (0, 0.03cm)$) {$\tilde{\alpha}$};
+\node[wirelbl, text=blkPendEdge, anchor=south]
+    at ([xshift=-0.42cm, yshift=0.03cm]energ_in_top) {$\tilde{\alpha}$};
+
+\end{tikzpicture}%
+}
+\caption{Diagrama de bloques at\'omico exclusivo del estado \texttt{FURUTA\_STATE\_SWING\_UP} (\qty{1.0}{\kilo\hertz} en \texttt{furuta\_control.c}). Muestra la cascada energ\'etica (\texttt{Energ\'ia} $\to$ \texttt{Cuadratura} $\to$ $\Sigma_3$ $\to$ \texttt{PD Swing-Up} $\to$ \texttt{Sat.\ Swing} $\to$ \texttt{Slew Swing}), la modulaci\'on escalonada de saturaci\'on $\pm v_{\mathrm{cap}}$ gobernada por $E_{\mathrm{norm}}$, la cadena de actuaci\'on L298N con planta de Furuta y la realimentaci\'on paralela AS5600 detenida estrictamente en \texttt{LPF IIR 1} (sin \texttt{LPF IIR 2}) para evitar retardo de fase en los cruces inferiores.}
+\label{fig:bloques_swingup}
+\end{figure*}

@@ -1,0 +1,169 @@
+% ==============================================================================
+% Figura: Arquitectura Modular del Firmware en 5 Capas (Layout by Construction)
+% Archivo modular listo para \input{} en IEEEtran dos columnas (figure* [!t])
+% Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
+%                            backgrounds, babel, bending.
+% ==============================================================================
+\begin{figure*}[!t]
+\centering
+\definecolor{archApp}{HTML}{EBF2FE}
+\definecolor{archAppBorder}{HTML}{1A73E8}
+\definecolor{archAppTitle}{HTML}{1558B0}
+\definecolor{archComm}{HTML}{FEF8E6}
+\definecolor{archCommBorder}{HTML}{D97706}
+\definecolor{archCommTitle}{HTML}{A15505}
+\definecolor{archDrv}{HTML}{EAF6ED}
+\definecolor{archDrvBorder}{HTML}{137333}
+\definecolor{archDrvTitle}{HTML}{0E5A27}
+\definecolor{archHal}{HTML}{FDECEB}
+\definecolor{archHalBorder}{HTML}{C5221F}
+\definecolor{archHalTitle}{HTML}{9E1B18}
+\definecolor{archHw}{HTML}{F1F3F5}
+\definecolor{archHwBorder}{HTML}{5F6368}
+\definecolor{archHwTitle}{HTML}{3C4043}
+\definecolor{archText}{HTML}{1E293B}
+
+% --- Geometría paramétrica única (Single Source of Truth, en cm) ---
+\def\rowW{14.4}
+\def\colGap{0.36}
+\def\boxH{0.80}
+\def\boxPadX{0.18}
+\def\titleGap{0.23}
+\def\layerGap{0.74}
+\def\layerPadX{0.34}
+\def\layerPadY{0.21}
+\pgfmathsetmacro{\wFour}{(\rowW - 3*\colGap)/4}
+\pgfmathsetmacro{\wThree}{(\rowW - 2*\colGap)/3}
+\pgfmathsetmacro{\twFour}{\wFour - 2*\boxPadX}
+\pgfmathsetmacro{\twThree}{\wThree - 2*\boxPadX}
+\pgfmathsetmacro{\layerDrop}{\layerGap + \layerPadY}
+
+\resizebox{0.82\textwidth}{!}{%
+\begin{tikzpicture}[
+    font=\sffamily,
+    layerbox/.style 2 args={
+        rectangle,
+        rounded corners=5pt,
+        draw=#1,
+        line width=1.05pt,
+        fill=#2,
+        inner xsep=\layerPadX cm,
+        inner ysep=\layerPadY cm
+    },
+    layertitle/.style={
+        font=\small\sffamily\bfseries,
+        inner xsep=0pt,
+        inner ysep=1pt,
+        text height=1.8ex,
+        text depth=0.45ex
+    },
+    subblock/.style={
+        rectangle,
+        rounded corners=3.5pt,
+        draw=#1,
+        line width=0.80pt,
+        fill=white,
+        font=\footnotesize\sffamily\bfseries,
+        text=archText,
+        align=center,
+        inner xsep=\boxPadX cm,
+        inner ysep=0pt,
+        outer sep=0pt,
+        text height=1.75ex,
+        text depth=0.40ex,
+        minimum height=\boxH cm
+    },
+    subblock4/.style={subblock=#1, text width=\twFour cm},
+    subblock3/.style={subblock=#1, text width=\twThree cm},
+    flow/.style={
+        <->,
+        >={Stealth[length=4.0pt, width=3.2pt]},
+        line width=1.15pt,
+        draw=archText!80,
+        shorten >=1.5pt,
+        shorten <=1.5pt
+    },
+    flowlbl/.style={
+        font=\scriptsize\sffamily,
+        text=archText!85,
+        inner sep=1.5pt
+    }
+]
+
+% ==================== CAPA 5: CONTROL Y FSM (Raíz) ====================
+\node[subblock4=archAppBorder, anchor=north west] (b1) at (0,0) {FSM};
+\node[subblock4=archAppBorder, right=\colGap cm of b1] (b2) {Lazo M4};
+\node[subblock4=archAppBorder, right=\colGap cm of b2] (b3) {Dual-Notch};
+\node[subblock4=archAppBorder, right=\colGap cm of b3] (b4) {Swing-Up / Servo};
+
+\node[layertitle, text=archAppTitle, above=\titleGap cm of b1.north west, anchor=south west] (L5t)
+    {Capa 5: Control y FSM};
+
+\begin{scope}[on background layer]
+    \node[layerbox={archAppBorder}{archApp}, fit=(L5t)(b1)(b2)(b3)(b4)] (L5) {};
+\end{scope}
+
+% ==================== CAPA 4: COMUNICACIÓN ====================
+\coordinate (L4_ref) at (b1.west |- L5.south);
+\node[layertitle, text=archCommTitle, below=\layerDrop cm of L4_ref, anchor=north west] (L4t)
+    {Capa 4: Comunicaci\'on};
+
+\node[subblock3=archCommBorder, below=\titleGap cm of L4t.south west, anchor=north west] (c1) {UART DMA};
+\node[subblock3=archCommBorder, right=\colGap cm of c1] (c2) {Parser CLI};
+\node[subblock3=archCommBorder, right=\colGap cm of c2] (c3) {Telemetr\'ia CSV};
+
+\begin{scope}[on background layer]
+    \node[layerbox={archCommBorder}{archComm}, fit=(L4t)(c1)(c2)(c3)] (L4) {};
+\end{scope}
+
+% ==================== CAPA 3: DRIVERS ====================
+\coordinate (L3_ref) at (b1.west |- L4.south);
+\node[layertitle, text=archDrvTitle, below=\layerDrop cm of L3_ref, anchor=north west] (L3t)
+    {Capa 3: Drivers};
+
+\node[subblock3=archDrvBorder, below=\titleGap cm of L3t.south west, anchor=north west] (d1) {Soft-I2C};
+\node[subblock3=archDrvBorder, right=\colGap cm of d1] (d2) {AS5600};
+\node[subblock3=archDrvBorder, right=\colGap cm of d2] (d3) {Driver L298N};
+
+\begin{scope}[on background layer]
+    \node[layerbox={archDrvBorder}{archDrv}, fit=(L3t)(d1)(d2)(d3)] (L3) {};
+\end{scope}
+
+% ==================== CAPA 2: HAL Y PERIFÉRICOS ====================
+\coordinate (L2_ref) at (b1.west |- L3.south);
+\node[layertitle, text=archHalTitle, below=\layerDrop cm of L2_ref, anchor=north west] (L2t)
+    {Capa 2: HAL y Perif\'ericos};
+
+\node[subblock3=archHalBorder, below=\titleGap cm of L2t.south west, anchor=north west] (h1) {TIM6};
+\node[subblock3=archHalBorder, right=\colGap cm of h1] (h2) {TIM1 PWM};
+\node[subblock3=archHalBorder, right=\colGap cm of h2] (h3) {DMA1 / EXTI};
+
+\begin{scope}[on background layer]
+    \node[layerbox={archHalBorder}{archHal}, fit=(L2t)(h1)(h2)(h3)] (L2) {};
+\end{scope}
+
+% ==================== CAPA 1: HARDWARE ====================
+\coordinate (L1_ref) at (b1.west |- L2.south);
+\node[layertitle, text=archHwTitle, below=\layerDrop cm of L1_ref, anchor=north west] (L1t)
+    {Capa 1: Hardware};
+
+\node[subblock4=archHwBorder, below=\titleGap cm of L1t.south west, anchor=north west] (w1) {Cortex-M4F};
+\node[subblock4=archHwBorder, right=\colGap cm of w1] (w2) {Flash / SRAM};
+\node[subblock4=archHwBorder, right=\colGap cm of w2] (w3) {Puente H / Motor};
+\node[subblock4=archHwBorder, right=\colGap cm of w3] (w4) {Encoders AS5600};
+
+\begin{scope}[on background layer]
+    \node[layerbox={archHwBorder}{archHw}, fit=(L1t)(w1)(w2)(w3)(w4)] (L1) {};
+\end{scope}
+
+% ==================== FLUJOS BIDIRECCIONALES ENTRE CAPAS ====================
+\draw[flow] (L5.south) -- (L4.north) node[midway, right=6pt, flowlbl] {Comandos};
+\draw[flow] (L4.south) -- (L3.north) node[midway, right=6pt, flowlbl] {Sensores / \textit{u}};
+\draw[flow] (L3.south) -- (L2.north) node[midway, right=6pt, flowlbl] {Registros};
+\draw[flow] (L2.south) -- (L1.north) node[midway, right=6pt, flowlbl] {Se\~nales};
+
+\end{tikzpicture}%
+}
+\caption{Arquitectura modular en cinco capas del firmware embebido sobre STM32 Nucleo-F446RE, desacoplando el lazo is\'ocrono de control (\texttt{TIM6} a \qty{1.0}{\kilo\hertz}) de la comunicaci\'on UART por hardware DMA (\qty{100}{\hertz}) y los controladores Soft-$\text{I}^2\text{C}$ / PWM (\qty{20.0}{\kilo\hertz}).}
+\label{fig:arquitectura_firmware}
+\end{figure*}

@@ -4,7 +4,7 @@
 % --- Codificación e Idioma ---
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
-\usepackage[spanish,es-nodecimaldot,es-noquoting,es-tabla]{babel}
+\usepackage[spanish,es-nodecimaldot,es-noquoting,es-tabla,es-nosectiondot]{babel}
 % Desactivar manejo especial de % de babel spanish
 \makeatletter
 \def\es@sppercent{}
@@ -34,7 +34,7 @@
 
 % --- Circuitos y Diagramas Vectoriales TikZ ---
 \usepackage{tikz}
-\usetikzlibrary{arrows.meta, positioning, fit, calc, shapes.geometric, backgrounds, babel}
+\usetikzlibrary{arrows.meta, positioning, fit, calc, shapes.geometric, backgrounds, babel, bending}
 \usepackage[siunitx, european]{circuitikz}
 
 % --- Código Fuente Embebido ---
@@ -88,6 +88,9 @@
 \def\sectionautorefname{Sección}
 \def\subsectionautorefname{Subsección}
 
+\renewcommand{\thesubsection}{\Alph{subsection}}
+\renewcommand{\thesubsubsection}{\arabic{subsubsection}}
+
 \IEEEoverridecommandlockouts{}
 
 \tolerance=10000
@@ -114,19 +117,20 @@
 
 \renewcommand\abstractname{Resumen}
 \begin{abstract}
-En este trabajo se diseña, caracteriza experimentalmente e implementa en tiempo real el control digital determinista de un péndulo invertido rotacional de Furuta subactuado e inestable en lazo abierto. La plataforma física se manufacturó en PLA mediante diseño para fabricación aditiva (DfAM) sin soportes ($\text{SUP}=0$, $0/23$ interferencias en FreeCAD 1.1) y se instrumentó sobre una tarjeta STM32 Nucleo-F446RE (Cortex-M4F a \qty{180}{\mega\hertz}) con lazo isócrono \texttt{TIM6} a \qty{1.0}{\kilo\hertz}, etapa de potencia L298N modulada por PWM a \qty{20.0}{\kilo\hertz} y dos encoders magnéticos AS5600 de 12~bits leídos por doble bus Soft-$\text{I}^2\text{C}$ ($\sim\qty{450}{\kilo\hertz}$). A partir de $3\,726$ muestras experimentales en banco, se identificaron la dinámica del actuador ($G_v(s)=3.3720/(0.1175s+1)$, $R^2=98.51\%$), la zona muerta asimétrica ($+10.0\% / -21.0\%$~PWM) y los parámetros acoplados pendulares ($\omega_n=\qty{8.8484}{\radian\per\second}$, $\zeta=0.06488$, $K_{\text{acople}}=0.8737$). Con base en ello, se integró el esquema híbrido \texttt{M4 Ultra-Silk}: levantamiento resonante en cuadratura acotado en carrera, lazo dual de equilibrio ($\text{PD}_\alpha + \text{PID}_\theta$), cascada biquad \textit{Dual-Notch} (\qty{11.0}{\hertz} fijo y \qty{6.2}{\hertz} adaptativo), rampa continua compensadora L298N y servo de retorno con reinicio de Clegg y freno activo. En validación física continua (\qty{15.001}{\second}), el prototipo levantó en \qty{0.98}{\second} y sostuvo el equilibrio por \qty{14.02}{\second} con cero caídas ($\mathrm{RMS}(\tilde{\alpha})=\qty{1.99}{\degree}$, $u_{\mathrm{RMS}}=\qty{0.73}{\volt}$), supervisado en tiempo real por un gemelo digital 3D en MATLAB.
+En este trabajo se diseña, caracteriza experimentalmente e implementa en tiempo real el control digital determinista de un péndulo invertido rotacional de Furuta subactuado e inestable en lazo abierto, con el propósito de lograr levantamiento autónomo rápido y estabilización continua sobre hardware accesible. La plataforma física se manufacturó en PLA mediante diseño para fabricación aditiva (DfAM) sin soportes ($\text{SUP}=0$, $0/23$ interferencias en FreeCAD 1.1) y se instrumentó sobre una tarjeta STM32 Nucleo-F446RE (Cortex-M4F a \qty{180}{\mega\hertz}) con lazo isócrono \texttt{TIM6} a \qty{1.0}{\kilo\hertz}, etapa de potencia L298N modulada por PWM a \qty{20.0}{\kilo\hertz} y dos encoders magnéticos AS5600 de 12~bits leídos por doble bus Soft-$\text{I}^2\text{C}$ ($\sim\qty{450}{\kilo\hertz}$). A partir de $3\,726$ muestras experimentales en banco, se identificaron la dinámica del actuador ($K_v=\qty{3.3720}{(\radian\per\second)\per\volt}$, $\tau_m=\qty{0.1175}{\second}$, $R^2=98.51\%$), la zona muerta asimétrica ($+10.0\% / -21.0\%$~PWM) y los parámetros acoplados pendulares ($\omega_n=\qty{8.8484}{\radian\per\second}$, $\zeta=0.06488$, $K_{\text{acople}}=0.8737$). Con base en ello, se integró el esquema híbrido \texttt{M4 Ultra-Silk}: levantamiento resonante en cuadratura acotado en carrera, lazo dual paralelo (PD de péndulo y PID de brazo en paralelo), cascada biquad \textit{Dual-Notch} (\qty{11.0}{\hertz} fijo y \qty{6.2}{\hertz} adaptativo), rampa continua compensadora L298N y servo de retorno con reinicio de Clegg y freno activo. En validación física continua (\qty{15.001}{\second}), el prototipo levantó en \qty{0.98}{\second} y sostuvo el equilibrio por \qty{14.02}{\second} con cero caídas ($\mathrm{RMS}(\tilde{\alpha})=\qty{1.99}{\degree}$, $u_{\mathrm{RMS}}=\qty{0.73}{\volt}$), supervisado en tiempo real por un gemelo digital 3D en MATLAB. Se concluye que la identificación empírica acoplada al filtrado selectivo adaptativo suprime ciclos límite mecánicos y garantiza estabilidad asintótica robusta en sistemas mecatrónicos subactuados de bajo costo.
 \end{abstract}
 
 \renewcommand\IEEEkeywordsname{Palabras clave}
 \begin{IEEEkeywords}
-Péndulo de Furuta, Control Digital, STM32F446RE, Identificación Experimental, M4 Ultra-Silk, Filtros Dual-Notch, Reinicio de Clegg, DfAM, Gemelo Digital 3D.
+Péndulo de Furuta, Control Digital, STM32F446RE, Identificación Experimental, Filtros Dual-Notch.
 \end{IEEEkeywords}
 
 \input{secciones/01_introduccion.tex}
-\input{secciones/02_metodologia.tex}
-\input{secciones/03_resultados.tex}
-\input{secciones/04_discusion.tex}
-\input{secciones/05_conclusiones.tex}
+\input{secciones/02_marco_teorico.tex}
+\input{secciones/03_metodologia.tex}
+\input{secciones/04_resultados.tex}
+\input{secciones/05_discusiones.tex}
+\input{secciones/06_conclusiones.tex}
 
 \bibliographystyle{IEEEtran}
 \bibliography{plantilla}

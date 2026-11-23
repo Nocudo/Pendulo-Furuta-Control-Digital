@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cinemática 3D Interactiva — Péndulo de Furuta (Formulación Matricial)</title>
+  <style>
+    :root {
+      --background: #0b1120;
+      --card: #111a2e;
+      --content: #17233b;
+      --border: #263554;
+      --foreground: #e5edf8;
+      --muted-foreground: #94a3b8;
+      --primary: #3b82f6;
+      --primary-foreground: #ffffff;
+    }
+    html.light {
+      --background: #f1f5f9;
+      --card: #ffffff;
+      --content: #f8fafc;
+      --border: #cbd5e1;
+      --foreground: #0f172a;
+      --muted-foreground: #475569;
+      --primary: #1d4ed8;
+      --primary-foreground: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .header-card {
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted-foreground);
+    }
+
+    .subtitle {
+      margin: 3px 0 0;
+      font-size: 12px;
+      color: var(--muted-foreground);
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--content);
+      color: var(--muted-foreground);
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    button {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--foreground);
+      background: var(--content);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 11px;
+      cursor: pointer;
+      transition: background 0.14s ease, border-color 0.14s ease, opacity 0.14s ease;
+    }
+    button:hover { opacity: 0.88; }
+    button.active {
+      background: var(--primary);
+      color: var(--primary-foreground);
+      border-color: var(--primary);
+    }
+    button.btn-sm {
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .guided-card {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .guided-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .step-exp {
+      background: var(--content);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+
+    .hidden { display: none !important; }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      gap: 12px;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .viewport-card {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toolbar {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .layers-bar {
+      padding: 8px 12px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px 14px;
+      font-size: 12px;
+    }
+
+    .chk-lbl {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #canvas-wrap {
+      position: relative;
+      width: 100%;
+      height: 475px;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    canvas:active { cursor: grabbing; }
+
+    .hud-top-left {
+      position: absolute;
+      top: 10px;
+      left: 12px;
+      display: flex;
+      gap: 6px;
+      pointer-events: none;
+    }
+    .sim-badge {
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      font-size: 12px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-green { background: #10b981; }
+    .dot-amber { background: #f59e0b; }
+
+    .hud-bottom-left {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      pointer-events: none;
+      font-size: 11.5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted-foreground);
+      opacity: 0.92;
+    }
+
+    .controls-card {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sliders-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 14px;
+    }
+    @media (max-width: 640px) {
+      .sliders-grid { grid-template-columns: 1fr; }
+    }
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .slider-hdr {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    /* Right Equations Panel */
+    .eq-panel {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .eq-panel-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .eq-card {
+      background: var(--content);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 11px;
+      cursor: pointer;
+      transition: border-color 0.16s ease, box-shadow 0.16s ease;
+    }
+    .eq-card:hover { border-color: var(--primary); }
+    .eq-card.active-eq {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary);
+    }
+    .eq-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted-foreground);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .eq-sep {
+      border-top: 1px solid var(--border);
+      margin-top: 6px;
+      padding-top: 6px;
+    }
+
+    /* Symbolic Matrix Typography */
+    .math-block {
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", Georgia, serif;
+      font-size: 13.5px;
+      line-height: 1.35;
+      color: var(--foreground);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 3px 0;
+    }
+    .math-inline {
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", Georgia, serif;
+      font-size: 13.5px;
+    }
+    .mv { font-style: italic; }
+    .mb { font-weight: 700; font-style: normal; }
+    .mf { font-style: normal; }
+    .muted { color: var(--muted-foreground); }
+
+    .mat-wrap {
+      display: inline-flex;
+      align-items: stretch;
+      vertical-align: middle;
+    }
+    .mat-l, .mat-r {
+      width: 6px;
+      border-top: 1.4px solid currentColor;
+      border-bottom: 1.4px solid currentColor;
+      flex-shrink: 0;
+    }
+    .mat-l { border-left: 1.4px solid currentColor; margin-right: 3px; }
+    .mat-r { border-right: 1.4px solid currentColor; margin-left: 3px; }
+    .mat-grid {
+      display: inline-grid;
+      row-gap: 3px;
+      column-gap: 11px;
+      padding: 2px 3px;
+      text-align: center;
+      align-items: center;
+    }
+    .mat-grid.cols-1 { grid-template-columns: auto; }
+    .mat-grid.cols-2 { grid-template-columns: auto auto; }
+    .mat-grid.cols-3 { grid-template-columns: auto auto auto; }
+    .mat-grid.cols-4 { grid-template-columns: auto auto auto auto; }
+
+    .mfrac {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      vertical-align: middle;
+      line-height: 1.05;
+      font-size: 0.88em;
+      margin: 0 2px;
+    }
+    .mfrac > span:first-child {
+      border-bottom: 1px solid currentColor;
+      padding: 0 2px 1px;
+    }
+    .mfrac > span:last-child { padding: 1px 2px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header class="card header-card">
+      <div>
+        <div class="btn-row">
+          <h1>Cinemática 3D Interactiva — Péndulo de Furuta</h1>
+          <span class="badge math-inline">
+            <span class="mb">q</span> = [<span class="mv">θ</span>, <span class="mv">α</span>]<sup>T</sup> · <span class="mv">L</span><sub>0</sub>, <span class="mv">l</span><sub>1</sub>, <span class="mv">L</span><sub>1</sub>, <span class="mv">m</span><sub>1</sub>, <span class="mv">J</span><sub>ref</sub>, <span class="mv">J</span><sub>1,piv</sub>, <span class="mv">g</span>
+          </span>
+        </div>
+        <p class="subtitle">
+          Modelo 3D del proyecto acoplado a su formulación matricial simbólica (función de letras, sin valores numéricos).
+        </p>
+      </div>
+
+      <div class="btn-row" role="group" aria-label="Modo de operación">
+        <button id="mode-guided" class="active">Paso a paso (5)</button>
+        <button id="mode-manual">Manual</button>
+        <button id="mode-swingup">Sim: Swing-Up → Balance</button>
+        <button id="mode-balance">Sim: Equilibrio M4</button>
+        <button id="btn-theme" title="Cambiar tema claro/oscuro">☀ Tema</button>
+      </div>
+    </header>
+
+    <!-- Guided Step Bar -->
+    <section id="guided-bar" class="card guided-card">
+      <div class="guided-top">
+        <div class="btn-row" role="tablist" aria-label="Pasos de construcción cinemática">
+          <button data-step="1" class="step-btn active">1. Rotación ⁰R₁(θ)</button>
+          <button data-step="2" class="step-btn">2. Transformación ⁰T₁(θ)</button>
+          <button data-step="3" class="step-btn">3. Posición r_G1(q)</button>
+          <button data-step="4" class="step-btn">4. Jacobiano J_G1(q) y v_G1</button>
+          <button data-step="5" class="step-btn">5. Inercia M(q) y Euler-Lagrange</button>
+        </div>
+        <div class="btn-row">
+          <button id="btn-prev-step" class="btn-sm">← Anterior</button>
+          <button id="btn-toggle-demo" class="btn-sm">⏸ Pausar demo</button>
+          <button id="btn-next-step" class="btn-sm">Siguiente →</button>
+        </div>
+      </div>
+      <div id="step-explanation" class="step-exp"></div>
+    </section>
+
+    <!-- Main Grid -->
+    <div class="main-grid">
+
+      <!-- Left Column: 3D Viewport + Sliders -->
+      <div class="left-col">
+        <div class="card viewport-card">
+          <div class="toolbar">
+            <div class="btn-row">
+              <span class="muted" style="font-weight:600;margin-right:2px;">Cámara:</span>
+              <button data-cam="iso" class="cam-btn btn-sm active">Isométrica (Fig. 1)</button>
+              <button data-cam="top" class="cam-btn btn-sm">Superior (X₀Y₀)</button>
+              <button data-cam="plane" class="cam-btn btn-sm">Plano ĵ₁–k̂₀ (Fijo a î₁)</button>
+              <button data-cam="front" class="cam-btn btn-sm">Frontal</button>
+            </div>
+            <label class="chk-lbl muted">
+              <input id="chk-hardware" type="checkbox" />
+              <span>Referencia física (mesa)</span>
+            </label>
+          </div>
+
+          <div id="canvas-wrap">
+            <canvas id="scene3d"></canvas>
+
+            <div class="hud-top-left">
+              <div id="sim-badge" class="sim-badge hidden">
+                <span id="sim-state-dot" class="dot dot-green"></span>
+                <span id="sim-state-text" style="font-weight:600;">SWING_UP</span>
+                <button id="btn-impulse" class="btn-sm hidden">⚡ Inyectar impulso en α̇</button>
+                <button id="btn-sim-reset" class="btn-sm">↺ Reiniciar</button>
+              </div>
+            </div>
+
+            <div class="hud-bottom-left">
+              Arrastra para orbitar · Rueda para zoom · Doble clic restablece vista
+            </div>
+          </div>
+
+          <div class="layers-bar">
+            <span class="muted" style="font-weight:600;">Capas 3D:</span>
+            <label class="chk-lbl"><input id="lyr-f0" type="checkbox" checked /> Marco ℱ₀</label>
+            <label class="chk-lbl"><input id="lyr-f1" type="checkbox" checked /> Marco ℱ₁</label>
+            <label class="chk-lbl"><input id="lyr-plane" type="checkbox" checked /> Plano ĵ₁–k̂₀</label>
+            <label class="chk-lbl"><input id="lyr-rg1" type="checkbox" checked /> Vector <span class="mb">r</span><sub>G1</sub></label>
+            <label class="chk-lbl"><input id="lyr-vg1" type="checkbox" checked /> Vector <span class="mb">v</span><sub>G1</sub></label>
+            <label class="chk-lbl"><input id="lyr-cone" type="checkbox" /> Cono captura</label>
+            <label class="chk-lbl"><input id="lyr-trail" type="checkbox" checked /> Rastro G₁</label>
+            <label class="chk-lbl"><input id="lyr-dims" type="checkbox" checked /> Cotas L₀, l₁, L₁</label>
+          </div>
+        </div>
+
+        <!-- Sliders -->
+        <div class="card controls-card">
+          <div class="guided-top">
+            <h2>Manipulación de Coordenadas Generalizadas</h2>
+            <div class="btn-row">
+              <button id="preset-fig1" class="btn-sm">Pose Fig. 1</button>
+              <button id="preset-down" class="btn-sm">Colgante (α = 0)</button>
+              <button id="preset-up" class="btn-sm">Invertido (α = π)</button>
+            </div>
+          </div>
+
+          <div class="sliders-grid">
+            <div class="slider-item">
+              <div class="slider-hdr">
+                <label for="sl-theta" class="math-inline"><b><span class="mv">θ</span>(<span class="mv">t</span>)</b> — Giro del brazo</label>
+                <span class="muted math-inline">[−<span class="mv">π</span>, +<span class="mv">π</span>]</span>
+              </div>
+              <input id="sl-theta" type="range" min="-180" max="180" step="0.5" value="60" />
+            </div>
+
+            <div class="slider-item">
+              <div class="slider-hdr">
+                <label for="sl-alpha" class="math-inline"><b><span class="mv">α</span>(<span class="mv">t</span>)</b> — Deflexión pendular</label>
+                <span class="muted math-inline">[0, 2<span class="mv">π</span>]</span>
+              </div>
+              <input id="sl-alpha" type="range" min="0" max="360" step="0.5" value="213" />
+            </div>
+
+            <div class="slider-item">
+              <div class="slider-hdr">
+                <label for="sl-dtheta" class="muted math-inline"><b>d<span class="mv">θ</span>/d<span class="mv">t</span></b> — Velocidad del brazo</label>
+                <span class="muted math-inline">− ↔ +</span>
+              </div>
+              <input id="sl-dtheta" type="range" min="-8" max="8" step="0.1" value="1.5" />
+            </div>
+
+            <div class="slider-item">
+              <div class="slider-hdr">
+                <label for="sl-dalpha" class="muted math-inline"><b>d<span class="mv">α</span>/d<span class="mv">t</span></b> — Velocidad pendular</label>
+                <span class="muted math-inline">− ↔ +</span>
+              </div>
+              <input id="sl-dalpha" type="range" min="-12" max="12" step="0.1" value="2.0" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Pure Symbolic Matrix Equations -->
+      <div class="card eq-panel">
+        <div class="eq-panel-hdr">
+          <h2>Formulación Matricial Simbólica (Solo Letras)</h2>
+          <span class="muted" style="font-size:11.5px;">Planteamiento → Matriz → Resultado</span>
+        </div>
+
+        <!-- Card 1: Elementary Rotations Rz(theta) & Rx(-alpha) -->
+        <div id="eq-card-1" data-jump="1" class="eq-card active-eq">
+          <div class="eq-tag">
+            <span>1. Rotaciones Elementales del Brazo y Péndulo</span>
+            <span>Ecs. (1)–(2)</span>
+          </div>
+          <div class="math-block">
+            <span><b>Planteamiento:</b></span>
+            <span><span class="mb">R</span><sub><span class="mv">θ</span></sub> = <span class="mb">R</span><sub><span class="mv">z</span></sub>(<span class="mv">θ</span>) = [<span class="mv">î</span><sub>1</sub>, <span class="mv">ĵ</span><sub>1</sub>, <span class="mv">k̂</span><sub>0</sub>],</span>
+            <span><span class="mb">R</span><sub><span class="mv">α</span></sub> = <span class="mb">R</span><sub><span class="mv">x</span></sub>(−<span class="mv">α</span>)</span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><span class="mb">R</span><sub><span class="mv">θ</span></sub> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-3">
+              <span><span class="mf">cos</span> <span class="mv">θ</span></span><span>−<span class="mf">sin</span> <span class="mv">θ</span></span><span>0</span>
+              <span><span class="mf">sin</span> <span class="mv">θ</span></span><span><span class="mf">cos</span> <span class="mv">θ</span></span><span>0</span>
+              <span>0</span><span>0</span><span>1</span>
+            </span><span class="mat-r"></span></span>
+            <span>,</span>
+            <span><span class="mb">R</span><sub><span class="mv">α</span></sub> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-3">
+              <span>1</span><span>0</span><span>0</span>
+              <span>0</span><span><span class="mf">cos</span> <span class="mv">α</span></span><span><span class="mf">sin</span> <span class="mv">α</span></span>
+              <span>0</span><span>−<span class="mf">sin</span> <span class="mv">α</span></span><span><span class="mf">cos</span> <span class="mv">α</span></span>
+            </span><span class="mat-r"></span></span>
+          </div>
+        </div>
+
+        <!-- Card 2: Homogeneous Transform 0T1(theta) -->
+        <div id="eq-card-2" data-jump="2" class="eq-card">
+          <div class="eq-tag">
+            <span>2. Transformación Homogénea al Pivote Distal</span>
+            <span>Ec. (3) · ℱ₀ → ℱ₁</span>
+          </div>
+          <div class="math-block">
+            <span><b>Planteamiento:</b></span>
+            <span><sup>0</sup><span class="mb">T</span><sub>1</sub>(<span class="mv">θ</span>) = <span class="mb">T</span><sub>rot,<span class="mv">z</span></sub>(<span class="mv">θ</span>) · <span class="mb">T</span><sub>tras,<span class="mv">x</span></sub>(<span class="mv">L</span><sub>0</sub>)</span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><sup>0</sup><span class="mb">T</span><sub>1</sub> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-4">
+              <span><span class="mf">cos</span> <span class="mv">θ</span></span><span>−<span class="mf">sin</span> <span class="mv">θ</span></span><span>0</span><span>0</span>
+              <span><span class="mf">sin</span> <span class="mv">θ</span></span><span><span class="mf">cos</span> <span class="mv">θ</span></span><span>0</span><span>0</span>
+              <span>0</span><span>0</span><span>1</span><span>0</span>
+              <span>0</span><span>0</span><span>0</span><span>1</span>
+            </span><span class="mat-r"></span></span>
+            <span>·</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-4">
+              <span>1</span><span>0</span><span>0</span><span><span class="mv">L</span><sub>0</sub></span>
+              <span>0</span><span>1</span><span>0</span><span>0</span>
+              <span>0</span><span>0</span><span>1</span><span>0</span>
+              <span>0</span><span>0</span><span>0</span><span>1</span>
+            </span><span class="mat-r"></span></span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><b>Resultado:</b></span>
+            <span><sup>0</sup><span class="mb">T</span><sub>1</sub>(<span class="mv">θ</span>) =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-4">
+              <span><span class="mf">cos</span> <span class="mv">θ</span></span><span>−<span class="mf">sin</span> <span class="mv">θ</span></span><span>0</span><span><span class="mv">L</span><sub>0</sub><span class="mf">cos</span> <span class="mv">θ</span></span>
+              <span><span class="mf">sin</span> <span class="mv">θ</span></span><span><span class="mf">cos</span> <span class="mv">θ</span></span><span>0</span><span><span class="mv">L</span><sub>0</sub><span class="mf">sin</span> <span class="mv">θ</span></span>
+              <span>0</span><span>0</span><span>1</span><span>0</span>
+              <span>0</span><span>0</span><span>0</span><span>1</span>
+            </span><span class="mat-r"></span></span>
+          </div>
+        </div>
+
+        <!-- Card 3: Position Vector r_G1 = R_theta * A -->
+        <div id="eq-card-3" data-jump="3" class="eq-card">
+          <div class="eq-tag">
+            <span>3. Cinemática Directa del Centro de Masa G₁</span>
+            <span>Ecs. (4)–(5)</span>
+          </div>
+          <div class="math-block">
+            <span><b>Planteamiento:</b></span>
+            <span><span class="mb">r</span><sub><span class="mv">G</span>1</sub> = <span class="mb">R</span><sub><span class="mv">θ</span></sub> · <span class="mb">A</span>(<span class="mv">α</span>),</span>
+            <span><span class="mb">A</span>(<span class="mv">α</span>) = <span class="mb">p</span><sub>0</sub> + <span class="mb">R</span><sub><span class="mv">α</span></sub> · <span class="mb">p</span><sub>1</sub></span>
+          </div>
+          <div class="math-block">
+            <span class="muted">con</span>
+            <span><span class="mb">p</span><sub>0</sub> = [<span class="mv">L</span><sub>0</sub>, 0, 0]<sup>T</sup>,</span>
+            <span><span class="mb">p</span><sub>1</sub> = [0, 0, −<span class="mv">l</span><sub>1</sub>]<sup>T</sup></span>
+            <span>⇒ <span class="mb">A</span>(<span class="mv">α</span>) = [<span class="mv">L</span><sub>0</sub>, −<span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span>, −<span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span>]<sup>T</sup></span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><span class="mb">r</span><sub><span class="mv">G</span>1</sub> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-3">
+              <span><span class="mf">cos</span> <span class="mv">θ</span></span><span>−<span class="mf">sin</span> <span class="mv">θ</span></span><span>0</span>
+              <span><span class="mf">sin</span> <span class="mv">θ</span></span><span><span class="mf">cos</span> <span class="mv">θ</span></span><span>0</span>
+              <span>0</span><span>0</span><span>1</span>
+            </span><span class="mat-r"></span></span>
+            <span>·</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-1">
+              <span><span class="mv">L</span><sub>0</sub></span>
+              <span>−<span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span></span>
+              <span>−<span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span></span>
+            </span><span class="mat-r"></span></span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><b>Resultado:</b></span>
+            <span><span class="mb">r</span><sub><span class="mv">G</span>1</sub>(<span class="mb">q</span>) =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-1">
+              <span><span class="mv">L</span><sub>0</sub><span class="mf">cos</span> <span class="mv">θ</span> + <span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span> <span class="mf">sin</span> <span class="mv">θ</span></span>
+              <span><span class="mv">L</span><sub>0</sub><span class="mf">sin</span> <span class="mv">θ</span> − <span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span> <span class="mf">cos</span> <span class="mv">θ</span></span>
+              <span>−<span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span></span>
+            </span><span class="mat-r"></span></span>
+          </div>
+        </div>
+
+        <!-- Card 4: Linear Velocity & Jacobian -->
+        <div id="eq-card-4" data-jump="4" class="eq-card">
+          <div class="eq-tag">
+            <span>4. Velocidad Lineal por Jacobiano en ℱ₀ y en ℱ₁</span>
+            <span>Ecs. (6)–(7)</span>
+          </div>
+          <div class="math-block">
+            <span><b>Planteamiento:</b></span>
+            <span><span class="mb">v</span><sub><span class="mv">G</span>1</sub> = <span class="mb">J</span><sub><span class="mv">G</span>1</sub>(<span class="mb">q</span>) · <span class="mb">q̇</span>,</span>
+            <span><sup>1</sup><span class="mb">v</span><sub><span class="mv">G</span>1</sub> = <span class="mb">R</span><sub><span class="mv">θ</span></sub><sup>T</sup> · <span class="mb">v</span><sub><span class="mv">G</span>1</sub></span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><span class="mb">v</span><sub><span class="mv">G</span>1</sub> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-2">
+              <span>−<span class="mv">L</span><sub>0</sub><span class="mf">sin</span> <span class="mv">θ</span> + <span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span> <span class="mf">cos</span> <span class="mv">θ</span></span><span><span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span> <span class="mf">sin</span> <span class="mv">θ</span></span>
+              <span><span class="mv">L</span><sub>0</sub><span class="mf">cos</span> <span class="mv">θ</span> + <span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span> <span class="mf">sin</span> <span class="mv">θ</span></span><span>−<span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span> <span class="mf">cos</span> <span class="mv">θ</span></span>
+              <span>0</span><span><span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span></span>
+            </span><span class="mat-r"></span></span>
+            <span>·</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-1">
+              <span><span class="mv">θ̇</span></span>
+              <span><span class="mv">α̇</span></span>
+            </span><span class="mat-r"></span></span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><b>Resultado ℱ₀:</b></span>
+            <span><span class="mb">v</span><sub><span class="mv">G</span>1</sub> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-1">
+              <span>(−<span class="mv">L</span><sub>0</sub><span class="mf">sin</span> <span class="mv">θ</span> + <span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span> <span class="mf">cos</span> <span class="mv">θ</span>)<span class="mv">θ̇</span> + <span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span> <span class="mf">sin</span> <span class="mv">θ</span> <span class="mv">α̇</span></span>
+              <span>(<span class="mv">L</span><sub>0</sub><span class="mf">cos</span> <span class="mv">θ</span> + <span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span> <span class="mf">sin</span> <span class="mv">θ</span>)<span class="mv">θ̇</span> − <span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span> <span class="mf">cos</span> <span class="mv">θ</span> <span class="mv">α̇</span></span>
+              <span><span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span> <span class="mv">α̇</span></span>
+            </span><span class="mat-r"></span></span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><b>En ℱ₁:</b></span>
+            <span><sup>1</sup><span class="mb">v</span><sub><span class="mv">G</span>1</sub> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-2">
+              <span><span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span></span><span>0</span>
+              <span><span class="mv">L</span><sub>0</sub></span><span>−<span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span></span>
+              <span>0</span><span><span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span></span>
+            </span><span class="mat-r"></span></span>
+            <span>·</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-1">
+              <span><span class="mv">θ̇</span></span>
+              <span><span class="mv">α̇</span></span>
+            </span><span class="mat-r"></span></span>
+            <span>=</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-1">
+              <span><span class="mv">l</span><sub>1</sub><span class="mv">θ̇</span><span class="mf">sin</span> <span class="mv">α</span></span>
+              <span><span class="mv">L</span><sub>0</sub><span class="mv">θ̇</span> − <span class="mv">l</span><sub>1</sub><span class="mv">α̇</span><span class="mf">cos</span> <span class="mv">α</span></span>
+              <span><span class="mv">l</span><sub>1</sub><span class="mv">α̇</span><span class="mf">sin</span> <span class="mv">α</span></span>
+            </span><span class="mat-r"></span></span>
+          </div>
+        </div>
+
+        <!-- Card 5: Euler-Lagrange Matrix Dynamics -->
+        <div id="eq-card-5" data-jump="5" class="eq-card">
+          <div class="eq-tag">
+            <span>5. Forma Cuadrática Energética y Dinámica Matricial</span>
+            <span>Ecs. (11)–(19)</span>
+          </div>
+          <div class="math-block">
+            <span><b>Planteamiento:</b></span>
+            <span><span class="mv">T</span> = <span class="mfrac"><span>1</span><span>2</span></span><span class="mb">q̇</span><sup>T</sup><span class="mb">M</span>(<span class="mb">q</span>)<span class="mb">q̇</span>,</span>
+            <span><span class="mv">V</span> = −<span class="mv">m</span><sub>1</sub><span class="mv">g</span><span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span>,</span>
+            <span>ℒ = <span class="mv">T</span> − <span class="mv">V</span></span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><b>Ecuación matricial:</b></span>
+            <span><span class="mb">M</span>(<span class="mb">q</span>)<span class="mb">q̈</span> + <span class="mb">C</span>(<span class="mb">q</span>,<span class="mb">q̇</span>)<span class="mb">q̇</span> + <span class="mb">B</span><span class="mb">q̇</span> + <span class="mb">G</span>(<span class="mb">q</span>) = <span class="mb">Q</span></span>
+          </div>
+          <div class="math-block eq-sep">
+            <span><span class="mb">M</span> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-2">
+              <span><span class="mv">J</span><sub>ref</sub> + <span class="mv">m</span><sub>1</sub><span class="mv">L</span><sub>0</sub><sup>2</sup> + <span class="mv">J</span><sub>1,piv</sub><span class="mf">sin</span><sup>2</sup><span class="mv">α</span></span>
+              <span>−<span class="mv">m</span><sub>1</sub><span class="mv">L</span><sub>0</sub><span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span></span>
+              <span>−<span class="mv">m</span><sub>1</sub><span class="mv">L</span><sub>0</sub><span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span></span>
+              <span><span class="mv">J</span><sub>1,piv</sub></span>
+            </span><span class="mat-r"></span></span>
+          </div>
+          <div class="math-block">
+            <span><span class="mb">C</span> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-2">
+              <span><span class="mfrac"><span>1</span><span>2</span></span><span class="mv">J</span><sub>1,piv</sub><span class="mf">sin</span>(2<span class="mv">α</span>)<span class="mv">α̇</span></span>
+              <span><span class="mfrac"><span>1</span><span>2</span></span><span class="mv">J</span><sub>1,piv</sub><span class="mf">sin</span>(2<span class="mv">α</span>)<span class="mv">θ̇</span> + <span class="mv">m</span><sub>1</sub><span class="mv">L</span><sub>0</sub><span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span> <span class="mv">α̇</span></span>
+              <span>−<span class="mfrac"><span>1</span><span>2</span></span><span class="mv">J</span><sub>1,piv</sub><span class="mf">sin</span>(2<span class="mv">α</span>)<span class="mv">θ̇</span></span>
+              <span>0</span>
+            </span><span class="mat-r"></span></span>
+          </div>
+          <div class="math-block">
+            <span><span class="mb">B</span> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-2">
+              <span><span class="mv">b</span><sub>0</sub></span><span>0</span>
+              <span>0</span><span><span class="mv">b</span><sub>1</sub></span>
+            </span><span class="mat-r"></span></span>
+            <span><span class="mb">G</span> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-1">
+              <span>0</span>
+              <span><span class="mv">m</span><sub>1</sub><span class="mv">g</span><span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span></span>
+            </span><span class="mat-r"></span></span>
+            <span><span class="mb">Q</span> =</span>
+            <span class="mat-wrap"><span class="mat-l"></span><span class="mat-grid cols-1">
+              <span><span class="mv">τ</span><sub>0</sub></span>
+              <span>0</span>
+            </span><span class="mat-r"></span></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const P = {
+        L0: 0.0885, L1: 0.1550, l1: 0.1253, Zpiv: 0.1828,
+        m1: 0.0240, g: 9.81, J1_piv: 2.044e-4, J_ref: 0.0276,
+        wn: 8.8484, zeta: 0.06488, K_acople: 0.8737, Kv: 3.3720, tau_m: 0.1175
+      };
+      const S = 10.0;
+
+      const state = {
+        mode: 'guided',
+        step: 1,
+        demoPlaying: true,
+        demoTime: 0,
+        theta: 60 * Math.PI / 180,
+        alpha: 213 * Math.PI / 180,
+        dtheta: 1.5,
+        dalpha: 2.0,
+        camMode: 'iso',
+        phi: 28 * Math.PI / 180,
+        psi: 22 * Math.PI / 180,
+        targetPhi: 28 * Math.PI / 180,
+        targetPsi: 22 * Math.PI / 180,
+        zoom: 1.0,
+        targetZoom: 1.0,
+        trail: [],
+        maxTrail: 105,
+        simState: 'SWING_UP',
+        simElapsed: 0,
+        swingTarget: 40 * Math.PI / 180,
+        armInt: 0,
+        uSlewed: 0,
+        lastTs: 0,
+        layers: {
+          f0: true, f1: true, plane: true, rg1: true,
+          vg1: true, cone: false, trail: true, dims: true, hardware: false
+        }
+      };
+
+      const STEP_INFO = {
+        1: {
+          title: 'Paso 1 — Matriz de rotación ⁰R₁(θ) entre el marco inercial ℱ₀ y el marco móvil ℱ₁',
+          html: `El brazo gira un ángulo <span class="math-inline"><span class="mv">θ</span>(<span class="mv">t</span>)</span> alrededor del eje vertical <span class="math-inline">+<span class="mv">Z</span><sub>0</sub></span> bajo el par <span class="math-inline"><span class="mv">τ</span><sub>0</sub></span>. Las columnas de la matriz ortogonal <span class="math-inline"><sup>0</sup><span class="mb">R</span><sub>1</sub>(<span class="mv">θ</span>)</span> contienen directamente los vectores unitarios radial <span class="math-inline"><span class="mv">î</span><sub>1</sub></span>, tangencial <span class="math-inline"><span class="mv">ĵ</span><sub>1</sub></span> y vertical <span class="math-inline"><span class="mv">k̂</span><sub>0</sub></span>.`
+        },
+        2: {
+          title: 'Paso 2 — Transformación homogénea ⁰T₁(θ) y plano móvil de oscilación (ĵ₁–k̂₀)',
+          html: `Al combinar la rotación <span class="math-inline"><sup>0</sup><span class="mb">R</span><sub>1</sub>(<span class="mv">θ</span>)</span> con la traslación radial <span class="math-inline"><span class="mv">L</span><sub>0</sub><span class="mv">î</span><sub>1</sub></span> se construye <span class="math-inline"><sup>0</sup><span class="mb">T</span><sub>1</sub>(<span class="mv">θ</span>)</span>, que ubica la articulación distal y orienta el plano sombreado <span class="math-inline">(<span class="mv">ĵ</span><sub>1</sub>, <span class="mv">k̂</span><sub>0</sub>)</span> donde oscila libremente la barra.`
+        },
+        3: {
+          title: 'Paso 3 — Cinemática directa matricial del centro de masa r_G1(q)',
+          html: `Rotando la barra un ángulo <span class="math-inline"><span class="mv">α</span></span> en sentido dextrógiro alrededor de <span class="math-inline">−<span class="mv">î</span><sub>1</sub></span> (con <span class="math-inline"><span class="mv">α̃</span> = <span class="mv">α</span> − <span class="mv">π</span></span> respecto a la vertical superior), las coordenadas locales <span class="math-inline">[<span class="mv">L</span><sub>0</sub>, −<span class="mv">l</span><sub>1</sub><span class="mf">sin</span> <span class="mv">α</span>, −<span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span>]<sup>T</sup></span> se transforman a <span class="math-inline">ℱ<sub>0</sub></span> premultiplicando por <span class="math-inline"><sup>0</sup><span class="mb">R</span><sub>1</sub>(<span class="mv">θ</span>)</span>.`
+        },
+        4: {
+          title: 'Paso 4 — Jacobiano lineal J_G1(q) y velocidad en ambos marcos',
+          html: `Diferenciando <span class="math-inline"><span class="mb">r</span><sub><span class="mv">G</span>1</sub>(<span class="mb">q</span>)</span> se factoriza la velocidad lineal como <span class="math-inline"><span class="mb">v</span><sub><span class="mv">G</span>1</sub> = <span class="mb">J</span><sub><span class="mv">G</span>1</sub>(<span class="mb">q</span>)<span class="mb">q̇</span></span>. Al proyectarla al marco móvil mediante <span class="math-inline"><sup>0</sup><span class="mb">R</span><sub>1</sub><sup>T</sup></span> desaparece toda dependencia de <span class="math-inline"><span class="mv">θ</span></span>, haciendo evidente el producto cruzado en la componente <span class="math-inline"><span class="mv">ĵ</span><sub>1</sub></span>.`
+        },
+        5: {
+          title: 'Paso 5 — Matriz de inercia M(q), Coriolis C(q, q̇) y ecuación matricial de Euler-Lagrange',
+          html: `La energía cinética se compacta en la forma cuadrática <span class="math-inline"><span class="mv">T</span> = ½<span class="mb">q̇</span><sup>T</sup><span class="mb">M</span>(<span class="mb">q</span>)<span class="mb">q̇</span></span>, donde los términos fuera de la diagonal <span class="math-inline">−<span class="mv">m</span><sub>1</sub><span class="mv">L</span><sub>0</sub><span class="mv">l</span><sub>1</sub><span class="mf">cos</span> <span class="mv">α</span></span> capturan el acoplamiento inercial brazo–péndulo que permite estabilizar la barra sin actuador en la articulación distal (<span class="math-inline"><span class="mv">Q</span><sub>2</sub> = 0</span>).`
+        }
+      };
+
+      const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+      const wrapPi = (a) => ((a + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+      const rad = (d) => d * Math.PI / 180;
+      const deg = (r) => r * 180 / Math.PI;
+      const add3 = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]];
+      const mul3 = (a, s) => [a[0] * s, a[1] * s, a[2] * s];
+      const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+      const len3 = (a) => Math.hypot(a[0], a[1], a[2]);
+
+      function computeKinematics(theta, alpha, dtheta, dalpha) {
+        const ct = Math.cos(theta), st = Math.sin(theta);
+        const ca = Math.cos(alpha), sa = Math.sin(alpha);
+        const alphaTilde = wrapPi(alpha - Math.PI);
+        const i1 = [ct, st, 0], j1 = [-st, ct, 0], k0 = [0, 0, 1];
+        const pHat = [sa * st, -sa * ct, -ca];
+        const O0 = [0, 0, 0], Ppiv = mul3(i1, P.L0);
+        const rG1 = add3(Ppiv, mul3(pHat, P.l1));
+        const Ptip = add3(Ppiv, mul3(pHat, P.L1));
+        const v_i1 = P.l1 * sa * dtheta;
+        const v_j1 = P.L0 * dtheta - P.l1 * ca * dalpha;
+        const v_k0 = P.l1 * sa * dalpha;
+        const vG1 = [v_i1 * i1[0] + v_j1 * j1[0], v_i1 * i1[1] + v_j1 * j1[1], v_k0];
+        return { theta, alpha, alphaTilde, i1, j1, k0, O0, Ppiv, rG1, Ptip, vG1 };
+      }
+
+      function furutaDerivs(th, dth, al, dal, u) {
+        const ddth = (-dth + P.Kv * u) / P.tau_m;
+        const ddal = P.K_acople * Math.cos(al) * ddth
+                   + 0.5 * Math.sin(2 * al) * dth * dth
+                   - (P.wn * P.wn) * Math.sin(al)
+                   - 2 * P.zeta * P.wn * dal;
+        return [dth, ddth, dal, ddal];
+      }
+
+      function stepSimulation(dt) {
+        const h = 0.001;
+        const nSteps = Math.max(1, Math.min(25, Math.round(dt / h)));
+        for (let s = 0; s < nSteps; s++) {
+          state.simElapsed += h;
+          const alWrap = wrapPi(state.alpha);
+          const alErr = wrapPi(state.alpha - Math.PI);
+          let uCmd = 0;
+
+          if (state.simState === 'SWING_UP') {
+            const Enorm = 0.5 * Math.pow(state.dalpha / P.wn, 2) + Math.cos(alErr) - 1.0;
+            if (Math.abs(alErr) < rad(20) && Math.abs(state.dalpha) < 4.8) {
+              state.simState = 'BALANCE_PID'; state.armInt = 0; state.uSlewed = 0;
+            } else {
+              let strokeDeg = 50, vCap = 6.8;
+              if (Enorm > -0.10) { strokeDeg = 22; vCap = 5.2; }
+              else if (Enorm > -0.32) { strokeDeg = 36; vCap = 6.0; }
+              if (state.simElapsed < 0.28) state.swingTarget = rad(40);
+              else if (Math.abs(alWrap) < rad(48)) {
+                if (state.dalpha < -0.55) state.swingTarget = -rad(strokeDeg);
+                else if (state.dalpha > 0.55) state.swingTarget = rad(strokeDeg);
+              }
+              const uRaw = 13.5 * (state.swingTarget - state.theta) - 1.2 * state.dtheta;
+              const uSat = clamp(uRaw, -vCap, vCap);
+              state.uSlewed += clamp(uSat - state.uSlewed, -0.12, 0.12);
+              uCmd = state.uSlewed;
+            }
+          }
+
+          if (state.simState === 'BALANCE_PID') {
+            if (Math.abs(alErr) > rad(38) && state.mode === 'swingup') {
+              state.simState = 'SWING_UP'; state.simElapsed = 0; state.uSlewed = 0;
+            }
+            const uPend = 14.50 * alErr + 1.50 * state.dalpha;
+            const eTheta = -state.theta;
+            if (Math.abs(eTheta) < rad(45)) {
+              state.armInt = clamp(state.armInt + (-0.75) * eTheta * h, -1.6, 1.6);
+            }
+            const uArm = clamp((-1.45) * eTheta + state.armInt + (-0.85) * (-state.dtheta), -2.2, 2.2);
+            const dist = Math.min(1, Math.max(Math.abs(alErr) / rad(4.5), Math.abs(state.dalpha) / 2.5));
+            const vCap = 6.5 + 2.0 * dist;
+            const slew = 0.065 + (0.40 - 0.065) * dist;
+            const uSat = clamp(uPend + uArm, -vCap, vCap);
+            state.uSlewed += clamp(uSat - state.uSlewed, -slew, slew);
+            uCmd = state.uSlewed;
+          }
+
+          const k1 = furutaDerivs(state.theta, state.dtheta, state.alpha, state.dalpha, uCmd);
+          const k2 = furutaDerivs(state.theta + 0.5*h*k1[0], state.dtheta + 0.5*h*k1[1], state.alpha + 0.5*h*k1[2], state.dalpha + 0.5*h*k1[3], uCmd);
+          const k3 = furutaDerivs(state.theta + 0.5*h*k2[0], state.dtheta + 0.5*h*k2[1], state.alpha + 0.5*h*k2[2], state.dalpha + 0.5*h*k2[3], uCmd);
+          const k4 = furutaDerivs(state.theta + h*k3[0], state.dtheta + h*k3[1], state.alpha + h*k3[2], state.dalpha + h*k3[3], uCmd);
+          state.theta  += (h / 6) * (k1[0] + 2*k2[0] + 2*k3[0] + k4[0]);
+          state.dtheta += (h / 6) * (k1[1] + 2*k2[1] + 2*k3[1] + k4[1]);
+          state.alpha  += (h / 6) * (k1[2] + 2*k2[2] + 2*k3[2] + k4[2]);
+          state.dalpha += (h / 6) * (k1[3] + 2*k2[3] + 2*k3[3] + k4[3]);
+        }
+      }
+
+      function getPalette() {
+        const isLight = document.documentElement.classList.contains('light');
+        return {
+          isLight,
+          muted: isLight ? '#475569' : '#94a3b8',
+          grid: isLight ? 'rgba(100,116,139,0.16)' : 'rgba(148,163,184,0.13)',
+          tableFill: isLight ? 'rgba(148,163,184,0.14)' : 'rgba(51,65,85,0.28)',
+          tableStroke: isLight ? 'rgba(100,116,139,0.35)' : 'rgba(148,163,184,0.30)',
+          postEdge: isLight ? '#334155' : '#94a3b8',
+          postFill: isLight ? '#cbd5e1' : '#475569',
+          linkEdge: isLight ? '#1e4e8c' : '#60a5fa',
+          linkFill: isLight ? '#8cb4e8' : '#3b82f6',
+          linkHi: isLight ? '#e0f2fe' : '#bfdbfe',
+          axis0: isLight ? '#1e293b' : '#e2e8f0',
+          f1: isLight ? '#0f766e' : '#2dd4bf',
+          planeFill: isLight ? 'rgba(15,118,110,0.09)' : 'rgba(45,212,191,0.11)',
+          planeStroke: isLight ? 'rgba(15,118,110,0.35)' : 'rgba(45,212,191,0.35)',
+          angle: isLight ? '#d9480f' : '#fb923c',
+          torque: isLight ? '#0d8a47' : '#34d399',
+          refUp: isLight ? '#2563eb' : '#60a5fa',
+          rg1: isLight ? '#b45309' : '#fbbf24',
+          vg1: isLight ? '#059669' : '#34d399',
+          coneFill: isLight ? 'rgba(37,99,235,0.10)' : 'rgba(96,165,250,0.14)',
+          coneStroke: isLight ? 'rgba(37,99,235,0.40)' : 'rgba(96,165,250,0.45)',
+          labelBg: isLight ? 'rgba(255,255,255,0.86)' : 'rgba(17,26,46,0.84)',
+        };
+      }
+
+      const canvas = document.getElementById('scene3d');
+      const ctx = canvas.getContext('2d');
+      const canvasWrap = document.getElementById('canvas-wrap');
+      let W = 720, H = 475, DPR = 1;
+
+      function resizeCanvas() {
+        const rect = canvasWrap.getBoundingClientRect();
+        W = Math.max(300, Math.floor(rect.width));
+        H = Math.max(340, Math.floor(rect.height));
+        DPR = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = W * DPR;
+        canvas.height = H * DPR;
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      }
+
+      function getCamera(phi, psi) {
+        const cp = Math.cos(phi), sp = Math.sin(phi);
+        const ce = Math.cos(psi), se = Math.sin(psi);
+        const right = [-sp, cp, 0], up = [-se * cp, -se * sp, ce], fwd = [ce * cp, ce * sp, se];
+        const fovDist = 11.5, scale = Math.min(W, H) * 0.255 * state.zoom;
+        const cx = W * 0.47, cy = H * 0.54, target = [0, 0, 0.22];
+        function project(ptM) {
+          const p = [ptM[0] * S - target[0], ptM[1] * S - target[1], ptM[2] * S - target[2]];
+          const rx = dot3(p, right), ry = dot3(p, up), rz = dot3(p, fwd);
+          const persp = fovDist / Math.max(2.0, fovDist - rz * 0.42);
+          return { x: cx + rx * scale * persp, y: cy - ry * scale * persp, z: rz, persp };
+        }
+        return { project };
+      }
+
+      function drawArrow2D(x1, y1, x2, y2, color, width = 2, headLen = 9, dash = []) {
+        const dx = x2 - x1, dy = y2 - y1, l = Math.hypot(dx, dy);
+        if (l < 2) return;
+        const ux = dx / l, uy = dy / l;
+        ctx.save();
+        ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width; ctx.lineCap = 'round';
+        if (dash.length) ctx.setLineDash(dash);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2 - ux * (headLen * 0.65), y2 - uy * (headLen * 0.65)); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - ux * headLen - uy * (headLen * 0.42), y2 - uy * headLen + ux * (headLen * 0.42));
+        ctx.lineTo(x2 - ux * headLen + uy * (headLen * 0.42), y2 - uy * headLen - ux * (headLen * 0.42));
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+
+      function drawDoubleArrow2D(x1, y1, x2, y2, color, width = 1.1) {
+        const dx = x2 - x1, dy = y2 - y1, l = Math.hypot(dx, dy);
+        if (l < 12) return;
+        const ux = dx / l, uy = dy / l, hl = 6.5;
+        ctx.save();
+        ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = width;
+        ctx.beginPath(); ctx.moveTo(x1 + ux * hl * 0.6, y1 + uy * hl * 0.6); ctx.lineTo(x2 - ux * hl * 0.6, y2 - uy * hl * 0.6); ctx.stroke();
+        for (const [tx, ty, sgn] of [[x1, y1, -1], [x2, y2, 1]]) {
+          ctx.beginPath();
+          ctx.moveTo(tx, ty);
+          ctx.lineTo(tx - sgn * ux * hl - uy * (hl * 0.36), ty - sgn * uy * hl + ux * (hl * 0.36));
+          ctx.lineTo(tx - sgn * ux * hl + uy * (hl * 0.36), ty - sgn * uy * hl - ux * (hl * 0.36));
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function drawLabel(x, y, text, color, pal, font = 'italic 600 13px "Cambria Math", Georgia, serif', align = 'center') {
+        ctx.save();
+        ctx.font = font; ctx.textAlign = align; ctx.textBaseline = 'middle';
+        const bw = ctx.measureText(text).width + 8, bh = 16;
+        let bx = x - bw / 2;
+        if (align === 'left') bx = x - 4;
+        if (align === 'right') bx = x - bw + 4;
+        ctx.fillStyle = pal.labelBg;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bx, y - bh / 2, bw, bh, 4);
+        else ctx.rect(bx, y - bh / 2, bw, bh);
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.fillText(text, x, y + 0.5);
+        ctx.restore();
+      }
+
+      function drawVecLabel(x, y, base, sub, color, pal) {
+        ctx.save();
+        ctx.font = 'bold 13.5px Georgia, "Times New Roman", serif';
+        const wBase = ctx.measureText(base).width;
+        ctx.font = 'italic 600 9.5px Georgia, "Times New Roman", serif';
+        const wSub = sub ? ctx.measureText(sub).width : 0;
+        const bw = wBase + wSub + 10, bh = 19;
+        const bx = x - bw / 2;
+        ctx.fillStyle = pal.labelBg;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bx, y - bh / 2, bw, bh, 4);
+        else ctx.rect(bx, y - bh / 2, bw, bh);
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.font = 'bold 13.5px Georgia, "Times New Roman", serif';
+        ctx.fillText(base, bx + 5, y);
+        if (sub) {
+          ctx.font = 'italic 600 9.5px Georgia, "Times New Roman", serif';
+          ctx.fillText(sub, bx + 5 + wBase + 0.5, y + 4);
+        }
+        ctx.restore();
+      }
+
+      function drawShadedRod(pA, pB, rPx, edgeCol, fillCol, hiCol) {
+        ctx.save(); ctx.lineCap = 'round';
+        ctx.strokeStyle = edgeCol; ctx.lineWidth = rPx * 2 + 2.4;
+        ctx.beginPath(); ctx.moveTo(pA.x, pA.y); ctx.lineTo(pB.x, pB.y); ctx.stroke();
+        ctx.strokeStyle = fillCol; ctx.lineWidth = rPx * 2;
+        ctx.beginPath(); ctx.moveTo(pA.x, pA.y); ctx.lineTo(pB.x, pB.y); ctx.stroke();
+        const dx = pB.x - pA.x, dy = pB.y - pA.y, l = Math.hypot(dx, dy) || 1;
+        const nx = -dy / l * (rPx * 0.34), ny = dx / l * (rPx * 0.34);
+        ctx.strokeStyle = hiCol; ctx.lineWidth = Math.max(1.2, rPx * 0.42);
+        ctx.beginPath(); ctx.moveTo(pA.x + nx, pA.y + ny); ctx.lineTo(pB.x + nx, pB.y + ny); ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawJoint(p, rPx, edgeCol, fillCol, hiCol) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(p.x, p.y, rPx, 0, Math.PI * 2);
+        ctx.fillStyle = fillCol; ctx.fill();
+        ctx.lineWidth = 1.6; ctx.strokeStyle = edgeCol; ctx.stroke();
+        ctx.beginPath(); ctx.arc(p.x - rPx * 0.28, p.y - rPx * 0.28, rPx * 0.30, 0, Math.PI * 2);
+        ctx.fillStyle = hiCol; ctx.fill();
+        ctx.restore();
+      }
+
+      function drawCMMarker(p, rPx, pal) {
+        ctx.save();
+        ctx.beginPath(); ctx.arc(p.x, p.y, rPx, 0, Math.PI * 2);
+        ctx.fillStyle = pal.isLight ? '#ffffff' : '#0f172a'; ctx.fill();
+        ctx.fillStyle = pal.axis0;
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.arc(p.x, p.y, rPx, 0, Math.PI / 2); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.arc(p.x, p.y, rPx, Math.PI, 1.5 * Math.PI); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.arc(p.x, p.y, rPx, 0, Math.PI * 2);
+        ctx.lineWidth = 1.4; ctx.strokeStyle = pal.axis0; ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawScene() {
+        const pal = getPalette();
+        const kin = computeKinematics(state.theta, state.alpha, state.dtheta, state.dalpha);
+        const cam = getCamera(state.phi, state.psi);
+        ctx.clearRect(0, 0, W, H);
+
+        const gridZ = state.layers.hardware ? -P.Zpiv : 0;
+        ctx.save(); ctx.strokeStyle = pal.grid; ctx.lineWidth = 1;
+        for (let g = -0.16; g <= 0.161; g += 0.04) {
+          const a = cam.project([g, -0.16, gridZ]), b = cam.project([g, 0.16, gridZ]);
+          ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+          const c = cam.project([-0.16, g, gridZ]), d = cam.project([0.16, g, gridZ]);
+          ctx.beginPath(); ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.stroke();
+        }
+        ctx.restore();
+
+        if (state.layers.hardware) {
+          const tblCorners = [[-0.17, -0.17, -P.Zpiv], [0.17, -0.17, -P.Zpiv], [0.17, 0.17, -P.Zpiv], [-0.17, 0.17, -P.Zpiv]].map(cam.project);
+          ctx.save();
+          ctx.fillStyle = pal.tableFill; ctx.strokeStyle = pal.tableStroke; ctx.lineWidth = 1.2;
+          ctx.beginPath(); tblCorners.forEach((pt, i) => i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)); ctx.closePath();
+          ctx.fill(); ctx.stroke();
+          const lblTable = cam.project([-0.15, 0.15, -P.Zpiv]);
+          drawLabel(lblTable.x, lblTable.y + 10, 'Plano mesa (Z = −Z_piv)', pal.muted, pal, '500 11px ui-sans-serif, system-ui', 'left');
+          ctx.restore();
+        }
+
+        ctx.save();
+        ctx.strokeStyle = pal.isLight ? 'rgba(30,78,140,0.20)' : 'rgba(96,165,250,0.22)';
+        ctx.lineWidth = 1.1; ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        for (let i = 0; i <= 64; i++) {
+          const ang = (i / 64) * Math.PI * 2;
+          const pt = cam.project([P.L0 * Math.cos(ang), P.L0 * Math.sin(ang), 0]);
+          if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+        }
+        ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+
+        if (state.layers.plane) {
+          const hJ = 0.155, hK = 0.165;
+          const corners = [
+            add3(kin.Ppiv, add3(mul3(kin.j1, -hJ), mul3(kin.k0, -hK))),
+            add3(kin.Ppiv, add3(mul3(kin.j1,  hJ), mul3(kin.k0, -hK))),
+            add3(kin.Ppiv, add3(mul3(kin.j1,  hJ), mul3(kin.k0,  hK))),
+            add3(kin.Ppiv, add3(mul3(kin.j1, -hJ), mul3(kin.k0,  hK))),
+          ].map(cam.project);
+          ctx.save();
+          ctx.fillStyle = pal.planeFill; ctx.strokeStyle = pal.planeStroke; ctx.lineWidth = 1.1;
+          ctx.beginPath(); corners.forEach((pt, i) => i ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y)); ctx.closePath();
+          ctx.fill(); ctx.stroke();
+          ctx.setLineDash([3, 3]); ctx.beginPath();
+          for (let i = 0; i <= 60; i++) {
+            const a = (i / 60) * Math.PI * 2;
+            const pt = cam.project(add3(kin.Ppiv, add3(mul3(kin.j1, -P.L1 * Math.sin(a)), mul3(kin.k0, -P.L1 * Math.cos(a)))));
+            if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+          }
+          ctx.stroke(); ctx.setLineDash([]); ctx.restore();
+        }
+
+        if (state.layers.cone) {
+          const rCone = P.L1 * 0.92, aMax = rad(20);
+          ctx.save();
+          ctx.fillStyle = pal.coneFill; ctx.strokeStyle = pal.coneStroke; ctx.lineWidth = 1.2;
+          const p0 = cam.project(kin.Ppiv);
+          ctx.beginPath(); ctx.moveTo(p0.x, p0.y);
+          for (let i = 0; i <= 20; i++) {
+            const at = -aMax + (2 * aMax * i / 20);
+            const pt = cam.project(add3(kin.Ppiv, add3(mul3(kin.j1, rCone * Math.sin(at)), mul3(kin.k0, rCone * Math.cos(at)))));
+            ctx.lineTo(pt.x, pt.y);
+          }
+          ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore();
+        }
+
+        if (state.layers.trail && state.trail.length > 1) {
+          ctx.save(); ctx.lineCap = 'round';
+          for (let i = 1; i < state.trail.length; i++) {
+            const p1 = cam.project(state.trail[i - 1]), p2 = cam.project(state.trail[i]);
+            const al = i / state.trail.length;
+            ctx.strokeStyle = pal.isLight ? `rgba(217,72,15,${(al*0.65).toFixed(3)})` : `rgba(251,146,60,${(al*0.78).toFixed(3)})`;
+            ctx.lineWidth = 1.2 + al * 2.0;
+            ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+          }
+          ctx.restore();
+        }
+
+        const pO0 = cam.project(kin.O0);
+        if (state.layers.f0) {
+          const pX = cam.project([0.135, 0, 0]), pY = cam.project([0, 0.135, 0]), pZ = cam.project([0, 0, 0.125]);
+          drawArrow2D(pO0.x, pO0.y, pX.x, pX.y, pal.axis0, 1.8, 8);
+          drawArrow2D(pO0.x, pO0.y, pY.x, pY.y, pal.axis0, 1.8, 8);
+          drawArrow2D(pO0.x, pO0.y, pZ.x, pZ.y, pal.axis0, 1.8, 8);
+          drawLabel(pX.x + (pX.x < pO0.x ? -16 : 16), pX.y + 8, '+X₀', pal.axis0, pal);
+          drawLabel(pY.x + (pY.x < pO0.x ? -16 : 16), pY.y + 4, '+Y₀', pal.axis0, pal);
+          drawLabel(pZ.x, pZ.y - 13, '+Z₀', pal.axis0, pal);
+          drawLabel(pO0.x - 16, pO0.y - 12, 'O₀', pal.axis0, pal);
+
+          const rTau = 0.024, zTau = 0.068;
+          ctx.save(); ctx.strokeStyle = pal.torque; ctx.lineWidth = 2.0; ctx.beginPath();
+          let lastT = null, prevT = null;
+          for (let i = 0; i <= 26; i++) {
+            const a = rad(40 + i * 10);
+            const pt = cam.project([rTau * Math.cos(a), rTau * Math.sin(a), zTau]);
+            if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+            prevT = lastT; lastT = pt;
+          }
+          ctx.stroke();
+          if (prevT && lastT) drawArrow2D(prevT.x, prevT.y, lastT.x, lastT.y, pal.torque, 2.0, 7);
+          const pTauLbl = cam.project([-rTau * 1.4, -rTau * 0.4, zTau + 0.012]);
+          drawLabel(pTauLbl.x, pTauLbl.y, 'τ₀', pal.torque, pal);
+          ctx.restore();
+
+          drawArrow2D(W - 42, 34, W - 42, 78, pal.axis0, 2.0, 8);
+          drawVecLabel(W - 26, 56, 'g', '', pal.axis0, pal);
+        }
+
+        const pPiv = cam.project(kin.Ppiv);
+        const pUp = cam.project(add3(kin.Ppiv, [0, 0, P.L1 * 1.02]));
+        const pDown = cam.project(add3(kin.Ppiv, [0, 0, -P.L1 * 0.42]));
+        ctx.save();
+        ctx.strokeStyle = pal.refUp; ctx.lineWidth = 1.4; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(pPiv.x, pPiv.y); ctx.lineTo(pUp.x, pUp.y); ctx.stroke();
+        ctx.strokeStyle = pal.muted; ctx.lineWidth = 1.1;
+        ctx.beginPath(); ctx.moveTo(pPiv.x, pPiv.y); ctx.lineTo(pDown.x, pDown.y); ctx.stroke();
+        ctx.setLineDash([]); ctx.restore();
+        drawLabel(pUp.x, pUp.y - 12, 'α = π', pal.refUp, pal);
+        drawLabel(pDown.x, pDown.y + 11, 'α = 0', pal.muted, pal);
+
+        const thNorm = wrapPi(state.theta);
+        if (Math.abs(thNorm) > rad(4)) {
+          const rTh = 0.048, steps = Math.max(12, Math.round(Math.abs(deg(thNorm)) / 4));
+          ctx.save(); ctx.strokeStyle = pal.angle; ctx.lineWidth = 2.0; ctx.beginPath();
+          let prevA = null, lastA = null;
+          for (let i = 0; i <= steps; i++) {
+            const a = (thNorm * i) / steps;
+            const pt = cam.project([rTh * Math.cos(a), rTh * Math.sin(a), 0]);
+            if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+            prevA = lastA; lastA = pt;
+          }
+          ctx.stroke();
+          if (prevA && lastA) drawArrow2D(prevA.x, prevA.y, lastA.x, lastA.y, pal.angle, 2.0, 7);
+          const midTh = thNorm * 0.52;
+          const lblTh = cam.project([(rTh + 0.022) * Math.cos(midTh), (rTh + 0.022) * Math.sin(midTh), 0]);
+          drawLabel(lblTh.x + 12, lblTh.y + 8, 'θ(t)', pal.angle, pal);
+          ctx.restore();
+        }
+
+        const atNorm = kin.alphaTilde;
+        if (Math.abs(atNorm) > rad(4)) {
+          const rAt = 0.088, steps = Math.max(12, Math.round(Math.abs(deg(atNorm)) / 4));
+          ctx.save(); ctx.strokeStyle = pal.angle; ctx.lineWidth = 2.0; ctx.beginPath();
+          let prevA = null, lastA = null;
+          for (let i = 0; i <= steps; i++) {
+            const a = (atNorm * i) / steps;
+            const pt = cam.project(add3(kin.Ppiv, add3(mul3(kin.j1, rAt * Math.sin(a)), mul3(kin.k0, rAt * Math.cos(a)))));
+            if (i === 0) ctx.moveTo(pt.x, pt.y); else ctx.lineTo(pt.x, pt.y);
+            prevA = lastA; lastA = pt;
+          }
+          ctx.stroke();
+          if (prevA && lastA) drawArrow2D(prevA.x, prevA.y, lastA.x, lastA.y, pal.angle, 2.0, 7);
+          const midAt = atNorm * 0.5;
+          const lblAt = cam.project(add3(kin.Ppiv, add3(mul3(kin.j1, (rAt + 0.018) * Math.sin(midAt)), mul3(kin.k0, (rAt + 0.018) * Math.cos(midAt)))));
+          drawLabel(lblAt.x, lblAt.y, 'α̃', pal.angle, pal);
+          ctx.restore();
+        }
+
+        const pPostBot = cam.project([0, 0, state.layers.hardware ? -P.Zpiv : -0.105]);
+        const pTip = cam.project(kin.Ptip), pCM = cam.project(kin.rG1);
+        const rods = [
+          { z: (pO0.z + pPostBot.z)/2, draw: () => drawShadedRod(pO0, pPostBot, 4.4, pal.postEdge, pal.postFill, pal.isLight ? '#f8fafc' : '#94a3b8') },
+          { z: (pO0.z + pPiv.z)/2, draw: () => { drawShadedRod(pO0, pPiv, 4.2, pal.linkEdge, pal.linkFill, pal.linkHi); drawJoint(pO0, 6.2, pal.linkEdge, pal.linkFill, pal.linkHi); } },
+          { z: (pPiv.z + pTip.z)/2, draw: () => { drawShadedRod(pPiv, pTip, 3.8, pal.linkEdge, pal.linkFill, pal.linkHi); drawJoint(pPiv, 6.0, pal.linkEdge, pal.linkFill, pal.linkHi); drawCMMarker(pCM, 6.0, pal); drawLabel(pCM.x - 18, pCM.y - 10, 'G₁', pal.axis0, pal); } }
+        ];
+        rods.sort((a, b) => a.z - b.z);
+        rods.forEach(r => r.draw());
+
+        if (state.layers.f1) {
+          const f1Len = 0.055;
+          const pi1 = cam.project(add3(kin.Ppiv, mul3(kin.i1, f1Len)));
+          const pj1 = cam.project(add3(kin.Ppiv, mul3(kin.j1, f1Len)));
+          const pk1 = cam.project(add3(kin.Ppiv, mul3(kin.k0, f1Len)));
+          drawArrow2D(pPiv.x, pPiv.y, pi1.x, pi1.y, pal.f1, 2.2, 8);
+          drawArrow2D(pPiv.x, pPiv.y, pj1.x, pj1.y, pal.f1, 2.2, 8);
+          drawArrow2D(pPiv.x, pPiv.y, pk1.x, pk1.y, pal.f1, 1.8, 7, [3, 2]);
+          drawLabel(pi1.x + (pi1.x > pPiv.x ? 13 : -13), pi1.y, 'î₁', pal.f1, pal);
+          drawLabel(pj1.x + (pj1.x > pPiv.x ? 13 : -13), pj1.y, 'ĵ₁', pal.f1, pal);
+          drawLabel(pk1.x + 13, pk1.y - 6, 'k̂₀', pal.f1, pal);
+        }
+
+        if (state.layers.rg1) {
+          const pXY = cam.project([kin.rG1[0], kin.rG1[1], 0]);
+          const pXproj = cam.project([kin.rG1[0], 0, 0]);
+          const pYproj = cam.project([0, kin.rG1[1], 0]);
+          ctx.save(); ctx.strokeStyle = pal.rg1; ctx.lineWidth = 1.1; ctx.setLineDash([3, 3]);
+          ctx.beginPath(); ctx.moveTo(pCM.x, pCM.y); ctx.lineTo(pXY.x, pXY.y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pXY.x, pXY.y); ctx.lineTo(pXproj.x, pXproj.y); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(pXY.x, pXY.y); ctx.lineTo(pYproj.x, pYproj.y); ctx.stroke();
+          ctx.setLineDash([]); ctx.fillStyle = pal.rg1;
+          ctx.beginPath(); ctx.arc(pXY.x, pXY.y, 3, 0, Math.PI * 2); ctx.fill();
+          ctx.restore();
+          drawArrow2D(pO0.x, pO0.y, pCM.x, pCM.y, pal.rg1, 2.2, 9);
+          drawVecLabel((pO0.x + pCM.x) * 0.52, (pO0.y + pCM.y) * 0.52 - 12, 'r', 'G1', pal.rg1, pal);
+        }
+
+        if (state.layers.vg1) {
+          const vMag = len3(kin.vG1);
+          if (vMag > 0.02) {
+            const vScale = clamp(0.085 / Math.max(vMag, 0.25), 0.04, 0.28);
+            const vEnd = cam.project(add3(kin.rG1, mul3(kin.vG1, vScale)));
+            drawArrow2D(pCM.x, pCM.y, vEnd.x, vEnd.y, pal.vg1, 2.5, 9);
+            drawVecLabel(vEnd.x + (vEnd.x >= pCM.x ? 18 : -18), vEnd.y - 6, 'v', 'G1', pal.vg1, pal);
+          }
+        }
+
+        if (state.layers.dims) {
+          const adx = pPiv.x - pO0.x, ady = pPiv.y - pO0.y, al = Math.hypot(adx, ady);
+          if (al > 32) {
+            const nx = -ady / al, ny = adx / al, sgn = ny > 0 ? 1 : -1, off = 24 * sgn;
+            const d1x = pO0.x + nx * off, d1y = pO0.y + ny * off;
+            const d2x = pPiv.x + nx * off, d2y = pPiv.y + ny * off;
+            ctx.save(); ctx.strokeStyle = pal.muted; ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(pO0.x, pO0.y); ctx.lineTo(d1x + nx * 4 * sgn, d1y + ny * 4 * sgn);
+            ctx.moveTo(pPiv.x, pPiv.y); ctx.lineTo(d2x + nx * 4 * sgn, d2y + ny * 4 * sgn);
+            ctx.stroke(); ctx.restore();
+            drawDoubleArrow2D(d1x, d1y, d2x, d2y, pal.muted, 1.0);
+            drawLabel((d1x + d2x)/2, (d1y + d2y)/2, 'L₀', pal.muted, pal);
+          }
+          const pdx = pTip.x - pPiv.x, pdy = pTip.y - pPiv.y, pl = Math.hypot(pdx, pdy);
+          if (pl > 36) {
+            const nx = -pdy / pl, ny = pdx / pl, sgn = nx > 0 ? 1 : -1, off1 = 22 * sgn, off2 = 42 * sgn;
+            const a1x = pPiv.x + nx * off1, a1y = pPiv.y + ny * off1;
+            const b1x = pCM.x + nx * off1,  b1y = pCM.y + ny * off1;
+            const a2x = pPiv.x + nx * off2, a2y = pPiv.y + ny * off2;
+            const b2x = pTip.x + nx * off2, b2y = pTip.y + ny * off2;
+            ctx.save(); ctx.strokeStyle = pal.muted; ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(pPiv.x, pPiv.y); ctx.lineTo(a2x + nx * 4 * sgn, a2y + ny * 4 * sgn);
+            ctx.moveTo(pCM.x, pCM.y);   ctx.lineTo(b1x + nx * 4 * sgn, b1y + ny * 4 * sgn);
+            ctx.moveTo(pTip.x, pTip.y); ctx.lineTo(b2x + nx * 4 * sgn, b2y + ny * 4 * sgn);
+            ctx.stroke(); ctx.restore();
+            drawDoubleArrow2D(a1x, a1y, b1x, b1y, pal.muted, 1.0);
+            drawLabel((a1x + b1x)/2, (a1y + b1y)/2, 'l₁', pal.muted, pal);
+            drawDoubleArrow2D(a2x, a2y, b2x, b2y, pal.muted, 1.0);
+            drawLabel((a2x + b2x)/2, (a2y + b2y)/2, 'L₁', pal.muted, pal);
+          }
+        }
+
+        if (state.mode !== 'manual') {
+          slTheta.value = clamp(deg(wrapPi(state.theta)), -180, 180).toFixed(1);
+          slAlpha.value = clamp(((deg(state.alpha) % 360) + 360) % 360, 0, 360).toFixed(1);
+          slDtheta.value = clamp(state.dtheta, -8, 8).toFixed(1);
+          slDalpha.value = clamp(state.dalpha, -12, 12).toFixed(1);
+        }
+        if (state.mode === 'swingup' || state.mode === 'balance') {
+          simText.textContent = state.simState;
+          simDot.className = 'dot ' + (state.simState === 'BALANCE_PID' ? 'dot-green' : 'dot-amber');
+        }
+      }
+
+      const slTheta = document.getElementById('sl-theta');
+      const slAlpha = document.getElementById('sl-alpha');
+      const slDtheta = document.getElementById('sl-dtheta');
+      const slDalpha = document.getElementById('sl-dalpha');
+      const guidedBar = document.getElementById('guided-bar');
+      const stepExp = document.getElementById('step-explanation');
+      const simBadge = document.getElementById('sim-badge');
+      const simDot = document.getElementById('sim-state-dot');
+      const simText = document.getElementById('sim-state-text');
+      const btnImpulse = document.getElementById('btn-impulse');
+
+      function syncLayerCheckboxes() {
+        document.getElementById('lyr-f0').checked = state.layers.f0;
+        document.getElementById('lyr-f1').checked = state.layers.f1;
+        document.getElementById('lyr-plane').checked = state.layers.plane;
+        document.getElementById('lyr-rg1').checked = state.layers.rg1;
+        document.getElementById('lyr-vg1').checked = state.layers.vg1;
+        document.getElementById('lyr-cone').checked = state.layers.cone;
+        document.getElementById('lyr-trail').checked = state.layers.trail;
+        document.getElementById('lyr-dims').checked = state.layers.dims;
+        document.getElementById('chk-hardware').checked = state.layers.hardware;
+      }
+
+      function setCameraPreset(preset) {
+        state.camMode = preset;
+        document.querySelectorAll('.cam-btn').forEach(b => b.classList.toggle('active', b.dataset.cam === preset));
+        if (preset === 'iso') { state.targetPhi = rad(28); state.targetPsi = rad(22); state.targetZoom = 1.0; }
+        else if (preset === 'top') { state.targetPhi = rad(0); state.targetPsi = rad(86); state.targetZoom = 1.05; }
+        else if (preset === 'front') { state.targetPhi = rad(0); state.targetPsi = rad(8); state.targetZoom = 1.0; }
+        else if (preset === 'plane') { state.targetPhi = state.theta; state.targetPsi = rad(10); state.targetZoom = 1.08; }
+      }
+
+      function highlightEqCard(stepNum) {
+        document.querySelectorAll('.eq-card').forEach(c => c.classList.toggle('active-eq', Number(c.dataset.jump) === stepNum));
+      }
+
+      function applyGuidedStep(stepNum) {
+        state.step = clamp(stepNum, 1, 5);
+        state.demoTime = 0; state.trail = [];
+        document.querySelectorAll('.step-btn').forEach(b => b.classList.toggle('active', Number(b.dataset.step) === state.step));
+        highlightEqCard(state.step);
+        const info = STEP_INFO[state.step];
+        stepExp.innerHTML = `<div style="font-weight:600;margin-bottom:2px;">${info.title}</div><div>${info.html}</div>`;
+
+        if (state.step === 1) {
+          Object.assign(state.layers, { f0: true, f1: true, plane: false, rg1: false, vg1: false, cone: false, trail: false, dims: true });
+          setCameraPreset('iso'); state.alpha = rad(180); state.dalpha = 0;
+        } else if (state.step === 2) {
+          Object.assign(state.layers, { f0: true, f1: true, plane: true, rg1: false, vg1: false, cone: false, trail: false, dims: true });
+          setCameraPreset('iso'); state.alpha = rad(213); state.dalpha = 0;
+        } else if (state.step === 3) {
+          Object.assign(state.layers, { f0: true, f1: true, plane: true, rg1: true, vg1: false, cone: true, trail: true, dims: true });
+          state.theta = rad(60); state.dtheta = 0; setCameraPreset('plane');
+        } else if (state.step === 4) {
+          Object.assign(state.layers, { f0: true, f1: true, plane: true, rg1: true, vg1: true, cone: false, trail: true, dims: false });
+          setCameraPreset('iso');
+        } else if (state.step === 5) {
+          Object.assign(state.layers, { f0: true, f1: true, plane: true, rg1: true, vg1: true, cone: false, trail: true, dims: true });
+          setCameraPreset('iso');
+        }
+        syncLayerCheckboxes();
+      }
+
+      function setMode(newMode) {
+        state.mode = newMode; state.trail = [];
+        document.querySelectorAll('#mode-guided, #mode-manual, #mode-swingup, #mode-balance').forEach(b => {
+          b.classList.toggle('active', b.id === 'mode-' + newMode);
+        });
+        guidedBar.classList.toggle('hidden', newMode !== 'guided');
+        const isSim = (newMode === 'swingup' || newMode === 'balance');
+        simBadge.classList.toggle('hidden', !isSim);
+        btnImpulse.classList.toggle('hidden', newMode !== 'balance');
+
+        if (newMode === 'guided') applyGuidedStep(state.step);
+        else if (newMode === 'manual') {
+          highlightEqCard(0);
+          Object.assign(state.layers, { f0: true, f1: true, plane: true, rg1: true, vg1: true, trail: true, dims: true });
+          syncLayerCheckboxes();
+        } else if (newMode === 'swingup') {
+          highlightEqCard(5);
+          state.theta = 0; state.dtheta = 0; state.alpha = rad(2.5); state.dalpha = 0;
+          state.simState = 'SWING_UP'; state.simElapsed = 0; state.armInt = 0; state.uSlewed = 0;
+          Object.assign(state.layers, { f0: true, f1: true, plane: true, rg1: false, vg1: true, cone: true, trail: true, dims: false });
+          syncLayerCheckboxes(); setCameraPreset('iso');
+        } else if (newMode === 'balance') {
+          highlightEqCard(5);
+          state.theta = 0; state.dtheta = 0; state.alpha = rad(185); state.dalpha = 0.25;
+          state.simState = 'BALANCE_PID'; state.simElapsed = 0; state.armInt = 0; state.uSlewed = 0;
+          Object.assign(state.layers, { f0: true, f1: true, plane: true, rg1: false, vg1: true, cone: true, trail: true, dims: false });
+          syncLayerCheckboxes(); setCameraPreset('iso');
+        }
+      }
+
+      let dragging = false, lastX = 0, lastY = 0;
+      canvas.addEventListener('pointerdown', (e) => {
+        dragging = true; lastX = e.clientX; lastY = e.clientY;
+        canvas.setPointerCapture(e.pointerId);
+        state.camMode = 'free';
+        document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+      });
+      canvas.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        state.phi -= (e.clientX - lastX) * 0.0085;
+        state.psi = clamp(state.psi + (e.clientY - lastY) * 0.0075, rad(-75), rad(88));
+        state.targetPhi = state.phi; state.targetPsi = state.psi;
+        lastX = e.clientX; lastY = e.clientY;
+      });
+      canvas.addEventListener('pointerup', () => { dragging = false; });
+      canvas.addEventListener('pointercancel', () => { dragging = false; });
+      canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        state.targetZoom = clamp(state.targetZoom * (e.deltaY > 0 ? 0.92 : 1.08), 0.55, 2.2);
+      }, { passive: false });
+      canvas.addEventListener('dblclick', () => setCameraPreset('iso'));
+
+      document.getElementById('mode-guided').addEventListener('click', () => setMode('guided'));
+      document.getElementById('mode-manual').addEventListener('click', () => setMode('manual'));
+      document.getElementById('mode-swingup').addEventListener('click', () => setMode('swingup'));
+      document.getElementById('mode-balance').addEventListener('click', () => setMode('balance'));
+
+      const btnTheme = document.getElementById('btn-theme');
+      btnTheme.addEventListener('click', () => {
+        const isLight = document.documentElement.classList.toggle('light');
+        btnTheme.textContent = isLight ? '☾ Tema' : '☀ Tema';
+        drawScene();
+      });
+
+      document.querySelectorAll('.step-btn').forEach(b => b.addEventListener('click', () => applyGuidedStep(Number(b.dataset.step))));
+      document.querySelectorAll('.eq-card').forEach(c => c.addEventListener('click', () => {
+        if (state.mode !== 'guided') setMode('guided');
+        applyGuidedStep(Number(c.dataset.jump));
+      }));
+      document.getElementById('btn-prev-step').addEventListener('click', () => applyGuidedStep(state.step - 1));
+      document.getElementById('btn-next-step').addEventListener('click', () => applyGuidedStep(state.step + 1));
+      const btnDemo = document.getElementById('btn-toggle-demo');
+      btnDemo.addEventListener('click', () => {
+        state.demoPlaying = !state.demoPlaying;
+        btnDemo.textContent = state.demoPlaying ? '⏸ Pausar demo' : '▶ Reanudar demo';
+      });
+      document.querySelectorAll('.cam-btn').forEach(b => b.addEventListener('click', () => setCameraPreset(b.dataset.cam)));
+      btnImpulse.addEventListener('click', () => { state.dalpha += 1.2; });
+      document.getElementById('btn-sim-reset').addEventListener('click', () => setMode(state.mode));
+
+      document.getElementById('preset-fig1').addEventListener('click', () => {
+        setMode('manual');
+        state.theta = rad(60); state.alpha = rad(213); state.dtheta = 1.5; state.dalpha = 2.0;
+        slTheta.value = 60; slAlpha.value = 213; slDtheta.value = 1.5; slDalpha.value = 2.0;
+        setCameraPreset('iso');
+      });
+      document.getElementById('preset-down').addEventListener('click', () => {
+        setMode('manual');
+        state.theta = 0; state.alpha = 0; state.dtheta = 0; state.dalpha = 0;
+        slTheta.value = 0; slAlpha.value = 0; slDtheta.value = 0; slDalpha.value = 0;
+      });
+      document.getElementById('preset-up').addEventListener('click', () => {
+        setMode('manual');
+        state.theta = 0; state.alpha = rad(180); state.dtheta = 0; state.dalpha = 0;
+        slTheta.value = 0; slAlpha.value = 180; slDtheta.value = 0; slDalpha.value = 0;
+      });
+
+      function onManualSlider() {
+        if (state.mode !== 'manual') setMode('manual');
+        state.theta = rad(parseFloat(slTheta.value));
+        state.alpha = rad(parseFloat(slAlpha.value));
+        state.dtheta = parseFloat(slDtheta.value);
+        state.dalpha = parseFloat(slDalpha.value);
+        const k = computeKinematics(state.theta, state.alpha, state.dtheta, state.dalpha);
+        state.trail.push(k.rG1);
+        if (state.trail.length > state.maxTrail) state.trail.shift();
+      }
+      [slTheta, slAlpha, slDtheta, slDalpha].forEach(s => s.addEventListener('input', onManualSlider));
+
+      Object.entries({
+        'lyr-f0': 'f0', 'lyr-f1': 'f1', 'lyr-plane': 'plane', 'lyr-rg1': 'rg1',
+        'lyr-vg1': 'vg1', 'lyr-cone': 'cone', 'lyr-trail': 'trail', 'lyr-dims': 'dims', 'chk-hardware': 'hardware'
+      }).forEach(([id, key]) => {
+        document.getElementById(id).addEventListener('change', (e) => {
+          state.layers[key] = e.target.checked;
+          if (key === 'trail' && !e.target.checked) state.trail = [];
+        });
+      });
+
+      window.addEventListener('resize', () => { resizeCanvas(); drawScene(); });
+
+      function animate(ts) {
+        const dt = state.lastTs ? Math.min(0.05, (ts - state.lastTs) / 1000) : 0.016;
+        state.lastTs = ts;
+
+        if (state.mode === 'guided' && state.demoPlaying) {
+          state.demoTime += dt;
+          const t = state.demoTime;
+          if (state.step === 1) {
+            state.theta = rad(60) + rad(55) * Math.sin(t * 0.95);
+            state.dtheta = rad(55) * 0.95 * Math.cos(t * 0.95);
+            state.alpha = rad(180); state.dalpha = 0;
+          } else if (state.step === 2) {
+            state.theta = rad(60) + rad(65) * Math.sin(t * 0.85);
+            state.dtheta = rad(65) * 0.85 * Math.cos(t * 0.85);
+            state.alpha = rad(213); state.dalpha = 0;
+          } else if (state.step === 3) {
+            state.theta = rad(60); state.dtheta = 0;
+            state.alpha = rad(180) + rad(160) * Math.sin(t * 1.1);
+            state.dalpha = rad(160) * 1.1 * Math.cos(t * 1.1);
+          } else if (state.step === 4) {
+            state.theta = rad(50) + rad(50) * Math.sin(t * 1.15);
+            state.dtheta = rad(50) * 1.15 * Math.cos(t * 1.15);
+            state.alpha = rad(195) + rad(45) * Math.sin(t * 1.9 + 0.4);
+            state.dalpha = rad(45) * 1.9 * Math.cos(t * 1.9 + 0.4);
+          } else if (state.step === 5) {
+            state.theta = rad(40) + rad(55) * Math.sin(t * 1.25);
+            state.dtheta = rad(55) * 1.25 * Math.cos(t * 1.25);
+            state.alpha = rad(180) + rad(55) * Math.sin(t * 2.1 + 0.5);
+            state.dalpha = rad(55) * 2.1 * Math.cos(t * 2.1 + 0.5);
+          }
+          const k = computeKinematics(state.theta, state.alpha, state.dtheta, state.dalpha);
+          if (state.layers.trail) {
+            state.trail.push(k.rG1);
+            if (state.trail.length > state.maxTrail) state.trail.shift();
+          }
+        } else if (state.mode === 'swingup' || state.mode === 'balance') {
+          stepSimulation(dt);
+          const k = computeKinematics(state.theta, state.alpha, state.dtheta, state.dalpha);
+          if (state.layers.trail) {
+            state.trail.push(k.rG1);
+            if (state.trail.length > state.maxTrail) state.trail.shift();
+          }
+        }
+
+        if (state.camMode === 'plane') state.targetPhi = state.theta;
+        const lerp = 1 - Math.exp(-dt * 9);
+        if (!dragging) {
+          state.phi += (state.targetPhi - state.phi) * lerp;
+          state.psi += (state.targetPsi - state.psi) * lerp;
+        }
+        state.zoom += (state.targetZoom - state.zoom) * lerp;
+
+        drawScene();
+        requestAnimationFrame(animate);
+      }
+
+      resizeCanvas();
+      applyGuidedStep(1);
+      const qParams = new URLSearchParams(window.location.search);
+      if (qParams.get('theme') === 'light') {
+        document.documentElement.classList.add('light');
+        btnTheme.textContent = '☾ Tema';
+      }
+      if (qParams.has('step')) {
+        applyGuidedStep(Number(qParams.get('step')));
+      }
+      if (qParams.get('mode') === 'manual') {
+        setMode('manual');
+        if (qParams.has('theta')) { state.theta = rad(Number(qParams.get('theta'))); slTheta.value = Number(qParams.get('theta')); }
+        if (qParams.has('alpha')) { state.alpha = rad(Number(qParams.get('alpha'))); slAlpha.value = Number(qParams.get('alpha')); }
+        if (qParams.has('dtheta')) { state.dtheta = Number(qParams.get('dtheta')); slDtheta.value = Number(qParams.get('dtheta')); }
+        if (qParams.has('dalpha')) { state.dalpha = Number(qParams.get('dalpha')); slDalpha.value = Number(qParams.get('dalpha')); }
+        if (qParams.get('cone') === '1') { state.layers.cone = true; syncLayerCheckboxes(); }
+        highlightEqCard(Number(qParams.get('card') || 3));
+      }
+      if (qParams.get('paused') === '1') {
+        state.demoPlaying = false;
+        btnDemo.textContent = '▶ Reanudar demo';
+      }
+      drawScene();
+      requestAnimationFrame(animate);
+    })();
+  </script>
+</body>
+</html>

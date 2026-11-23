@@ -1,8 +1,8 @@
 # Péndulo Invertido Rotacional de Furuta — Control Digital
 
-Proyecto final de la materia **Control Digital** — Universidad EAFIT, Semestre 2024-2.
+Proyecto final de la materia **Control Digital** — **Universidad de los Llanos** (Facultad de Ciencias Básicas e Ingeniería, Villavicencio, Colombia).
 
-Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico paramétrico en FreeCAD 1.1, piezas optimizadas para impresión 3D sin soportes (DfAM), firmware de control y documentación de montaje.
+Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico paramétrico en FreeCAD 1.1, piezas optimizadas para impresión 3D sin soportes (DfAM), firmware de control determinista a `1 kHz` en STM32F446RE, gemelo digital 3D en MATLAB, simulador interactivo 3D de cinemática matricial simbólica y artículo científico IEEEtran certificado.
 
 ---
 
@@ -12,15 +12,18 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 ├── GUIA_EXPOSICION_PROYECTO.md       # ★ Guía completa de sustentación (filtros, controladores, física y Q&A)
 ├── README.md                         # Portada ejecutiva e inicio rápido del proyecto
 │
-├── informe/                          # ★ Artículo científico / Informe final IEEEtran (13 págs, certificado 0 warnings)
-│   ├── plantilla.pdf                 # Documento PDF final listo para entrega y sustentación
+├── articulo/                         # ★ Artículo científico IEEEtran IMRyD + Marco Teórico (29 págs., certificado 0/0/0)
+│   ├── plantilla.pdf                 # Documento PDF final certificado (0 errores, 0 warnings, 0 sobreposiciones)
 │   ├── plantilla.tex                 # Código fuente principal LaTeX (IEEEtran conference)
-│   ├── plantilla.bib                 # Base de datos bibliográfica BibTeX
-│   ├── secciones/                    # Secciones modulares (01_introduccion a 05_conclusiones)
-│   └── figuras/                      # Diagramas vectoriales TikZ (relativos) y figuras experimentales
+│   ├── plantilla.bib                 # Base de datos bibliográfica BibTeX (18 referencias verificadas con DOI)
+│   ├── secciones/                    # Secciones modulares (01_introduccion a 06_conclusiones, matemática matricial)
+│   └── figuras/                      # 9 diagramas vectoriales TikZ atómicos + figuras experimentales y del simulador 3D
+│
+├── simulacion cinematica/            # ★ Simulador interactivo 3D de cinemática matricial simbólica (HTML5 offline)
+│   └── index.html                    # Aplicación web autónoma (sin dependencias): modelo 3D + matrices Ecs. (1)–(19) + RK4
 │
 ├── interfaz_matlab/                  # ★ Interfaz gráfica principal lista para presentación (MATLAB)
-│   └── app_telemetria_sistema_furuta_matlab.m   # Dashboard maximizado, telemetría en vivo y constantes
+│   └── app_telemetria_sistema_furuta_matlab.m   # Dashboard maximizado, gemelo digital 3D y telemetría en vivo
 │
 ├── firmware_stm32/                   # ★ Firmware C embebido (STM32 Nucleo-F446RE @ 180 MHz, 1 kHz)
 │   ├── platformio.ini                # Configuración de compilación y flasheo (PlatformIO / HAL)
@@ -71,7 +74,20 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
    ```matlab
    run('interfaz_matlab/app_telemetria_sistema_furuta_matlab.m')
    ```
-3. **Pulsar `CERO (0°)`** con el péndulo colgado en reposo y luego **`▶ INICIAR`** para levantamiento autónomo (`Swing-Up` en `~0.96 s`) y estabilización invertida continua (`M4 Ultra-Silk`) con auto-recuperación.
+3. **Pulsar `CERO (0°)`** con el péndulo colgado en reposo y luego **`▶ INICIAR`** para levantamiento autónomo (`Swing-Up` en `~0.98 s`) y estabilización invertida continua (`M4 Ultra-Silk`) con auto-recuperación.
+
+---
+
+## 🧭 Simulador Interactivo 3D de Cinemática Matricial
+
+Para explorar la cinemática tridimensional y el modelado lagrangiano matricial del artículo sin hardware ni licencias de software, abre directamente en cualquier navegador moderno:
+
+- **[`simulacion cinematica/index.html`](simulacion%20cinematica/index.html)** *(100 % offline, archivo único HTML5 Canvas + CSS + JS, sin dependencias externas)*
+
+**Características principales:**
+- **4 modos operativos:** recorrido didáctico `Paso a paso (5)`, manipulación manual de coordenadas y velocidades generalizadas $(\theta, \alpha, \dot{\theta}, \dot{\alpha})$, simulación RK4 en vivo de `SWING_UP → BALANCE_PID` y equilibrio `M4 Ultra-Silk` con inyección de perturbaciones impulsionales.
+- **Formulación matricial puramente simbólica (Planteamiento → Matriz → Resultado):** sincronizada directamente con las Ecs. (1)–(19) de [`articulo/plantilla.pdf`](articulo/plantilla.pdf) (`R_θ`, `R_α`, `⁰T₁`, `r_G1 = R_θ · A(α)`, Jacobianos `J_G1` / `¹J_G1`, matriz de inercia `M(q)`, Coriolis `C(q, q̇)` y gravedad `G(q)`).
+- **Cámara orbital 3D y capas conmutables:** vista isométrica, superior, plano móvil fijado a $\hat{j}_1\text{--}\hat{k}_0$, frontal, cono de captura, vectores $\mathbf{r}_{G1}$ / $\mathbf{v}_{G1}$, rastro espacial y tema claro/oscuro.
 
 ---
 
@@ -221,6 +237,8 @@ El dueño del repositorio puede agregar colaboradores en:
 
 | Documento | Descripción |
 |---|---|
+| [`articulo/plantilla.pdf`](articulo/plantilla.pdf) | **Artículo científico IEEEtran certificado (29 págs.):** marco teórico matricial, metodología, validación experimental y discusiones |
+| [`simulacion cinematica/index.html`](simulacion%20cinematica/index.html) | **Simulador interactivo 3D offline** de la cinemática y dinámica matricial simbólica acoplada al artículo |
 | [`GUIA_EXPOSICION_PROYECTO.md`](GUIA_EXPOSICION_PROYECTO.md) | **Guía completa de sustentación**: funcionamiento, filtros, controladores, física y preguntas frecuentes |
 | [`docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md`](docs/ARQUITECTURA_PINES_Y_CODIGO_STM32_PID.md) | Arquitectura de control STM32F446RE, tabla de pines, explicación del código C/caracterización y diagramas de bloques |
 | [`docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md`](docs/ARQUITECTURA_MONTAJE_PENDULO_FURUTA.md) | Arquitectura mecánica, modelo matemático y estrategia de control |
@@ -235,4 +253,4 @@ El dueño del repositorio puede agregar colaboradores en:
 
 ## 📄 Licencia
 
-Proyecto académico — Universidad EAFIT, Control Digital 2024-2.
+Proyecto académico — Universidad de los Llanos, Control Digital (Villavicencio, Colombia).

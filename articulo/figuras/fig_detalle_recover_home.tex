@@ -1,0 +1,201 @@
+% ==============================================================================
+% Figura: Flujo Detallado de Auto-Recuperación RECOVER_HOME (furuta_control.c)
+% Diseño por construcción (Layout by Construction): único nodo raíz (0,0),
+% posicionamiento relativo, coordenadas nombradas, rutas ortogonales (|-).
+% Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
+%                            shapes.geometric, backgrounds, babel, bending.
+% ==============================================================================
+\begin{figure}[!t]
+\centering
+\begingroup
+\sisetup{mode=match, reset-text-family=false, reset-text-series=false}%
+% --- Paleta coherente con fig:fsm_firmware (ámbito local) ---
+\definecolor{recWarmFill}{HTML}{FFF7ED}%
+\definecolor{recWarmBdr}{HTML}{EA580C}%
+\definecolor{recWarmHdr}{HTML}{C2410C}%
+\definecolor{recWarmPill}{HTML}{FFEDD5}%
+\definecolor{recWarmZoneTxt}{HTML}{9A3412}%
+\definecolor{recDecFill}{HTML}{FEF3C7}%
+\definecolor{recDecBdr}{HTML}{D97706}%
+\definecolor{recDecTxt}{HTML}{92400E}%
+\definecolor{recExitFill}{HTML}{CCFBF1}%
+\definecolor{recExitBdr}{HTML}{0D9488}%
+\definecolor{recExitTxt}{HTML}{115E59}%
+\definecolor{recInk}{HTML}{1E293B}%
+% --- Parámetros centralizados de geometría (Single Source of Truth) ---
+\def\recBoxW{2.88cm}%
+\def\recBoxH{0.82cm}%
+\def\recPadX{5.5pt}%
+\def\recGapY{0.66cm}%
+\def\recDecGapY{0.64cm}%
+\def\recLoopGap{0.86cm}%
+\def\recZonePadX{0.26cm}%
+\def\recZonePadY{0.34cm}%
+\def\recEntryDropY{0.62cm}%
+\def\recExitOut{1.38cm}%
+\def\recSwingW{1.88cm}%
+\resizebox{\columnwidth}{!}{%
+\begin{tikzpicture}[
+    font=\sffamily,
+    % --- Estilos de bloques y decisión ---
+    phaseBox/.style={
+        rectangle,
+        rounded corners=6pt,
+        fill=recWarmFill,
+        draw=recWarmBdr,
+        line width=1.1pt,
+        text width=\recBoxW,
+        minimum height=\recBoxH,
+        align=center,
+        inner xsep=\recPadX,
+        inner ysep=5pt,
+        text=recInk,
+        font=\small\bfseries\sffamily
+    },
+    decBox/.style={
+        diamond,
+        aspect=2.05,
+        fill=recDecFill,
+        draw=recDecBdr,
+        line width=1.15pt,
+        inner xsep=3pt,
+        inner ysep=2pt,
+        minimum width=2.25cm,
+        minimum height=1.10cm,
+        align=center,
+        text=recDecTxt,
+        font=\small\bfseries\sffamily
+    },
+    exitBox/.style={
+        rectangle,
+        rounded corners=6pt,
+        fill=recExitFill,
+        draw=recExitBdr,
+        line width=1.35pt,
+        text width=\recSwingW,
+        minimum height=\recBoxH,
+        align=center,
+        inner xsep=\recPadX,
+        inner ysep=5pt,
+        text=recExitTxt,
+        font=\small\bfseries\sffamily
+    },
+    zoneBox/.style={
+        rectangle,
+        rounded corners=9pt,
+        draw=recWarmBdr,
+        dashed,
+        line width=1.05pt,
+        fill=none,
+        inner xsep=\recZonePadX,
+        inner ysep=\recZonePadY
+    },
+    zonePill/.style={
+        rectangle,
+        rounded corners=3.5pt,
+        fill=recWarmPill,
+        draw=recWarmBdr,
+        line width=0.8pt,
+        text=recWarmZoneTxt,
+        font=\footnotesize\bfseries\sffamily,
+        inner xsep=6pt,
+        inner ysep=2.2pt
+    },
+    % --- Flechas canónicas ---
+    flowShort/.style={
+        -{Stealth[length=2.1mm, width=1.55mm]},
+        line width=1.05pt,
+        draw=recWarmHdr,
+        shorten >=1.2pt,
+        shorten <=1.0pt
+    },
+    flowEntry/.style={
+        -{Stealth[length=2.2mm, width=1.65mm]},
+        line width=1.10pt,
+        draw=recInk,
+        shorten >=1.5pt,
+        shorten <=0.5pt
+    },
+    flowLoop/.style={
+        -{Stealth[length=2.2mm, width=1.6mm]},
+        line width=1.05pt,
+        draw=recWarmHdr,
+        shorten >=1.5pt,
+        shorten <=1.0pt
+    },
+    flowExit/.style={
+        -{Stealth[length=2.4mm, width=1.75mm]},
+        line width=1.20pt,
+        draw=recExitTxt,
+        shorten >=1.5pt,
+        shorten <=1.0pt
+    },
+    % --- Etiquetas ---
+    condLbl/.style={
+        font=\footnotesize\sffamily,
+        text=recInk,
+        align=center,
+        inner sep=1.8pt
+    }
+]
+
+% ==============================================================================
+% 1. COLOCACIÓN RELATIVA DE BLOQUES (ÚNICO NODO RAÍZ EN F0)
+% ==============================================================================
+\node[phaseBox] (f0) at (0,0) {F0: Rueda Libre};
+\node[phaseBox, below=\recGapY of f0] (f1) {F1: Retorno \qty{0}{\degree}};
+\node[phaseBox, below=\recGapY of f1] (f2) {F2: Freno Activo};
+\node[decBox, below=\recDecGapY of f2] (calma) {¿Calma?};
+
+% Coordenada nombrada para el retorno ortogonal "No" y carril de entrada
+\coordinate (loop_wp) at ($(f2.west |- calma.west) + (-\recLoopGap, 0)$);
+\coordinate (entry_lane_x) at ($(loop_wp)!0.42!(f0.west)$);
+
+% ==============================================================================
+% 2. TRANSICIONES INTERNAS Y BUCLE DE RETORNO ORTOGONAL
+% ==============================================================================
+\draw[flowShort] (f0.south) -- (f1.north)
+    node[condLbl, midway, right=4pt] (lbl_t300) {\qty{300}{\milli\second}};
+
+\draw[flowShort] (f1.south) -- (f2.north)
+    node[condLbl, midway, right=4pt] (lbl_zero) {$|e_\theta|\le\qty{0.08}{\degree}$};
+
+\draw[flowShort] (f2.south) -- (calma.north);
+
+\draw[flowLoop, rounded corners=5pt]
+    (calma.west) -- node[condLbl, pos=0.46, above=2.5pt, font=\footnotesize\bfseries\sffamily, text=recWarmHdr] (lbl_no) {No}
+    (loop_wp) |- (f2.west);
+
+% ==============================================================================
+% 3. CONTENEDOR ELÁSTICO RECOVER_HOME (FIT) Y ENCABEZADO PILL
+% ==============================================================================
+\coordinate (zone_top_pad) at ($(f0.north)+(0,0.22cm)$);
+\begin{scope}[on background layer]
+    \node[zoneBox, fit=(f0)(f1)(f2)(calma)(loop_wp)(lbl_t300)(lbl_zero)(lbl_no)(zone_top_pad)] (recover_zone) {};
+\end{scope}
+\node[zonePill, anchor=east] (recover_pill) at ([xshift=-0.20cm]recover_zone.north east) {RECOVER\_HOME};
+
+% ==============================================================================
+% 4. ENTRADA SUPERIOR-IZQUIERDA (Caída / Inicio) Y SALIDA TERMINAL (SWING_UP)
+% ==============================================================================
+\coordinate (init_dot) at ($(entry_lane_x |- recover_zone.north) + (0, \recEntryDropY)$);
+\fill[recInk] (init_dot) circle (2.8pt);
+\draw[flowEntry, rounded corners=5pt] (init_dot) |- (f0.west);
+\node[condLbl, right=4pt of init_dot, font=\footnotesize\bfseries\sffamily, text=recInk] (lbl_entry)
+    {Caída / Inicio};
+
+% Salida terminal "Sí (250 ms)" -> SWING_UP (fuera del contenedor)
+\coordinate (exit_border) at (recover_zone.east |- calma.east);
+\node[exitBox, right=\recExitOut of exit_border, anchor=west] (swingup) {SWING\_UP};
+\draw[flowExit] (calma.east) -- (swingup.west);
+
+\coordinate (exit_mid) at ($(exit_border)!0.5!(swingup.west)$);
+\node[condLbl, above=2.5pt, font=\footnotesize\bfseries\sffamily, text=recExitTxt] at (exit_mid) {Sí};
+\node[condLbl, below=2.5pt, text=recExitTxt] at (exit_mid) {\qty{250}{\milli\second}};
+
+\end{tikzpicture}%
+}%
+\endgroup
+\caption{Flujo interno de subfases del estado de auto-recuperación \texttt{RECOVER\_HOME} (\texttt{furuta\_control.c}). Tras una caída en equilibrio ($|\tilde{\alpha}|>\qty{32}{\degree}$), un \textit{timeout} de levantamiento o un inicio con $\theta\neq\qty{0}{\degree}$, el sistema aplica rueda libre (\qty{300}{\milli\second}), retorna el brazo a $\qty{0}{\degree}$ mediante \texttt{pid\_motor\_pos} con reinicio de Clegg (cota de seguridad \qty{3.5}{\second}) y sostiene el freno activo \texttt{L298N\_Brake} hasta confirmar reposo pendular ($|\alpha_{\text{abajo}}|<\qty{10}{\degree}$, $|\dot{\alpha}|<\qty{0.65}{\radian\per\second}$) por \qty{250}{\milli\second} (cota \qty{5.5}{\second}) antes de relanzar \texttt{SWING\_UP}.}
+\label{fig:detalle_recover_home}
+\end{figure}

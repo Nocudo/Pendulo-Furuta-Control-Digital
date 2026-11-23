@@ -1,0 +1,525 @@
+% ==============================================================================
+% SECCION II: MARCO TEORICO
+% ==============================================================================
+\section{Marco Teórico}\label{sec:marco_teorico}
+
+\subsection{Antecedentes e Investigaciones Previas}\label{subsec:antecedentes}
+
+El estudio del péndulo invertido rotacional ---conocido como péndulo de Furuta desde la formulación de Furuta, Yamakita y Kobayashi~\cite{furuta1991}--- se ha consolidado como un problema canónico para validar estrategias de control no lineal, híbrido y digital sobre plantas subactuadas. A lo largo de las últimas tres décadas, la literatura científica ha madurado soluciones específicas en cuatro frentes complementarios:
+
+\begin{enumerate}
+    \item \textbf{Control basado en energía y conmutación para levantamiento (\textit{swing-up}):} Furuta \textit{et al.}~\cite{furuta1991} introdujeron leyes de levantamiento por realimentación de pseudoestados y conmutación entre regiones del espacio de fase para impulsar la barra desde el reposo inferior hasta la vecindad de la vertical superior. Posteriormente, Spong~\cite{spong1995} formalizó el problema de \textit{swing-up} en sistemas mecánicos subactuados mediante linealización parcial por realimentación y bombeo energético, mientras que Åström y Furuta~\cite{astrom2000} establecieron la formulación general de control por energía total con aceleración acotada del brazo, garantizando la convergencia hacia la órbita homoclínica donde un controlador lineal local captura el equilibrio invertido.
+
+    \item \textbf{Modelado lagrangiano riguroso y parámetros equivalentes:} Cazzolato y Prime~\cite{cazzolato2011} desarrollaron una formulación sistemática de Euler-Lagrange para el péndulo de Furuta que incorpora tensores completos de inercia, términos acoplados de Coriolis y centrífugos, análisis de parámetros equivalentes y criterios consistentes de linealización alrededor del equilibrio vertical superior.
+
+    \item \textbf{Gestión de saturación integral, transferencia sin saltos y reinicio no lineal de fase:} En actuadores con límites físicos de tensión o corriente, la acumulación integral sostenida (\textit{integrator windup}) induce sobreimpulsos severos y pérdida de estabilidad. Åström y Rundqwist~\cite{AstromAntiwindup1989} sistematizaron esquemas de \textit{anti-windup} por seguimiento posterior y sujeción condicional, y Peng \textit{et al.}~\cite{Peng1996} unificaron las técnicas de \textit{anti-windup}, transferencia sin saltos (\textit{bumpless transfer}) y acondicionamiento para controladores PID discretos. De forma complementaria, Clegg~\cite{clegg1958} propuso un integrador no lineal con reinicio instantáneo a cero en el cruce del error por cero, reduciendo el retardo de fase efectivo respecto a un integrador lineal sin sacrificar ganancia estática frente a fricción seca.
+
+    \item \textbf{Estimación discreta de velocidad ante cuantización de encoders y no linealidades PWM:} La diferenciación numérica directa de sensores angulares cuantizados amplifica el ruido de alta frecuencia de manera inversamente proporcional al periodo de muestreo; Merry \textit{et al.}~\cite{Merry2010} caracterizaron los errores de estimación de velocidad y aceleración derivados de la resolución finita de encoders y del tiempo de muestreo, evidenciando la necesidad de filtrado digital de mínimo retardo de fase~\cite{Oppenheim2010,Astrom1997}. Asimismo, Petrić \textit{et al.}~\cite{Petric2022} analizaron las no linealidades dinámicas y armónicos introducidos por moduladores por ancho de pulso (PWM) multimuestreados, los cuales se agravan en etapas de potencia reales por caídas de conducción y zonas muertas asimétricas.
+\end{enumerate}
+
+Pese a la solidez teórica de cada una de estas líneas por separado, la gran mayoría de las validaciones experimentales en la literatura emplean bancos académicos con motores de accionamiento directo, amplificadores lineales o MOSFET de baja resistencia y encoders ópticos incrementales de alta resolución. Persiste, por tanto, una brecha experimental relevante: validar de manera conjunta el levantamiento energético acotado, el lazo dual SIMO sin competencia integral, el reinicio no lineal de Clegg, el \textit{anti-windup} condicional y el filtrado selectivo IIR/\textit{biquad} sobre hardware accesible manufacturado en PLA mediante impresión 3D, accionado por un reductor planetario $80:1$ con holgura mecánica perceptible, un puente~H bipolar L298N con zona muerta asimétrica y encoders magnéticos AS5600 muestreados determinísticamente a \qty{1.0}{\kilo\hertz}.
+
+\subsection{Modelo Dinámico de Euler-Lagrange y Funciones de Transferencia de la Planta}\label{subsec:euler_lagrange}
+
+\input{figuras/fig_cinematica_furuta.tex}
+
+La \mbox{Fig.~\ref{fig:cinematica_furuta}} ilustra la cinemática tridimensional del péndulo rotacional de Furuta respecto al sistema de referencia inercial de base $\mathcal{F}_0$, centrado en la articulación motriz $O_0$ y definido por los ejes ortogonales $+X_0$ y $+Y_0$ en el plano horizontal de giro y el eje vertical $+Z_0$ orientado hacia arriba a lo largo del eje del actuador. El brazo horizontal de longitud $L_0$ describe una rotación acimutal $\theta$ alrededor de $+Z_0$ (medida desde $+X_0$ hacia $+Y_0$) bajo la acción del par motor efectivo $\tau_0$. En el extremo del brazo se ubica la articulación distal, a la cual se asocia el marco móvil ortonormal $\mathcal{F}_1$ solidario al pivote (cuyos ejes unitarios radial, tangencial y vertical conforman las columnas de la matriz de rotación del brazo). Sobre dicho pivote oscila una barra rígida de longitud $L_1$ y masa $m_1$, cuyo centro de masa $G_1$ (con momento de inercia centroidal transversal $J_{1,\text{cg}}$) se sitúa a una distancia $l_1$ del pivote distal. La coordenada pendular $\alpha$ mide la deflexión angular dextrógira de la barra alrededor del eje radial negativo de $\mathcal{F}_1$ desde la vertical descendente bajo la aceleración gravitacional $\mathbf{g}$, mientras que $\tilde{\alpha}$ representa la desviación angular respecto a la vertical superior de equilibrio invertido.
+
+El vector de coordenadas generalizadas $\mathbf{q}$, la desviación vertical $\tilde{\alpha}$ y el vector gravitatorio $\mathbf{g}$ en el marco inercial $\mathcal{F}_0$ se definen como:
+\begin{equation}
+    \mathbf{q}(t) = \begin{bmatrix} \theta(t) \\ \alpha(t) \end{bmatrix}, \qquad
+    \tilde{\alpha} = \alpha - \pi, \qquad
+    \mathbf{g} = \begin{bmatrix} 0 \\ 0 \\ -g \end{bmatrix},
+    \label{eq:marco_movil}
+\end{equation}
+mientras que las matrices de rotación elementales del brazo ($\mathbf{R}_\theta$) y de la barra pendular ($\mathbf{R}_\alpha$) se plantean mediante:
+\begin{equation}
+\resizebox{0.85\columnwidth}{!}{$\displaystyle
+    \setlength{\arraycolsep}{3.5pt}
+    \begin{aligned}
+        \mathbf{R}_\theta &= \mathbf{R}_z(\theta) = \begin{bmatrix} \hat{i}_1 & \hat{j}_1 & \hat{k}_0 \end{bmatrix}
+        = \begin{bmatrix}
+            \cos\theta & -\sin\theta & 0 \\
+            \sin\theta & \cos\theta & 0 \\
+            0 & 0 & 1
+        \end{bmatrix}, \\[4pt]
+        \mathbf{R}_\alpha &= \mathbf{R}_x(-\alpha)
+        = \begin{bmatrix}
+            1 & 0 & 0 \\
+            0 & \cos\alpha & \sin\alpha \\
+            0 & -\sin\alpha & \cos\alpha
+        \end{bmatrix}.
+    \end{aligned}
+$}
+    \label{eq:rotaciones_elem}
+\end{equation}
+
+La transformación homogénea ${}^{0}\mathbf{T}_1$ desde el marco inercial $\mathcal{F}_0$ hasta el marco móvil distal $\mathcal{F}_1$ se plantea como la composición de la rotación acimutal $\mathbf{T}_{\text{rot},z}$ seguida de la traslación radial $\mathbf{T}_{\text{tras},x}$ a lo largo del brazo:
+\begin{equation}
+\resizebox{0.86\columnwidth}{!}{$\displaystyle
+    \setlength{\arraycolsep}{2.5pt}
+    \begin{aligned}
+        {}^{0}\mathbf{T}_1(\theta) &= \mathbf{T}_{\text{rot},z}(\theta)\,\mathbf{T}_{\text{tras},x}(L_0) \\[3pt]
+        &= \begin{bmatrix}
+            \cos\theta & -\sin\theta & 0 & 0 \\
+            \sin\theta & \cos\theta & 0 & 0 \\
+            0 & 0 & 1 & 0 \\
+            0 & 0 & 0 & 1
+        \end{bmatrix}
+        \begin{bmatrix}
+            1 & 0 & 0 & L_0 \\
+            0 & 1 & 0 & 0 \\
+            0 & 0 & 1 & 0 \\
+            0 & 0 & 0 & 1
+        \end{bmatrix} \\[3pt]
+        &= \begin{bmatrix}
+            \cos\theta & -\sin\theta & 0 & L_0\cos\theta \\
+            \sin\theta & \cos\theta & 0 & L_0\sin\theta \\
+            0 & 0 & 1 & 0 \\
+            0 & 0 & 0 & 1
+        \end{bmatrix}.
+    \end{aligned}
+$}
+    \label{eq:transf_homogenea}
+\end{equation}
+
+Definiendo el vector radial del brazo $\mathbf{p}_0$ y el vector colgante del centro de masa $\mathbf{p}_1$, el vector de posición local $\mathbf{A}$ expresado en el marco rotado $\mathcal{F}_1$ se obtiene mediante la traslación y rotación pendular:
+\begin{equation}
+    \begin{aligned}
+        \mathbf{p}_0 &= \begin{bmatrix} L_0 \\ 0 \\ 0 \end{bmatrix}, \qquad
+        \mathbf{p}_1 = \begin{bmatrix} 0 \\ 0 \\ -l_1 \end{bmatrix}, \\[4pt]
+        \mathbf{A}(\alpha) &= \mathbf{p}_0 + \mathbf{R}_\alpha\,\mathbf{p}_1 \\[3pt]
+        &= \begin{bmatrix} L_0 \\ 0 \\ 0 \end{bmatrix}
+        + \begin{bmatrix}
+            1 & 0 & 0 \\
+            0 & \cos\alpha & \sin\alpha \\
+            0 & -\sin\alpha & \cos\alpha
+        \end{bmatrix}
+        \begin{bmatrix} 0 \\ 0 \\ -l_1 \end{bmatrix} \\[3pt]
+        &= \begin{bmatrix} L_0 \\ -l_1\sin\alpha \\ -l_1\cos\alpha \end{bmatrix}.
+    \end{aligned}
+    \label{eq:vector_local_A}
+\end{equation}
+Aplicando~\eqref{eq:rotaciones_elem} sobre~\eqref{eq:vector_local_A}, la cinemática directa del centro de masa $\mathbf{r}_{G1}$ en el marco inercial $\mathcal{F}_0$ se plantea como el producto matricial entre $\mathbf{R}_\theta$ y $\mathbf{A}$:
+\begin{equation}
+    \begin{aligned}
+        \mathbf{r}_{G1}(\mathbf{q}) &= \mathbf{R}_\theta\,\mathbf{A}(\alpha) \\[3pt]
+        &= \begin{bmatrix}
+            \cos\theta & -\sin\theta & 0 \\
+            \sin\theta & \cos\theta & 0 \\
+            0 & 0 & 1
+        \end{bmatrix}
+        \begin{bmatrix}
+            L_0 \\ -l_1\sin\alpha \\ -l_1\cos\alpha
+        \end{bmatrix} \\[3pt]
+        &= \begin{bmatrix}
+            L_0\cos\theta + l_1\sin\alpha\sin\theta \\
+            L_0\sin\theta - l_1\sin\alpha\cos\theta \\
+            -l_1\cos\alpha
+        \end{bmatrix}.
+    \end{aligned}
+    \label{eq:pos_g1}
+\end{equation}
+
+Derivando~\eqref{eq:pos_g1} respecto al tiempo mediante el Jacobiano lineal $\mathbf{J}_{G1}$, el vector de velocidad lineal $\mathbf{v}_{G1}$ expresado en el marco inercial $\mathcal{F}_0$ resulta:
+\begin{equation}
+\resizebox{0.86\columnwidth}{!}{$\displaystyle
+    \setlength{\arraycolsep}{2.5pt}
+    \begin{aligned}
+        \mathbf{v}_{G1} &= \frac{\mathrm{d}\mathbf{r}_{G1}}{\mathrm{d}t} = \mathbf{J}_{G1}(\mathbf{q})\,\dot{\mathbf{q}} \\[3pt]
+        &= \begin{bmatrix}
+            -L_0\sin\theta + l_1\sin\alpha\cos\theta & l_1\cos\alpha\sin\theta \\
+            L_0\cos\theta + l_1\sin\alpha\sin\theta & -l_1\cos\alpha\cos\theta \\
+            0 & l_1\sin\alpha
+        \end{bmatrix}
+        \begin{bmatrix} \dot{\theta} \\ \dot{\alpha} \end{bmatrix} \\[3pt]
+        &= \begin{bmatrix}
+            (-L_0\sin\theta + l_1\sin\alpha\cos\theta)\dot{\theta} + l_1\cos\alpha\sin\theta\,\dot{\alpha} \\
+            (L_0\cos\theta + l_1\sin\alpha\sin\theta)\dot{\theta} - l_1\cos\alpha\cos\theta\,\dot{\alpha} \\
+            l_1\sin\alpha\,\dot{\alpha}
+        \end{bmatrix}.
+    \end{aligned}
+$}
+    \label{eq:vel_g1_f0}
+\end{equation}
+Proyectando~\eqref{eq:vel_g1_f0} al marco móvil $\mathcal{F}_1$ mediante $\mathbf{R}_\theta^T$, la dependencia en $\theta$ se cancela por ortogonalidad de~\eqref{eq:rotaciones_elem}, definiendo el Jacobiano local ${}^{1}\mathbf{J}_{G1}$, la velocidad local ${}^{1}\mathbf{v}_{G1}$ y la forma cuadrática de la rapidez al cuadrado:
+\begin{equation}
+    \setlength{\arraycolsep}{3.5pt}
+    \begin{aligned}
+        {}^{1}\mathbf{v}_{G1} &= \mathbf{R}_\theta^T\,\mathbf{v}_{G1} = {}^{1}\mathbf{J}_{G1}(\alpha)\,\dot{\mathbf{q}} \\[3pt]
+        &= \begin{bmatrix}
+            l_1\sin\alpha & 0 \\
+            L_0 & -l_1\cos\alpha \\
+            0 & l_1\sin\alpha
+        \end{bmatrix}
+        \begin{bmatrix} \dot{\theta} \\ \dot{\alpha} \end{bmatrix} \\[3pt]
+        &= \begin{bmatrix}
+            l_1\dot{\theta}\sin\alpha \\
+            L_0\dot{\theta} - l_1\dot{\alpha}\cos\alpha \\
+            l_1\dot{\alpha}\sin\alpha
+        \end{bmatrix}, \\[4pt]
+        \|\mathbf{v}_{G1}\|^2 &= {}^{1}\mathbf{v}_{G1}^T\,{}^{1}\mathbf{v}_{G1}
+        = \dot{\mathbf{q}}^T\bigl({}^{1}\mathbf{J}_{G1}^T\,{}^{1}\mathbf{J}_{G1}\bigr)\dot{\mathbf{q}} \\[3pt]
+        &= \dot{\mathbf{q}}^T
+        \begin{bmatrix}
+            L_0^2 + l_1^2\sin^2\alpha & -L_0 l_1\cos\alpha \\
+            -L_0 l_1\cos\alpha & l_1^2
+        \end{bmatrix}
+        \dot{\mathbf{q}}.
+    \end{aligned}
+    \label{eq:v_g1_cuadrado}
+\end{equation}
+
+Sean $J_{\text{ref}}$ la inercia rotacional total reflejada en el eje de salida del brazo ---conformada por la inercia del brazo $J_0$ más la inercia del inducido motor $J_m$ escalada por la relación de reducción $N_g$--- y $J_{1,\text{piv}}$ el momento de inercia efectivo de la barra pendular respecto a su pivote distal:
+\begin{equation}
+    J_{\text{ref}} = J_0 + N_g^2 J_m, \qquad
+    J_{1,\text{piv}} = J_{1,\text{cg}} + m_1 l_1^2.
+    \label{eq:inercias_equiv}
+\end{equation}
+De manera análoga, los vectores de velocidad angular del brazo ($\boldsymbol{\omega}_0$ en $\mathcal{F}_0$) y de la barra pendular (${}^{p}\boldsymbol{\omega}_1$ expresado en sus ejes principales de cuerpo mediante $\mathbf{R}_\alpha^T$) se factorizan con sus respectivos Jacobianos angulares $\mathbf{J}_{\omega 0}$ y $\mathbf{J}_{\omega 1}$:
+\begin{equation}
+    \setlength{\arraycolsep}{3.5pt}
+    \begin{aligned}
+        \boldsymbol{\omega}_0 &= \mathbf{J}_{\omega 0}\,\dot{\mathbf{q}}
+        = \begin{bmatrix} 0 & 0 \\ 0 & 0 \\ 1 & 0 \end{bmatrix}
+        \begin{bmatrix} \dot{\theta} \\ \dot{\alpha} \end{bmatrix}
+        = \begin{bmatrix} 0 \\ 0 \\ \dot{\theta} \end{bmatrix}, \\[4pt]
+        {}^{p}\boldsymbol{\omega}_1 &= \mathbf{R}_\alpha^T
+        \begin{bmatrix} -\dot{\alpha} \\ 0 \\ \dot{\theta} \end{bmatrix}
+        = \mathbf{J}_{\omega 1}(\alpha)\,\dot{\mathbf{q}} \\[3pt]
+        &= \begin{bmatrix}
+            0 & -1 \\
+            -\sin\alpha & 0 \\
+            \cos\alpha & 0
+        \end{bmatrix}
+        \begin{bmatrix} \dot{\theta} \\ \dot{\alpha} \end{bmatrix}
+        = \begin{bmatrix}
+            -\dot{\alpha} \\
+            -\dot{\theta}\sin\alpha \\
+            \dot{\theta}\cos\alpha
+        \end{bmatrix}.
+    \end{aligned}
+    \label{eq:vel_ang_mat}
+\end{equation}
+Modelando el péndulo como una barra esbelta simétrica con inercia axial despreciable~\cite{cazzolato2011}, los tensores diagonales de inercia del conjunto motriz ($\mathbf{I}_0$) y centroidal de la barra ($\mathbf{I}_{1,\text{cg}}$) adoptan la forma matricial:
+\begin{equation}
+    \setlength{\arraycolsep}{3.5pt}
+    \mathbf{I}_0 = \begin{bmatrix} 0 & 0 & 0 \\ 0 & 0 & 0 \\ 0 & 0 & J_{\text{ref}} \end{bmatrix}, \qquad
+    \mathbf{I}_{1,\text{cg}} = \begin{bmatrix} J_{1,\text{cg}} & 0 & 0 \\ 0 & J_{1,\text{cg}} & 0 \\ 0 & 0 & 0 \end{bmatrix}.
+    \label{eq:tensores_inercia}
+\end{equation}
+Agrupando las contribuciones rotacionales y traslacional a partir de~\eqref{eq:v_g1_cuadrado}--\eqref{eq:tensores_inercia}, la energía cinética total $T$ adopta la forma cuadrática matricial:
+\begin{equation}
+    \begin{aligned}
+        T(\mathbf{q},\dot{\mathbf{q}}) &= \frac{1}{2}\boldsymbol{\omega}_0^T\mathbf{I}_0\boldsymbol{\omega}_0
+        + \frac{1}{2}m_1\,{}^{1}\mathbf{v}_{G1}^T\,{}^{1}\mathbf{v}_{G1} \\
+        &\quad + \frac{1}{2}\,{}^{p}\boldsymbol{\omega}_1^T\mathbf{I}_{1,\text{cg}}\,{}^{p}\boldsymbol{\omega}_1 \\[3pt]
+        &= \frac{1}{2}\dot{\mathbf{q}}^T\mathbf{M}(\mathbf{q})\dot{\mathbf{q}},
+    \end{aligned}
+    \label{eq:energia_cinetica}
+\end{equation}
+donde la matriz simétrica y definida positiva de inercia $\mathbf{M}$ se construye por suma matricial de Jacobianos y se simplifica mediante~\eqref{eq:inercias_equiv}:
+\begin{equation}
+\resizebox{0.85\columnwidth}{!}{$\displaystyle
+    \setlength{\arraycolsep}{3.5pt}
+    \begin{aligned}
+        \mathbf{M}(\mathbf{q}) &= \mathbf{J}_{\omega 0}^T\mathbf{I}_0\mathbf{J}_{\omega 0}
+        + m_1\,{}^{1}\mathbf{J}_{G1}^T\,{}^{1}\mathbf{J}_{G1}
+        + \mathbf{J}_{\omega 1}^T\mathbf{I}_{1,\text{cg}}\mathbf{J}_{\omega 1} \\[4pt]
+        &= \begin{bmatrix}
+            J_{\text{ref}} + m_1 L_0^2 + J_{1,\text{piv}}\sin^2\alpha & -m_1 L_0 l_1\cos\alpha \\
+            -m_1 L_0 l_1\cos\alpha & J_{1,\text{piv}}
+        \end{bmatrix}.
+    \end{aligned}
+$}
+    \label{eq:matriz_inercia}
+\end{equation}
+Tomando el plano horizontal de rotación del brazo en el origen $O_0$ como referencia nula, la energía potencial gravitatoria $V$ se obtiene mediante el producto interno entre~\eqref{eq:marco_movil} y~\eqref{eq:pos_g1}:
+\begin{equation}
+    \begin{aligned}
+        V(\mathbf{q}) &= -m_1\,\mathbf{g}^T\mathbf{r}_{G1}(\mathbf{q}) \\[3pt]
+        &= -m_1 \begin{bmatrix} 0 & 0 & -g \end{bmatrix}
+        \begin{bmatrix}
+            L_0\cos\theta + l_1\sin\alpha\sin\theta \\
+            L_0\sin\theta - l_1\sin\alpha\cos\theta \\
+            -l_1\cos\alpha
+        \end{bmatrix} \\[3pt]
+        &= -m_1 g l_1\cos\alpha.
+    \end{aligned}
+    \label{eq:energia_potencial}
+\end{equation}
+A partir de~\eqref{eq:energia_cinetica}--\eqref{eq:energia_potencial}, el Lagrangiano matricial $\mathcal{L}$ resulta:
+\begin{equation}
+    \mathcal{L}(\mathbf{q},\dot{\mathbf{q}}) = T - V = \frac{1}{2}\dot{\mathbf{q}}^T\mathbf{M}(\mathbf{q})\dot{\mathbf{q}} + m_1 g l_1\cos\alpha.
+    \label{eq:lagrangiano}
+\end{equation}
+Para modelar las pérdidas viscosas mediante la función cuadrática de disipación de Rayleigh $\mathcal{D}$ ---donde $b_0$ y $b_1$ denotan el amortiguamiento viscoso en el eje motriz y en el rodamiento distal, respectivamente--- junto con la matriz diagonal de amortiguamiento $\mathbf{B}$ y el vector de fuerzas generalizadas $\mathbf{Q}$ (cuya segunda componente nula refleja la subactuación del eje pendular), se definen:
+\begin{equation}
+    \mathcal{D}(\dot{\mathbf{q}}) = \frac{1}{2}\dot{\mathbf{q}}^T\mathbf{B}\dot{\mathbf{q}}, \qquad
+    \mathbf{B} = \begin{bmatrix} b_0 & 0 \\ 0 & b_1 \end{bmatrix}, \qquad
+    \mathbf{Q} = \begin{bmatrix} \tau_0 \\ 0 \end{bmatrix}.
+    \label{eq:rayleigh}
+\end{equation}
+Aplicando el operador vectorial de Euler-Lagrange con disipación:
+\begin{equation}
+    \frac{\mathrm{d}}{\mathrm{d}t}\!\left(\frac{\partial\mathcal{L}}{\partial\dot{\mathbf{q}}}\right) - \frac{\partial\mathcal{L}}{\partial\mathbf{q}} + \frac{\partial\mathcal{D}}{\partial\dot{\mathbf{q}}} = \mathbf{Q},
+    \label{eq:euler_lagrange_op}
+\end{equation}
+se obtiene la ecuación dinámica no lineal del péndulo de Furuta en forma matricial canónica:
+\begin{equation}
+    \mathbf{M}(\mathbf{q})\ddot{\mathbf{q}} + \mathbf{C}(\mathbf{q},\dot{\mathbf{q}})\dot{\mathbf{q}} + \mathbf{B}\dot{\mathbf{q}} + \mathbf{G}(\mathbf{q}) = \mathbf{Q},
+    \label{eq:dinamica_theta}
+\end{equation}
+donde la matriz de términos centrífugos y de Coriolis $\mathbf{C}$ (obtenida mediante los símbolos de Christoffel de primera especie asociados a $\mathbf{M}$, garantizando la propiedad de pasividad antisimétrica) y el vector gravitatorio $\mathbf{G}$ quedan definidos por:
+\begin{gather}
+    \resizebox{0.86\columnwidth}{!}{$\displaystyle
+        \setlength{\arraycolsep}{3pt}
+        \mathbf{C}(\mathbf{q},\dot{\mathbf{q}}) =
+        \begin{bmatrix}
+            \tfrac{1}{2}J_{1,\text{piv}}\sin(2\alpha)\dot{\alpha} & \tfrac{1}{2}J_{1,\text{piv}}\sin(2\alpha)\dot{\theta} + m_1 L_0 l_1\sin\alpha\,\dot{\alpha} \\
+            -\tfrac{1}{2}J_{1,\text{piv}}\sin(2\alpha)\dot{\theta} & 0
+        \end{bmatrix},
+    $} \label{eq:matriz_coriolis} \\[4pt]
+    \mathbf{G}(\mathbf{q}) = \frac{\partial V}{\partial\mathbf{q}} =
+    \begin{bmatrix}
+        0 \\ m_1 g l_1\sin\alpha
+    \end{bmatrix}. \label{eq:dinamica_alpha}
+\end{gather}
+
+Para la síntesis del regulador de equilibrio se linealiza el sistema matricial~\eqref{eq:dinamica_theta}--\eqref{eq:dinamica_alpha} alrededor del equilibrio vertical invertido bajo pequeñas desviaciones angulares de $\tilde{\alpha}$ mediante las aproximaciones de primer orden:
+\begin{equation}
+    \begin{gathered}
+        \tilde{\mathbf{q}} = \begin{bmatrix} \theta \\ \tilde{\alpha} \end{bmatrix}, \qquad
+        \alpha = \pi + \tilde{\alpha}, \\[3pt]
+        \sin\alpha \approx -\tilde{\alpha}, \qquad
+        \cos\alpha \approx -1, \qquad
+        \sin^2\alpha \approx 0,
+    \end{gathered}
+    \label{eq:aprox_linealizacion}
+\end{equation}
+despreciando los términos bilineales en $\mathbf{C}$ para obtener el sistema matricial linealizado de segundo orden:
+\begin{equation}
+    \begin{gathered}
+        \mathbf{M}_0\,\ddot{\tilde{\mathbf{q}}} + \mathbf{B}\,\dot{\tilde{\mathbf{q}}} + \mathbf{K}_g\,\tilde{\mathbf{q}} = \mathbf{Q}, \\[4pt]
+        \resizebox{0.85\columnwidth}{!}{$\displaystyle
+            \setlength{\arraycolsep}{3pt}
+            \mathbf{M}_0 =
+            \begin{bmatrix}
+                J_{\text{ref}} + m_1 L_0^2 & m_1 L_0 l_1 \\
+                m_1 L_0 l_1 & J_{1,\text{piv}}
+            \end{bmatrix}, \qquad
+            \mathbf{K}_g =
+            \begin{bmatrix}
+                0 & 0 \\
+                0 & -m_1 g l_1
+            \end{bmatrix}.
+        $}
+    \end{gathered}
+    \label{eq:dinamica_lin_mat}
+\end{equation}
+En arquitecturas accionadas mediante un reductor de relación elevada ($N_g \gg 1$), el escalamiento cuadrático en~\eqref{eq:inercias_equiv} produce una fuerte \textbf{propiedad de desacoplamiento inercial}: cuando $J_{\text{ref}} \gg m_1 L_0 l_1$ (y $J_{\text{ref}} \gg J_{1,\text{piv}}$), el elemento fuera de la diagonal en la primera fila de $\mathbf{M}_0$ en~\eqref{eq:dinamica_lin_mat} resulta despreciable frente a la inercia reflejada del tren motriz. Bajo esta condición, y modelando el motor DC controlado por armadura con inductancia eléctrica despreciable frente a su dinámica mecánica ---donde el par $\tau_0$ es proporcional a la diferencia entre la tensión de entrada $u$ y la fuerza contraelectromotriz---~\cite{Ogata2010}, la primera fila de~\eqref{eq:dinamica_lin_mat} se reduce a una planta electromecánica lineal desacoplada de primer orden en velocidad y de tipo~1 en posición:
+\begin{equation}
+    \begin{aligned}
+        G_v(s) &= \frac{\dot{\Theta}(s)}{U(s)} = \frac{K_v}{\tau_m s + 1}, \\
+        G_p(s) &= \frac{\Theta(s)}{U(s)} = \frac{K_v}{s(\tau_m s + 1)},
+    \end{aligned}
+    \label{eq:gv_actuador}
+\end{equation}
+donde $K_v$ es la ganancia estática de velocidad angular respecto a la tensión de armadura y $\tau_m$ es la constante de tiempo mecánica equivalente del conjunto brazo--motor--reductor. En el dominio temporal, la ecuación diferencial de velocidad del brazo correspondiente a~\eqref{eq:gv_actuador} es:
+\begin{equation}
+    \ddot{\theta} = -\frac{1}{\tau_m}\dot{\theta} + \frac{K_v}{\tau_m}u.
+    \label{eq:edo_brazo}
+\end{equation}
+
+De la segunda fila del sistema matricial~\eqref{eq:dinamica_lin_mat}, definiendo la frecuencia natural pendular $\omega_n$, el factor de amortiguamiento viscoso $\zeta$ y la ganancia adimensional de acoplamiento inercial $K_{\text{acople}}$ mediante:
+\begin{equation}
+\resizebox{0.88\columnwidth}{!}{$\displaystyle
+    \omega_n = \sqrt{\frac{m_1 g l_1}{J_{1,\text{piv}}}}, \quad
+    \zeta = \frac{b_1}{2 J_{1,\text{piv}}\omega_n}, \quad
+    K_{\text{acople}} = \frac{m_1 L_0 l_1}{J_{1,\text{piv}}},
+$}
+    \label{eq:params_pendulo_simb}
+\end{equation}
+se obtiene la ecuación diferencial linealizada del péndulo invertido:
+\begin{equation}
+    \ddot{\tilde{\alpha}} + 2\zeta\omega_n\dot{\tilde{\alpha}} - \omega_n^2\tilde{\alpha} = -K_{\text{acople}}\ddot{\theta}.
+    \label{eq:pendulo_linealizado}
+\end{equation}
+Aplicando la transformada de Laplace bajo condiciones iniciales nulas en términos de las transformadas $\tilde{A}(s)$ y $U(s)$, y combinando~\eqref{eq:gv_actuador} y~\eqref{eq:pendulo_linealizado}, se deducen las funciones de transferencia simbólicas acopladas desde la aceleración del brazo hacia la deflexión pendular, $G_{\alpha/\ddot{\theta}}^{\text{up}}(s)$, y desde la tensión de entrada del actuador hacia la desviación pendular, $G_{\alpha/u}^{\text{up}}(s)$:
+\begin{equation}
+    \begin{aligned}
+        G_{\alpha/\ddot{\theta}}^{\text{up}}(s) &= \frac{\tilde{A}(s)}{s^2\Theta(s)} = \frac{-K_{\text{acople}}}{s^2 + 2\zeta\omega_n s - \omega_n^2}, \\[3pt]
+        G_{\alpha/u}^{\text{up}}(s) &= \frac{\tilde{A}(s)}{U(s)} = G_{\alpha/\ddot{\theta}}^{\text{up}}(s)\,s\,G_v(s) \\
+        &= \frac{-K_{\text{acople}} K_v\,s}{(\tau_m s + 1)(s^2 + 2\zeta\omega_n s - \omega_n^2)}.
+    \end{aligned}
+    \label{eq:ft_pendulo_up}
+\end{equation}
+
+La estructura polo--cero de~\eqref{eq:ft_pendulo_up} resulta indispensable para fundamentar físicamente el diseño del controlador, pues revela tres restricciones inherentes de la planta:
+\begin{enumerate}
+    \item \textbf{Cero en el origen y bloqueo de componente continua (DC):} El factor derivativo $s$ en el numerador refleja que el péndulo solo recibe par inercial ante \textit{aceleraciones} no nulas del pivote $\ddot{\theta}$, de modo que la ganancia estática de~\eqref{eq:ft_pendulo_up} se anula en $s=0$. Una tensión continua constante produce rotación estacionaria a velocidad constante sin sostener par restaurador sobre $\alpha$; en consecuencia, una única entrada escalar $u$ no puede anular simultáneamente errores estacionarios independientes en $\alpha$ y $\theta$, impidiendo emplear acciones integrales competitivas en ambos lazos.
+    \item \textbf{Inestabilidad hiperbólica en lazo abierto:} El factor cuadrático pendular de~\eqref{eq:ft_pendulo_up} posee una raíz real negativa $s_3$ y una raíz real positiva $s_4$ en el semiplano derecho, asociadas a una constante característica de divergencia $\tau_{\text{div}}$:
+    \begin{equation}
+        \begin{aligned}
+            s_3 &= -\omega_n\bigl(\zeta + \sqrt{\zeta^2 + 1}\bigr) < 0, \\
+            s_4 &= \omega_n\bigl(\sqrt{\zeta^2 + 1} - \zeta\bigr) > 0, \qquad
+            \tau_{\text{div}} = \frac{1}{s_4}.
+        \end{aligned}
+        \label{eq:polos_pendulo_simb}
+    \end{equation}
+    Este polo inestable $s_4$ genera crecimiento exponencial divergente gobernado por $\tau_{\text{div}}$, imponiendo una cota inferior estricta sobre el ancho de banda y el margen de fase del regulador.
+    \item \textbf{Dinámica de fase no mínima en la regulación de $\theta$:} La combinación de~\eqref{eq:gv_actuador} y~\eqref{eq:ft_pendulo_up} acopla la posición del brazo a la inclinación pendular con signo opuesto: para desplazar el brazo hacia el origen desde una desviación $\theta$ positiva sin derribar la barra, una aceleración inicial directa en sentido negativo inclinaría por inercia el péndulo hacia el exterior en sentido positivo de $\tilde{\alpha}$, agravando la caída. Por el contrario, el lazo externo debe comandar inicialmente una breve aceleración en sentido opuesto para inclinar el péndulo hacia el origen y luego desplazar el pivote bajo su centro de masa, lo que equivale a emplear ganancias de signo negativo en el controlador de posición $\theta$.
+\end{enumerate}
+
+Combinando~\eqref{eq:edo_brazo} y~\eqref{eq:pendulo_linealizado} mediante el vector de estado $\mathbf{x}$ y la salida medida $\mathbf{y}$, la realización lineal continua en espacio de estados se formula como:
+\begin{equation}
+\resizebox{0.88\columnwidth}{!}{$\displaystyle
+    \begin{aligned}
+        \dot{\mathbf{x}} &= \mathbf{A}_c\mathbf{x} + \mathbf{B}_c u, &
+        \mathbf{x} &= \begin{bmatrix} \theta & \dot{\theta} & \tilde{\alpha} & \dot{\tilde{\alpha}} \end{bmatrix}^T, \\
+        \mathbf{y} &= \mathbf{C}_c\mathbf{x}, &
+        \mathbf{y} &= \begin{bmatrix} \theta & \tilde{\alpha} \end{bmatrix}^T,
+    \end{aligned}
+$}
+    \label{eq:ss_continuo}
+\end{equation}
+cuyas matrices continuas quedan definidas por:
+\begin{gather}
+    \mathbf{A}_c = \begin{bmatrix}
+        0 & 1 & 0 & 0 \\
+        0 & -\frac{1}{\tau_m} & 0 & 0 \\
+        0 & 0 & 0 & 1 \\
+        0 & \frac{K_{\text{acople}}}{\tau_m} & \omega_n^2 & -2\zeta\omega_n
+    \end{bmatrix}, \label{eq:matriz_ac} \\
+    \mathbf{B}_c = \begin{bmatrix}
+        0 \\
+        \frac{K_v}{\tau_m} \\
+        0 \\
+        -\frac{K_{\text{acople}}K_v}{\tau_m}
+    \end{bmatrix}, \quad
+    \mathbf{C}_c = \begin{bmatrix}
+        1 & 0 & 0 & 0 \\
+        0 & 0 & 1 & 0
+    \end{bmatrix}. \label{eq:matrices_bc_cc}
+\end{gather}
+El polinomio característico asociado a $\mathbf{A}_c$ es:
+\begin{equation}
+    \det(s\mathbf{I} - \mathbf{A}_c) = s\bigl(s + \tau_m^{-1}\bigr)\bigl(s^2 + 2\zeta\omega_n s - \omega_n^2\bigr) = 0,
+    \label{eq:pol_caracteristico}
+\end{equation}
+el cual expone explícitamente los cuatro polos propios en lazo abierto: el integrador rígido del brazo $s_1$ en el origen, el polo electromecánico estable del motor $s_2$ determinado por $\tau_m$, el modo pendular amortiguado $s_3$ y el polo hiperbólico inestable $s_4$ dado en~\eqref{eq:polos_pendulo_simb}. Bajo muestreo isócrono de periodo $T_s$ mediante retenedor de orden cero (ZOH), la dinámica exacta en tiempo discreto y el mapeo de polos al plano-$z$ vienen dados por~\cite{Astrom1997,Franklin2015,OgataDiscrete1995}:
+\begin{equation}
+    \mathbf{x}[k+1] = \mathbf{\Phi}\mathbf{x}[k] + \mathbf{\Gamma}u[k], \qquad
+    z_i = e^{s_i T_s},
+    \label{eq:ss_discreto}
+\end{equation}
+con matrices discretas de transición y entrada:
+\begin{equation}
+    \mathbf{\Phi} = e^{\mathbf{A}_c T_s}, \qquad
+    \mathbf{\Gamma} = \left(\int_0^{T_s} e^{\mathbf{A}_c\tau}\,\mathrm{d}\tau\right)\mathbf{B}_c.
+    \label{eq:zoh_teorico}
+\end{equation}
+En particular, el polo inestable $s_4$ se proyecta fuera del círculo unitario en el polo discreto $z_4$ y el retenedor ZOH introduce un retardo medio equivalente a medio periodo $T_s$, exigiendo que $T_s$ sea muy inferior a $\tau_{\text{div}}$ para preservar la estabilidad modal y el margen de fase en implementación digital~\cite{Astrom1997,Franklin2015}. Para verificar de forma interactiva la correspondencia geométrica entre las transformaciones matriciales~\eqref{eq:marco_movil}--\eqref{eq:dinamica_lin_mat}, el plano móvil de oscilación y los vectores cinemáticos espaciales en tres dimensiones, se desarrolló un simulador cinemático interactivo~3D (detallado en la Subsección~\ref{subsec:simulador_cinematica} y la Fig.~\ref{fig:simulador_cinematica_3d}), distribuido junto al resto del proyecto en el repositorio oficial \url{https://github.com/Nocudo/Pendulo-Furuta-Control-Digital}.
+
+\subsection{Fundamentos de Control Discreto, Energía y Filtrado Digital}\label{subsec:control_filtrado}
+
+\subsubsection{Discretización Bilineal de Tustin, Derivada sobre Medición y Anti-Windup}
+Para implementar reguladores PID realizables en microcontroladores a periodo fijo $T_s$, se parte del controlador continuo con filtro derivativo de primer orden de polo $N$:
+\begin{equation}
+    C(s) = K_p + \frac{K_i}{s} + \frac{K_d N s}{s + N},
+    \label{eq:pid_continuo}
+\end{equation}
+donde la etapa pasa-bajos de primer orden de polo $N$ en~\eqref{eq:pid_continuo} garantiza la causalidad propia del término derivativo y acota su ganancia en alta frecuencia. Aplicando la transformada bilineal (regla trapezoidal de Tustin)~\cite{OgataDiscrete1995,Kuo1992,Astrom1997}:
+\begin{equation}
+    s = \frac{2}{T_s}\frac{1 - z^{-1}}{1 + z^{-1}},
+    \label{eq:tustin_transform}
+\end{equation}
+el semiplano izquierdo continuo se mapea íntegramente dentro del círculo unitario, preservando la estabilidad de prototipos estables sin solapamiento espectral (\textit{aliasing}). A fin de suprimir impulsos derivativos (\textit{derivative kick}) frente a escalones en la referencia $r[k]$, la acción derivativa se aplica sobre la medición negada de la salida $y[k]$ en lugar del error de seguimiento $e[k]$ ---coincidiendo con la diferencia del error cuando la referencia de equilibrio es constante---~\cite{Astrom1997}. Con ello, las ecuaciones en diferencias del controlador PID discreto resultan:
+\begin{equation}
+\resizebox{0.88\columnwidth}{!}{$\displaystyle
+    \begin{aligned}
+        e[k] &= r[k] - y[k], \qquad \Delta_{\text{in}}[k] = -\bigl(y[k] - y[k-1]\bigr), \\
+        I[k] &= I[k-1] + \frac{K_i T_s}{2}\bigl(e[k] + e[k-1]\bigr), \\
+        D[k] &= \frac{2 - N T_s}{2 + N T_s}D[k-1] + \frac{2 K_d N}{2 + N T_s}\,\Delta_{\text{in}}[k], \\
+        u_{\text{PID}}[k] &= K_p e[k] + I[k] + D[k].
+    \end{aligned}
+$}
+    \label{eq:pid_tustin}
+\end{equation}
+Cuando la señal $u_{\text{PID}}[k]$ excede los límites físicos del actuador, comprendidos entre $u_{\min}$ y $u_{\max}$, la integración continua provoca saturación integral (\textit{windup}), degradando el sobreimpulso y el tiempo de establecimiento. Mediante sujeción condicional (\textit{clamping})~\cite{AstromAntiwindup1989,Peng1996}, el acumulador integral $I[k]$ en~\eqref{eq:pid_tustin} se congela en su valor previo siempre que el actuador se encuentre saturado y el signo de $e[k]$ refuerce la dirección de saturación, asegurando recuperación inmediata al retornar a la región lineal.
+
+\subsubsection{Integrador No Lineal con Reinicio de Clegg}
+En lazos de posicionamiento del brazo sujetos a fricción seca de Coulomb, un integrador lineal acumula energía mientras el eje permanece adherido por fricción estática; una vez superado el umbral de despegue, dicha carga integral impulsa el sistema más allá de la referencia, generando sobreimpulso u oscilaciones sostenidas debido al retardo de fase constante de $\qty{-90}{\degree}$ propio de un integrador lineal continuo. Para resolver este compromiso, Clegg~\cite{clegg1958} introdujo el integrador no lineal con reinicio, cuyo estado se anula instantáneamente cada vez que el error cambia de signo:
+\begin{equation}
+\resizebox{0.94\columnwidth}{!}{$\displaystyle
+    I_c[k] =
+    \begin{cases}
+        0, & e[k]\,e[k-1] \le 0, \\[2pt]
+        \mathrm{sat}_{\pm I_{\max}}\!\bigl(I_c[k-1] + K_i T_s\,e[k]\bigr), & \text{en otro caso},
+    \end{cases}
+$}
+    \label{eq:clegg_teoria}
+\end{equation}
+donde $I_{\max}$ acota la contribución integral dentro de una banda de operación local. Desde el análisis por función descriptiva~\cite{clegg1958}, el reinicio en el cruce por cero reduce el retardo de fase efectivo de $\qty{-90}{\degree}$ a aproximadamente $\qty{-38.1}{\degree}$ manteniendo la pendiente de ganancia en baja frecuencia, lo cual aporta rigidez estática para vencer la fricción seca con mínimo sobreimpulso.
+
+\subsubsection{Control Energético de Levantamiento (Swing-Up)}
+Debido a que la linealización~\eqref{eq:pendulo_linealizado} solo es válida en una cuenca estrecha alrededor de la vertical invertida, la maniobra de levantamiento desde el reposo descendente requiere un controlador no lineal basado en la energía mecánica libre del péndulo $E_{\text{mec}}$ y su valor potencial de referencia superior $E_{\text{up}}$~\cite{astrom2000,spong1995}:
+\begin{equation}
+    \begin{aligned}
+        E_{\text{mec}}(\alpha,\dot{\alpha}) &= \frac{1}{2}J_{1,\text{piv}}\dot{\alpha}^2 - m_1 g l_1\cos\alpha, \\
+        E_{\text{up}} &= m_1 g l_1 = J_{1,\text{piv}}\omega_n^2, \qquad \cos\alpha = -\cos\tilde{\alpha}.
+    \end{aligned}
+    \label{eq:energia_mec_ref}
+\end{equation}
+Al sustraer $E_{\text{up}}$ de $E_{\text{mec}}$ y normalizar respecto a $E_{\text{up}}$ mediante~\eqref{eq:energia_mec_ref}, se define la energía mecánica adimensional normalizada:
+\begin{equation}
+    E_{\text{norm}}[k] = \frac{1}{2}\left(\frac{\dot{\alpha}[k]}{\omega_n}\right)^2 + \cos\tilde{\alpha}[k] - 1 \in [-2,\, 0],
+    \label{eq:energia_swingup}
+\end{equation}
+donde el extremo inferior de $-2$ corresponde al reposo colgante estable y el valor nulo caracteriza la órbita homoclínica del equilibrio invertido. A partir de la segunda fila de~\eqref{eq:dinamica_theta}--\eqref{eq:dinamica_alpha}, despreciando la disipación viscosa y el acoplamiento centrífugo de orden superior, la tasa de transferencia de energía hacia el péndulo y la ley de conmutación en cuadratura que garantiza inyección neta positiva de energía hasta alcanzar la cuenca de captura lineal satisfacen~\cite{astrom2000,spong1995}:
+\begin{equation}
+    \begin{aligned}
+        \dot{E}_{\text{mec}} &\approx m_1 L_0 l_1\,\dot{\alpha}\cos\alpha\,\ddot{\theta}, \\
+        \ddot{\theta}_{\text{sw}} &= a_{\max}\operatorname{sgn}\!\bigl(-E_{\text{norm}}\dot{\alpha}\cos\alpha\bigr),
+    \end{aligned}
+    \label{eq:energia_mec_tasa}
+\end{equation}
+donde $a_{\max}$ denota la amplitud de aceleración acotada del brazo actuado.
+
+\subsubsection{Filtros IIR Pasa-Bajos en Cascada y Filtros Biquad Notch}
+Al estimar velocidades angulares en tiempo discreto mediante diferenciación hacia atrás sobre un encoder de resolución finita $\Delta q$, un salto unitario de cuantización ($1\,\mathrm{LSB}$) induce picos derivativos de ruido inversamente proporcionales al periodo de muestreo $T_s$~\cite{Merry2010}:
+\begin{equation}
+    \dot{q}[k] \approx \frac{q[k] - q[k-1]}{T_s}, \qquad
+    \Delta\dot{q}_{\text{ruido}} = \pm\frac{\Delta q}{T_s}.
+    \label{eq:diff_ruido_teoria}
+\end{equation}
+A frecuencias de muestreo elevadas, la amplitud del ruido en~\eqref{eq:diff_ruido_teoria} satura la etapa de potencia y excita resonancias mecánicas de la estructura y del tren reductor. Para atenuarlo preservando la fase en torno a $\omega_n$, se emplea una cascada de dos filtros IIR pasa-bajos idénticos de primer orden obtenidos por discretización hacia atrás con constante de tiempo $\tau$:
+\begin{equation}
+    \begin{aligned}
+        H_{\text{LPF1}}(z) &= \frac{1 - \gamma}{1 - \gamma z^{-1}}, \qquad \gamma = \frac{\tau}{\tau + T_s}, \\
+        H_{\text{LPF2}}(z) &= \bigl[H_{\text{LPF1}}(z)\bigr]^2 = \frac{(1 - \gamma)^2}{\bigl(1 - \gamma z^{-1}\bigr)^2}.
+    \end{aligned}
+    \label{eq:lpf_iir}
+\end{equation}
+Dado que tanto $\tau$ como $T_s$ son estrictamente positivos, el polo doble real de~\eqref{eq:lpf_iir} se ubica en $\gamma$ estrictamente dentro del círculo unitario, lo que garantiza estabilidad BIBO y ganancia unitaria en corriente continua; además, la conexión en cascada duplica la pendiente de atenuación en alta frecuencia de $\qty{-20}{\decibel}$/década a $\qty{-40}{\decibel}$/década~\cite{Oppenheim2010}.
+
+Adicionalmente, las oscilaciones de banda estrecha causadas por holgura de engranajes o modos flexibles dentro del espectro intermedio no pueden suprimirse únicamente mediante filtros pasa-bajos sin degradar severamente el margen de fase en $\omega_n$. Para lograr atenuación selectiva en una frecuencia cíclica de resonancia $f_0$ con ancho de banda $\Delta\omega$ gobernado por el factor de calidad $Q$ y frecuencia angular $\omega_0$:
+\begin{equation}
+    \omega_0 = 2\pi f_0, \qquad \Delta\omega = \frac{\omega_0}{Q},
+    \label{eq:notch_params}
+\end{equation}
+se introducen filtros \textit{biquad notch} de segundo orden~\cite{Oppenheim2010}:
+\begin{equation}
+    H_n(z) = \frac{b_0 + b_1 z^{-1} + b_2 z^{-2}}{1 + a_1 z^{-1} + a_2 z^{-2}},
+    \label{eq:dual_notch}
+\end{equation}
+cuyos ceros complejos conjugados situados sobre o en la proximidad del círculo unitario a la frecuencia angular discreta correspondiente a $\omega_0$ y $T_s$ producen una muesca espectral profunda compensada en fase por polos complejos conjugados internos de radio definido por $Q$. Para su ejecución numérica en procesadores embebidos,~\eqref{eq:dual_notch} se realiza en \textbf{Forma Directa II Transpuesta (TDF-II)}:
+\begin{equation}
+    \begin{aligned}
+        y_n[k] &= b_0 u_f[k] + w_1[k-1], \\
+        w_1[k] &= b_1 u_f[k] - a_1 y_n[k] + w_2[k-1], \\
+        w_2[k] &= b_2 u_f[k] - a_2 y_n[k],
+    \end{aligned}
+    \label{eq:tdf2_biquad}
+\end{equation}
+estructura canónica de dos estados internos ($w_1$ y $w_2$) que acumula los productos directos y recursivos en los nodos de suma, reduciendo la sensibilidad a errores de redondeo y desbordamiento interno frente a implementaciones en Forma Directa~I o~II cuando los polos se aproximan al círculo unitario~\cite{Oppenheim2010}.

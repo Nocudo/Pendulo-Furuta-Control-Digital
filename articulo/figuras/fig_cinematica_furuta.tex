@@ -1,0 +1,276 @@
+% ==============================================================================
+% Figura: Diagrama Cinematico Puro del Pendulo Rotacional de Furuta
+% Representacion vectorial limpia (estilo libro de texto) entre el marco
+% inercial F0 = {O0, X0, Y0, Z0} y la articulacion distal.
+% Archivo modular listo para \input{} en IEEEtran (columna simple, figure [!t]).
+% Bibliotecas TikZ requeridas: arrows.meta, positioning, fit, calc,
+%                            backgrounds, babel, bending.
+% ==============================================================================
+\begin{figure}[!t]
+\centering
+% Paleta cromatica de ingenieria (local a la figura)
+\definecolor{furutaSlate}{HTML}{1E293B}
+\definecolor{furutaLinkEdge}{HTML}{1E4E8C}
+\definecolor{furutaLinkFill}{HTML}{8CB4E8}
+\definecolor{furutaLinkHi}{HTML}{DCEAFE}
+\definecolor{furutaPostEdge}{HTML}{334155}
+\definecolor{furutaPostFill}{HTML}{CBD5E1}
+\definecolor{furutaPostHi}{HTML}{F1F5F9}
+\definecolor{furutaAngle}{HTML}{D9480F}
+\definecolor{furutaTorque}{HTML}{0D8A47}
+\definecolor{furutaRef}{HTML}{2563EB}
+\definecolor{furutaMuted}{HTML}{64748B}
+%
+\resizebox{0.92\columnwidth}{!}{%
+\begin{tikzpicture}[
+    >=Stealth,
+    line cap=round,
+    line join=round,
+    font=\small,
+    % Estilos semanticos unificados
+    axis0/.style={->, >={Stealth[length=4.8pt, width=3.4pt]}, line width=0.95pt, furutaSlate},
+    dimline/.style={<->, >={Stealth[length=4.0pt, width=2.8pt]}, line width=0.6pt, furutaSlate!85},
+    dimext/.style={line width=0.45pt, furutaSlate!45},
+    dimlbl/.style={font=\footnotesize, text=furutaSlate, fill=white, inner sep=1.4pt},
+    refline/.style={dashed, line width=0.85pt, furutaRef!85},
+    refsub/.style={dashed, line width=0.65pt, furutaMuted!80},
+    angarc/.style={->, >={Stealth[length=4.4pt, width=3.1pt]}, line width=1.15pt, furutaAngle},
+    anglbl/.style={font=\footnotesize\bfseries, text=furutaAngle, inner sep=1.5pt},
+    halo/.style={preaction={draw=white, line width=2.8pt}}
+]
+    % =========================================================================
+    % 1. PARAMETROS CENTRALIZADOS DE PROYECCION 3D Y GEOMETRIA (Single Source)
+    % =========================================================================
+    % Camara ortografica: azimut phi_c = 28 deg, elevacion psi_c = 22 deg
+    \pgfmathsetmacro{\phiCam}{28}
+    \pgfmathsetmacro{\psiCam}{22}
+    % Brazo horizontal en theta = 60 deg; desviacion invertida tilde_alpha = 33 deg
+    % Coherente con Eq. (1): alpha = pi + tilde_alpha (tilde_alpha > 0 -> +j1)
+    \pgfmathsetmacro{\thetaArm}{60}
+    \pgfmathsetmacro{\alphaTilde}{33}
+
+    % Vectores base proyectados de F0 = {X0, Y0, Z0}
+    \pgfmathsetmacro{\Xx}{-sin(\phiCam)}
+    \pgfmathsetmacro{\Xy}{-sin(\psiCam)*cos(\phiCam)}
+    \pgfmathsetmacro{\Yx}{cos(\phiCam)}
+    \pgfmathsetmacro{\Yy}{-sin(\psiCam)*sin(\phiCam)}
+    \pgfmathsetmacro{\Zx}{0}
+    \pgfmathsetmacro{\Zy}{cos(\psiCam)}
+
+    % Marco local del brazo: i1 (radial) y j1 = k0 x i1 (tangencial +theta)
+    \pgfmathsetmacro{\Xr}{cos(\thetaArm)*\Xx + sin(\thetaArm)*\Yx}
+    \pgfmathsetmacro{\Yr}{cos(\thetaArm)*\Xy + sin(\thetaArm)*\Yy}
+    \pgfmathsetmacro{\Xt}{-sin(\thetaArm)*\Xx + cos(\thetaArm)*\Yx}
+    \pgfmathsetmacro{\Yt}{-sin(\thetaArm)*\Xy + cos(\thetaArm)*\Yy}
+
+    % Direccion unitaria del brazo en pantalla y normal perpendicular hacia abajo
+    \pgfmathsetmacro{\alen}{sqrt(\Xr*\Xr + \Yr*\Yr)}
+    \pgfmathsetmacro{\uaX}{\Xr/\alen}
+    \pgfmathsetmacro{\uaY}{\Yr/\alen}
+    \pgfmathsetmacro{\naX}{\uaY}
+    \pgfmathsetmacro{\naY}{-\uaX}
+
+    % Direccion del pendulo: p(pi + tilde_alpha) = sin(tilde_alpha)*j1 + cos(tilde_alpha)*k0
+    \pgfmathsetmacro{\uxP}{sin(\alphaTilde)*\Xt + cos(\alphaTilde)*\Zx}
+    \pgfmathsetmacro{\uyP}{sin(\alphaTilde)*\Yt + cos(\alphaTilde)*\Zy}
+    \pgfmathsetmacro{\plen}{sqrt(\uxP*\uxP + \uyP*\uyP)}
+    \pgfmathsetmacro{\upX}{\uxP/\plen}
+    \pgfmathsetmacro{\upY}{\uyP/\plen}
+    % Normal unitaria hacia la derecha del pendulo en pantalla
+    \pgfmathsetmacro{\npX}{\upY}
+    \pgfmathsetmacro{\npY}{-\upX}
+
+    % Longitudes, radios y holguras parametricas (escala ~1:1 en columna IEEE)
+    \def\lenX{3.20}
+    \def\lenY{2.25}
+    \def\lenZ{2.55}
+    \def\lenPost{2.35}
+    \def\lenArm{6.20}
+    \def\lenPend{4.25}
+    \def\fracCM{0.56}
+    \def\lenDownRef{1.15}
+
+    \def\rTau{0.50}
+    \def\zTau{1.28}
+    \def\rTheta{1.65}
+    \def\rTilde{3.08}
+    \def\rCM{0.115}
+
+    \def\dArm{1.32}
+    \def\dLone{0.62}
+    \def\dLtot{1.16}
+    \def\extOver{0.12}
+
+    % =========================================================================
+    % 2. UNICO ORIGEN (O0) Y COORDENADAS NOMBRADAS DERIVADAS POR CONSTRUCCION
+    % =========================================================================
+    \coordinate (O0)       at (0, 0);
+    \coordinate (X0tip)    at ($(O0) + ({\lenX*\Xx}, {\lenX*\Xy})$);
+    \coordinate (Y0tip)    at ($(O0) + ({\lenY*\Yx}, {\lenY*\Yy})$);
+    \coordinate (Z0tip)    at ($(O0) + ({\lenZ*\Zx}, {\lenZ*\Zy})$);
+    \coordinate (PostBot)  at ($(O0) - ({\lenPost*\Zx}, {\lenPost*\Zy})$);
+    \coordinate (TauCtr)   at ($(O0) + ({\zTau*\Zx}, {\zTau*\Zy})$);
+
+    \coordinate (Ppiv)     at ($(O0) + ({\lenArm*\Xr}, {\lenArm*\Yr})$);
+    \coordinate (Pup)      at ($(Ppiv) + ({\lenPend*\Zx}, {\lenPend*\Zy})$);
+    \coordinate (Pdown)    at ($(Ppiv) - (0, \lenDownRef)$);
+    \coordinate (Pcm)      at ($(Ppiv) + ({\fracCM*\lenPend*\uxP}, {\fracCM*\lenPend*\uyP})$);
+    \coordinate (Ptip)     at ($(Ppiv) + ({\lenPend*\uxP}, {\lenPend*\uyP})$);
+
+    % Puntos de cota para L0 (perpendiculares al brazo en pantalla)
+    \coordinate (L0ExtO)   at ($(O0)   + ({(\dArm+\extOver)*\naX}, {(\dArm+\extOver)*\naY})$);
+    \coordinate (L0ExtP)   at ($(Ppiv) + ({(\dArm+\extOver)*\naX}, {(\dArm+\extOver)*\naY})$);
+    \coordinate (L0DimO)   at ($(O0)   + ({\dArm*\naX}, {\dArm*\naY})$);
+    \coordinate (L0DimP)   at ($(Ppiv) + ({\dArm*\naX}, {\dArm*\naY})$);
+
+    % Puntos de cota escalonadas para l1 y L1 (lado derecho del pendulo)
+    \coordinate (PivExtL1) at ($(Ppiv) + ({(\dLtot+\extOver)*\npX}, {(\dLtot+\extOver)*\npY})$);
+    \coordinate (CmExt)    at ($(Pcm)  + ({(\dLone+\extOver)*\npX}, {(\dLone+\extOver)*\npY})$);
+    \coordinate (TipExt)   at ($(Ptip) + ({(\dLtot+\extOver)*\npX}, {(\dLtot+\extOver)*\npY})$);
+    \coordinate (l1DimA)   at ($(Ppiv) + ({\dLone*\npX}, {\dLone*\npY})$);
+    \coordinate (l1DimB)   at ($(Pcm)  + ({\dLone*\npX}, {\dLone*\npY})$);
+    \coordinate (L1DimA)   at ($(Ppiv) + ({\dLtot*\npX}, {\dLtot*\npY})$);
+    \coordinate (L1DimB)   at ($(Ptip) + ({\dLtot*\npX}, {\dLtot*\npY})$);
+
+    % =========================================================================
+    % 3. LINEAS DE EXTENSION, COTA L0 (DETRAS DEL POSTE) Y REFERENCIAS
+    % =========================================================================
+    \draw[dimext] (O0)   -- (L0ExtO);
+    \draw[dimext] (Ppiv) -- (L0ExtP);
+    \draw[dimext] (Ppiv) -- (PivExtL1);
+    \draw[dimext] (Pcm)  -- (CmExt);
+    \draw[dimext] (Ptip) -- (TipExt);
+
+    % Cota paralela limpia L0 bajo el brazo (pasa limpiamente detras del poste -Z0)
+    \draw[dimline] (L0DimO) -- node[dimlbl, midway, sloped] {$L_0$} (L0DimP);
+
+    % Referencia sutil inferior (alpha = 0)
+    \draw[refsub] (Ppiv) -- (Pdown);
+    \node[anchor=north, font=\scriptsize, text=furutaMuted, inner sep=1.5pt]
+        at ($(Pdown) + (0, -0.04)$) {$\alpha = 0$};
+
+    % Mitad trasera del arco de par tau_0 (detras del eje +Z0)
+    \begin{scope}[shift={(TauCtr)}]
+        \draw[line width=1.45pt, furutaTorque]
+            plot[domain=62:201, samples=26, smooth]
+            ({ \rTau*(cos(\x)*\Xx + sin(\x)*\Yx) },
+             { \rTau*(cos(\x)*\Xy + sin(\x)*\Yy) });
+    \end{scope}
+
+    % =========================================================================
+    % 4. POSTE VERTICAL (-Z0) Y EJES ORTOGONALES INERCIALES F0
+    % =========================================================================
+    % Poste cilindrico vertical del soporte motor (sin dibujar motor ni caja)
+    \draw[white,          line width=6.2pt, line cap=round] (O0) -- (PostBot);
+    \draw[furutaPostEdge, line width=4.6pt, line cap=round] (O0) -- (PostBot);
+    \draw[furutaPostFill, line width=3.0pt, line cap=round] (O0) -- (PostBot);
+    \draw[furutaPostHi,   line width=0.9pt, line cap=round] ($(O0)+(-0.025,0)$) -- ($(PostBot)+(-0.025,0)$);
+
+    % Ejes inerciales ortogonales (+X0, +Y0, +Z0) con halo sutil
+    \draw[axis0, halo] (O0) -- (X0tip)
+        node[below left=-1pt and 1pt, font=\small\bfseries, text=furutaSlate] {$+X_0$};
+    \draw[axis0, halo] (O0) -- (Y0tip)
+        node[right=2pt, font=\small\bfseries, text=furutaSlate] {$+Y_0$};
+    \draw[axis0, halo] (O0) -- (Z0tip)
+        node[above=1pt, font=\small\bfseries, text=furutaSlate] {$+Z_0$};
+
+    % Mitad frontal del arco de par tau_0 (emerge a la izquierda tras +Z0 sin muesca)
+    \begin{scope}[shift={(TauCtr)}]
+        \draw[->, >={Stealth[length=4.6pt, width=3.2pt]}, line width=1.45pt, furutaTorque]
+            plot[domain=215:336, samples=26, smooth]
+            ({ \rTau*(cos(\x)*\Xx + sin(\x)*\Yx) },
+             { \rTau*(cos(\x)*\Xy + sin(\x)*\Yy) });
+    \end{scope}
+    \node[anchor=south east, font=\small\bfseries, text=furutaTorque, inner sep=1.5pt]
+        at ($(TauCtr) + ({-\rTau*0.62}, {\rTau*0.58})$) {$\tau_0$};
+
+    % Etiqueta limpia del origen O0 en cuadrante superior izquierdo despejado
+    \node[anchor=south east, font=\footnotesize\bfseries, text=furutaSlate, inner sep=1.5pt]
+        at ($(O0) + (-0.12, 0.08)$) {$O_0$};
+
+    % =========================================================================
+    % 5. ARCO ANGULAR theta(t) Y BRAZO HORIZONTAL (L0)
+    % =========================================================================
+    % Arco angular theta(t) desde +X0 hasta el brazo horizontal en plano X0-Y0
+    \begin{scope}[shift={(O0)}]
+        \draw[angarc, halo]
+            plot[domain=4:{\thetaArm-5.5}, samples=30, smooth]
+            ({ \rTheta*(cos(\x)*\Xx + sin(\x)*\Yx) },
+             { \rTheta*(cos(\x)*\Xy + sin(\x)*\Yy) });
+    \end{scope}
+    \pgfmathsetmacro{\thetaLbl}{0.56*\thetaArm}
+    \node[anglbl, anchor=north, fill=white, inner sep=1pt]
+        at ($(O0) + ({(\rTheta+0.12)*(cos(\thetaLbl)*\Xx + sin(\thetaLbl)*\Yx)},
+                     {(\rTheta+0.12)*(cos(\thetaLbl)*\Xy + sin(\thetaLbl)*\Yy)})$)
+        {$\theta(t)$};
+
+    % Varilla cilindrica esbelta del brazo horizontal (L0)
+    \draw[white,          line width=6.2pt, line cap=round] (O0) -- (Ppiv);
+    \draw[furutaLinkEdge, line width=4.4pt, line cap=round] (O0) -- (Ppiv);
+    \draw[furutaLinkFill, line width=2.8pt, line cap=round] (O0) -- (Ppiv);
+    \draw[furutaLinkHi,   line width=0.85pt, line cap=round]
+        ($(O0)+(0.015, 0.025)$) -- ($(Ppiv)+(0.015, 0.025)$);
+
+    % Junta esferica/cilindrica limpia en el origen O0
+    \fill[furutaLinkFill, draw=furutaLinkEdge, line width=0.85pt] (O0) circle (0.11cm);
+    \fill[furutaLinkHi] ($(O0)+(-0.03, 0.03)$) circle (0.032cm);
+
+    % =========================================================================
+    % 6. ARTICULACION DISTAL, VERTICAL (alpha = pi), PENDULO (L1) Y tilde_alpha
+    % =========================================================================
+    % Linea punteada vertical superior de equilibrio invertido (alpha = pi)
+    \draw[refline] (Ppiv) -- (Pup);
+    \node[anchor=south, font=\footnotesize\bfseries, text=furutaRef!90!black, inner sep=1.5pt]
+        at ($(Pup) + (0, 0.06)$) {$\alpha = \pi$};
+
+    % Arco angular limpio tilde_alpha entre la vertical superior y el pendulo
+    \begin{scope}[shift={(Ppiv)}]
+        \draw[angarc]
+            plot[domain=0.4:{\alphaTilde-1.8}, samples=24, smooth]
+            ({ \rTilde*(sin(\x)*\Xt + cos(\x)*\Zx) },
+             { \rTilde*(sin(\x)*\Yt + cos(\x)*\Zy) });
+    \end{scope}
+    \pgfmathsetmacro{\midTilde}{0.50*\alphaTilde}
+    \node[anglbl, anchor=south, inner sep=1.5pt]
+        at ($(Ppiv) + ({(\rTilde+0.12)*(sin(\midTilde)*\Xt + cos(\midTilde)*\Zx)},
+                       {(\rTilde+0.12)*(sin(\midTilde)*\Yt + cos(\midTilde)*\Zy)})$)
+        {$\tilde{\alpha}$};
+
+    % Varilla cilindrica esbelta del pendulo (L1)
+    \draw[white,          line width=6.2pt, line cap=round] (Ppiv) -- (Ptip);
+    \draw[furutaLinkEdge, line width=4.4pt, line cap=round] (Ppiv) -- (Ptip);
+    \draw[furutaLinkFill, line width=2.8pt, line cap=round] (Ppiv) -- (Ptip);
+    \draw[furutaLinkHi,   line width=0.85pt, line cap=round]
+        ($(Ppiv)+(-0.025, 0.015)$) -- ($(Ptip)+(-0.025, 0.015)$);
+
+    % Junta circular en articulacion distal Ppiv
+    \fill[furutaLinkFill, draw=furutaLinkEdge, line width=0.85pt] (Ppiv) circle (0.11cm);
+    \fill[furutaLinkHi] ($(Ppiv)+(-0.03, 0.03)$) circle (0.032cm);
+
+    % Marcador limpio de centro de masa G1 sobre la varilla a distancia l1
+    \fill[white, draw=furutaSlate, line width=0.75pt] (Pcm) circle (\rCM cm);
+    \fill[furutaSlate] (Pcm) -- ++(0:\rCM cm) arc (0:90:\rCM cm) -- cycle;
+    \fill[furutaSlate] (Pcm) -- ++(180:\rCM cm) arc (180:270:\rCM cm) -- cycle;
+    \node[anchor=south east, font=\footnotesize\bfseries, text=furutaSlate, inner sep=1.5pt]
+        at ($(Pcm) + (-0.11, 0.05)$) {$G_1$};
+
+    % Cotas paralelas escalonadas del pendulo: l1 (interna) y L1 (externa)
+    \draw[dimline] (l1DimA) -- node[dimlbl, midway, sloped] {$l_1$} (l1DimB);
+    \draw[dimline] (L1DimA) -- node[dimlbl, midway, sloped] {$L_1$} (L1DimB);
+
+    % =========================================================================
+    % 7. VECTOR DE GRAVEDAD g EN ESQUINA SUPERIOR DERECHA DESPEJADA
+    % =========================================================================
+    \node[fit=(Ptip)(TipExt)(Pup), inner sep=0pt] (TopRightScope) {};
+    \coordinate (Gtop) at ($(TopRightScope.east |- Pup) + (0.28, -0.05)$);
+    \coordinate (Gbot) at ($(Gtop) + (0, -0.95)$);
+    \draw[->, >={Stealth[length=5.0pt, width=3.5pt]}, line width=1.15pt, furutaSlate]
+        (Gtop) -- (Gbot);
+    \node[anchor=west, font=\small\bfseries, text=furutaSlate, inner sep=2pt]
+        at ($(Gtop)!0.48!(Gbot) + (0.04, 0)$) {$\vec{g}$};
+
+\end{tikzpicture}%
+}%
+\caption{Diagrama cinem\'atico del p\'endulo rotacional de Furuta respecto al marco inercial $\mathcal{F}_0$ centrado en $O_0$, mostrando el par aplicado $\tau_0$, el brazo horizontal de longitud $L_0$ con giro acimutal $\theta(t)$, la vertical de equilibrio invertido ($\alpha=\pi$), la desviaci\'on pendular $\tilde{\alpha}=\alpha-\pi$, el centro de masa $G_1$ ($l_1, L_1$) y la gravedad $\vec{g}$.}
+\label{fig:cinematica_furuta}
+\end{figure}
