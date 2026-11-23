@@ -349,6 +349,6 @@
 
 \end{tikzpicture}%
 }
-\caption{Diagrama de bloques at\'omico exclusivo del estado \texttt{FURUTA\_STATE\_SWING\_UP} (\qty{1.0}{\kilo\hertz} en \texttt{furuta\_control.c}). Muestra la cascada energ\'etica (\texttt{Energ\'ia} $\to$ \texttt{Cuadratura} $\to$ $\Sigma_3$ $\to$ \texttt{PD Swing-Up} $\to$ \texttt{Sat.\ Swing} $\to$ \texttt{Slew Swing}), la modulaci\'on escalonada de saturaci\'on $\pm v_{\mathrm{cap}}$ gobernada por $E_{\mathrm{norm}}$, la cadena de actuaci\'on L298N con planta de Furuta y la realimentaci\'on paralela AS5600 detenida estrictamente en \texttt{LPF IIR 1} (sin \texttt{LPF IIR 2}) para evitar retardo de fase en los cruces inferiores.}
+\caption{Diagrama de bloques del controlador de levantamiento \texttt{SWING\_UP}.}
 \label{fig:bloques_swingup}
 \end{figure*}

@@ -406,6 +406,6 @@
 
 \end{tikzpicture}%
 }%
-\caption{Diagrama de flujo l\'ogico de la multiplexaci\'on de estados ejecutada a \qty{1.0}{\kilo\hertz} dentro de \texttt{Furuta\_ControlISR\_1kHz} (\texttt{furuta\_control.c} y \texttt{stm32f4xx\_it.c}). Cada periodo de \texttt{TIM6} verifica la guarda previa \texttt{CALIBRATING} (evitando colisiones $\text{I}^2\text{C}$ durante el promediado de cero), adquiere ambos sensores AS5600 y despacha mediante \texttt{switch(sys->state)} ---actualizado as\'incronamente por el superlazo \texttt{UART DMA / B1} $\to$ \texttt{Parser CLI}--- una \'unica rama mutuamente excluyente entre los diez estados de \texttt{Furuta\_State\_t}, aplicando protecci\'on por racha de fallos $\text{I}^2\text{C}_2$, transferencias \textit{bumpless}, conmutaci\'on autom\'atica/manual ante ca\'ida y salida directa a \texttt{L298N\_SetVoltage}, \texttt{L298N\_Brake} o \texttt{L298N\_Coast} antes de la decimaci\'on de telemetr\'ia a \qty{100}{\hertz}.}
+\caption{Diagrama de flujo l\'ogico de la multiplexaci\'on de estados a \qty{1.0}{\kilo\hertz}.}
 \label{fig:flujo_multiplexacion}
 \end{figure*}

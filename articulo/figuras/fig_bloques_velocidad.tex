@@ -291,6 +291,6 @@
 
 \end{tikzpicture}%
 }
-\caption{Diagrama de bloques at\'omico del estado \texttt{FURUTA\_STATE\_MOTOR\_PID\_VEL} a \qty{1.0}{\kilo\hertz} (\texttt{PID\_Compute} en \texttt{pid\_controller.c} y \texttt{L298N\_SetVoltage} en \texttt{l298n\_motor.c}). Muestra el esquema paralelo discretizado por Tustin con derivada directa sobre la medici\'on negada y supervisi\'on \textit{anti-windup} por congelamiento condicional (\texttt{clamp}) ante saturaci\'on en $\pm\qty{12.0}{\volt}$, la cascada de potencia L298N hacia el motor $80:1$ y la rama \'unica de sensado base AS5600 hasta \texttt{LPF IIR 1}.}
+\caption{Diagrama de bloques del controlador de velocidad \texttt{MOTOR\_PID\_VEL}.}
 \label{fig:bloques_velocidad}
 \end{figure*}

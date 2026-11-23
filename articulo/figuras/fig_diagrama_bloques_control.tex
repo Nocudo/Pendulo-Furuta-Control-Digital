@@ -423,6 +423,6 @@
 
 \end{tikzpicture}%
 }
-\caption{Diagrama de bloques at\'omico exclusivo del estado \texttt{FURUTA\_STATE\_BALANCE\_PID} (estrategia \texttt{M4 Ultra-Silk} a \qty{1.0}{\kilo\hertz} en \texttt{furuta\_control.c}). Muestra el lazo paralelo dual ($\text{PD}_\alpha$ para el p\'endulo y $\text{PID}_\theta$ saturado para el brazo), la cascada con bifurcaci\'on paralela \textit{Dual-Notch} (\texttt{Notch 1} y \texttt{Notch 2}), mezcla, saturaci\'on y limitador de pendiente modulados por el \'indice $\mathrm{dist}$, la cadena de actuaci\'on L298N con planta de Furuta y las dos ramas paralelas de realimentaci\'on AS5600 con doble filtrado pasa-bajas IIR.}
+\caption{Diagrama de bloques del controlador de equilibrio \texttt{BALANCE\_PID}.}
 \label{fig:diagrama_bloques_control}
 \end{figure*}

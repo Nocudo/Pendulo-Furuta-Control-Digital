@@ -359,6 +359,6 @@
 
 \end{tikzpicture}%
 }
-\caption{Diagrama de bloques at\'omico exclusivo del control servo a $\qty{0}{\degree}$ activo en \texttt{FURUTA\_STATE\_MOTOR\_PID\_POS}, \texttt{STOP\_HOME} y la subfase \texttt{F1} de \texttt{RECOVER\_HOME} (\texttt{Furuta\_DriveArmToZero\_1kHz} en \texttt{furuta\_control.c}, $T_s=\qty{1.0}{\milli\second}$). Combina tres ramas paralelas ---proporcional, integral no lineal con ventana de $\pm\qty{5}{\degree}$, sujeci\'on en $\pm\qty{6.5}{\volt}$ y reinicio instant\'aneo de Clegg~\eqref{eq:clegg_pos}, y derivativa directa sobre $-\dot{\theta}_{f1}$--- seguidas por saturaci\'on ($\pm\qty{5.8}{\volt}$), limitador de pendiente ($\qty{0.055}{\volt\per\milli\second}$), selector con freno activo \texttt{L298N\_Brake}, la cascada de potencia L298N hacia el motor $80:1$ y la realimentaci\'on base AS5600 con se\~nales separadas de posici\'on ($\theta$) y velocidad filtrada ($\dot{\theta}_{f1}$).}
+\caption{Diagrama de bloques del controlador de posici\'on con reinicio de Clegg.}
 \label{fig:detalle_servo_clegg}
 \end{figure*}

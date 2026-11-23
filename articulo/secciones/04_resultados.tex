@@ -7,26 +7,26 @@
 
 \begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.78\textwidth]{fig_exp_zona_muerta_y_l298n.png}
-    \caption{Resultados experimentales del ensayo \texttt{CHAR1} ($n=918$ muestras, \qty{9.17}{\second}): respuesta angular y velocidad del brazo ante rampa de ciclo útil con umbrales de ruptura estática en $+10.0\%$~PWM CCW y $-21.0\%$~PWM CW (a), y comparación entre la respuesta estática medida y la curva compensadora continua por tramos implementada (b).}
+    \includegraphics[width=0.75\textwidth]{fig_exp_zona_muerta_y_l298n.png}
+    \caption{Identificación de zona muerta (\texttt{CHAR1}) y curva compensadora L298N.}
     \label{fig:exp_zona_muerta}
 \end{figure*}
 
 \begin{figure*}[!t]
     \centering
-    \includegraphics[width=0.69\textwidth]{fig_exp_caracterizacion_motor.png}
-    \caption{Resultados experimentales del ensayo \texttt{CHAR2} ($n=538$ muestras, \qty{5.37}{\second}): excitación mediante ocho escalones bidireccionales de tensión y superposición entre la velocidad medida del brazo $\dot{\theta}(t)$ y la respuesta temporal del modelo lineal identificado de primer orden ($R^2 = 98.51\%$, $\mathrm{NRMSE} = 87.79\%$).}
+    \includegraphics[width=0.66\textwidth]{fig_exp_caracterizacion_motor.png}
+    \caption{Identificación dinámica del actuador mediante escalones (\texttt{CHAR2}).}
     \label{fig:exp_motor}
 \end{figure*}
 
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.74\textwidth]{fig_exp_caracterizacion_sistema.png}
-    \caption{Resultados experimentales del ensayo acoplado \texttt{CHAR4} ($n=768$ muestras, \qty{7.67}{\second}): respuesta ante dobletes bipolares de excitación y ventanas de decaimiento libre con freno electromagnético activo, superponiendo la trayectoria pendular medida $\alpha(t)$ con el modelo acoplado y el ajuste de fricción mixta viscosa--Coulomb ($R^2 = 99.64\%$).}
+    \caption{Identificación acoplada y decaimiento libre del péndulo (\texttt{CHAR4}).}
     \label{fig:exp_sistema}
 \end{figure*}
 
-En la Fig.~\ref{fig:exp_zona_muerta} se presentan los registros obtenidos durante la prueba de rampa de ruptura estática \texttt{CHAR1} ($n=918$ muestras, duración de \qty{9.17}{\second}). En la rama positiva en sentido antihorario (CCW), el inicio del movimiento del brazo se registró en un ciclo útil de $+10.0\%$~PWM, equivalente a una tensión umbral de $+\qty{1.20}{\volt}$. En la rama negativa en sentido horario (CW), el umbral de ruptura estática se midió en $-21.0\%$~PWM, correspondiente a $-\qty{2.52}{\volt}$. Una vez superado el reposo inicial, el umbral dinámico de sostenimiento de giro se ubicó en $2.5\%$~PWM ($\qty{0.30}{\volt}$). En la Fig.~\ref{fig:exp_zona_muerta}(b) se contrasta el perfil experimental frente a la ley compensadora continua~\eqref{eq:comp_l298n} configurada con valores de arranque $\mathrm{dz}^+=9.2\%$~PWM y $\mathrm{dz}^-=16.0\%$~PWM, banda silenciosa central de $\qty{0.06}{\volt}$ y tensión de rodilla $V_k=\qty{0.65}{\volt}$.
+En la Fig.~\ref{fig:exp_zona_muerta}(a) se presentan los registros de posición y velocidad angular del brazo obtenidos durante la prueba de rampa de ruptura estática \texttt{CHAR1} ($n=918$ muestras, duración de \qty{9.17}{\second}). En la rama positiva en sentido antihorario (CCW), el inicio del movimiento del brazo se registró en un ciclo útil de $+10.0\%$~PWM, equivalente a una tensión umbral de $+\qty{1.20}{\volt}$. En la rama negativa en sentido horario (CW), el umbral de ruptura estática se midió en $-21.0\%$~PWM, correspondiente a $-\qty{2.52}{\volt}$. Una vez superado el reposo inicial, el umbral dinámico de sostenimiento de giro se ubicó en $2.5\%$~PWM ($\qty{0.30}{\volt}$). En la Fig.~\ref{fig:exp_zona_muerta}(b) se contrasta el perfil experimental frente a la ley compensadora continua~\eqref{eq:comp_l298n} configurada con valores de arranque $\mathrm{dz}^+=9.2\%$~PWM y $\mathrm{dz}^-=16.0\%$~PWM, banda silenciosa central de $\qty{0.06}{\volt}$ y tensión de rodilla $V_k=\qty{0.65}{\volt}$.
 
 Los resultados de la identificación dinámica del actuador mediante el ensayo \texttt{CHAR2} ($n=538$ muestras, \qty{5.37}{\second}) se muestran en la Fig.~\ref{fig:exp_motor}. El ajuste por mínimos cuadrados no lineales sobre la secuencia de ocho escalones bidireccionales arrojó una ganancia estática del brazo $K_v=\qty{3.3720}{(\radian\per\second)\per\volt}$ (equivalente a $\qty{269.764}{(\radian\per\second)\per\volt}$ en el eje del rotor previo al tren planetario $80:1$) y una constante de tiempo electromecánica media $\tau_m=\qty{0.1175}{\second}$. Al desglosar los transitorios por régimen, se midió una constante de tiempo de aceleración de \qty{128.61}{\milli\second} y una constante de tiempo de desaceleración de \qty{106.34}{\milli\second}. La superposición temporal frente a los datos experimentales alcanzó un coeficiente de determinación $R^2=98.51\%$ y un índice $\mathrm{NRMSE}=87.79\%$. Sustituyendo los parámetros identificados en la estructura teórica~\eqref{eq:gv_actuador} de la Sección~\ref{sec:marco_teorico}, las funciones de transferencia continuas identificadas entre la tensión $U(s)$, la velocidad $\dot{\Theta}(s)$ y la posición $\Theta(s)$ del brazo corresponden a:
 \begin{equation}
@@ -113,14 +113,14 @@ La Tabla~\ref{tab:parametros_identificados} consolida la totalidad de los parám
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.92\textwidth]{fig_sim_controladores_motor.png}
-    \caption{Simulación discreta a \qty{1.0}{\kilo\hertz} de los controladores PID auxiliares del actuador: seguimiento de escalones de velocidad en \texttt{CHAR5A} (a--b) y posicionamiento servo con reinicio de Clegg, limitador de pendiente y freno activo en \texttt{CHAR5B} (c--d).}
+    \caption{Simulación discreta de los controladores PID de velocidad y posición del motor.}
     \label{fig:sim_control_motor}
 \end{figure*}
 
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.92\textwidth]{fig_sim_bode_filtros_y_polos.png}
-    \caption{Respuesta frecuencial de la cadena de filtrado digital LPF~IIR + \textit{Dual-Notch} a \qty{1.0}{\kilo\hertz} (a--b) y ubicación de polos de lazo abierto y lazo cerrado en el plano-$s$ continuo (c) y plano-$z$ discreto (d) bajo el esquema \texttt{M4 Ultra-Silk}.}
+    \caption{Respuesta frecuencial de los filtros digitales y mapa de polos en \texttt{M4 Ultra-Silk}.}
     \label{fig:sim_bode_polos}
 \end{figure*}
 
@@ -144,22 +144,22 @@ con un radio espectral discreto resultante $\rho=0.99934$.
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.84\textwidth]{fig_exp_validacion_swingup_balance.png}
-    \caption{Validación experimental en planta física sobre STM32 (\texttt{COM13}, \qty{12.0}{\volt}~DC, $n=1\,502$ muestras en \qty{15.001}{\second}): levantamiento autónomo en $t_{\text{swing}}=\qty{0.980}{\second}$ (1), error vertical $\tilde{\alpha}(t)$ en equilibrio invertido (2), posición del brazo $\theta(t)$ (3) y tensión de control $u(t)$ junto al ciclo útil PWM (4).}
+    \caption{Validación experimental del ciclo autónomo sobre la planta física STM32.}
     \label{fig:exp_validacion}
 \end{figure*}
 
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=0.84\textwidth]{fig_sim_vs_exp_furuta.png}
-    \caption{Comparación cruzada 1:1 entre simulación no lineal a \qty{1.0}{\kilo\hertz} y ensayo físico en STM32: trayectoria de levantamiento y captura vertical (a), evolución del error $\tilde{\alpha}(t)$ incluyendo perturbación impulsional simulada de $+\qty{1.2}{\radian\per\second}$ en $t=\qty{8.0}{\second}$ (b), posición del brazo $\theta(t)$ (c) y tensión aplicada $u(t)$ (d).}
+    \caption{Comparación cruzada entre simulación no lineal y ensayo experimental.}
     \label{fig:sim_vs_exp}
 \end{figure*}
 
-En la Fig.~\ref{fig:exp_validacion} se presentan las series temporales adquiridas en el ensayo físico continuo sobre el prototipo alimentado a \qty{12.0}{\volt}~DC (\nolinkurl{ensayo_real_swingup_y_balance_stm32.csv}, puerto \texttt{COM13}, $n=1\,502$ muestras en \qty{15.001}{\second}). La maniobra de levantamiento \texttt{SWING\_UP} alcanzó el cono superior y conmutó a \texttt{BALANCE\_PID} en un tiempo $t_{\text{swing}}=\qty{0.980}{\second}$. A partir de ese instante, la planta mantuvo el equilibrio invertido ininterrumpidamente durante los \qty{14.021}{\second} restantes de la captura con $0$~caídas.
+En la Fig.~\ref{fig:exp_validacion} se presentan las series temporales adquiridas en el ensayo físico continuo sobre el prototipo alimentado a \qty{12.0}{\volt}~DC (\nolinkurl{ensayo_real_swingup_y_balance_stm32.csv}, puerto \texttt{COM13}, $n=1\,502$ muestras en \qty{15.001}{\second}), organizadas en cuatro paneles sincronizados: trayectoria de levantamiento autónomo (1), error vertical $\tilde{\alpha}(t)$ en equilibrio invertido (2), posición angular del brazo $\theta(t)$ (3) y tensión de control $u(t)$ junto al ciclo útil PWM (4). La maniobra de levantamiento \texttt{SWING\_UP} alcanzó el cono superior y conmutó a \texttt{BALANCE\_PID} en un tiempo $t_{\text{swing}}=\qty{0.980}{\second}$. A partir de ese instante, la planta mantuvo el equilibrio invertido ininterrumpidamente durante los \qty{14.021}{\second} restantes de la captura con $0$~caídas.
 
 Durante el régimen establecido, evaluado a partir de $t=\qty{3.0}{\second}$, se registraron los siguientes indicadores estadísticos sobre toda la ventana: valor eficaz de error vertical $\tilde{\alpha}_{\mathrm{RMS}}=\qty{1.99}{\degree}$, velocidad angular pendular eficaz $\dot{\alpha}_{\mathrm{RMS}}=\qty{0.77}{\radian\per\second}$, excursión máxima puntual de $\qty{7.12}{\degree}$ en la magnitud de $\tilde{\alpha}$, desplazamiento eficaz del brazo $\theta_{\mathrm{RMS}}=\qty{9.31}{\degree}$, tensión de control eficaz $u_{\mathrm{RMS}}=\qty{0.73}{\volt}$ y ciclo útil eficaz de $10.2\%$~PWM. En la ventana estacionaria óptima de \qty{5.0}{\second} dentro del mismo registro, los indicadores descendieron a $\tilde{\alpha}_{\mathrm{RMS}}=\qty{1.46}{\degree}$, $\theta_{\mathrm{RMS}}=\qty{5.04}{\degree}$ y $u_{\mathrm{RMS}}=\qty{0.57}{\volt}$. En corridas extendidas de validación en banco se registraron valores mínimos de $\tilde{\alpha}_{\mathrm{RMS}}=\qty{1.35}{\degree}$ y $u_{\mathrm{RMS}}=\qty{0.50}{\volt}$. Adicionalmente, la ejecución de la secuencia de parada ordenada \texttt{STOPHOME} finalizó con un error angular estacionario en el brazo de $\qty{-0.25}{\degree}$.
 
-La Fig.~\ref{fig:sim_vs_exp} muestra la superposición directa 1:1 entre la simulación numérica no lineal a \qty{1.0}{\kilo\hertz} y los registros experimentales de la planta física. En la fase de levantamiento (Fig.~\ref{fig:sim_vs_exp}(a)), la simulación completó la captura vertical en \qty{1.48}{\second}, en comparación con el registro experimental de \qty{0.980}{\second}. En la prueba de rechazo a perturbaciones inyectada en simulación en $t=\qty{8.0}{\second}$ mediante un impulso de velocidad angular de $+\qty{1.2}{\radian\per\second}$ (Fig.~\ref{fig:sim_vs_exp}(b)--(d)), la desviación pendular $\tilde{\alpha}$ alcanzó un valor pico transitorio de $\qty{7.2}{\degree}$ y reingresó por debajo de la banda de $\pm\qty{3.0}{\degree}$ en un intervalo inferior a \qty{0.9}{\second}, acompañado del retorno progresivo de la posición del brazo $\theta$ hacia $\qty{0}{\degree}$. La Tabla~\ref{tab:metricas_simulacion_y_exp} sintetiza la totalidad de las métricas cuantitativas de simulación y validación experimental.
+La Fig.~\ref{fig:sim_vs_exp} muestra la superposición directa 1:1 entre la simulación numérica no lineal a \qty{1.0}{\kilo\hertz} y los registros experimentales de la planta física. En la fase de levantamiento y captura vertical (Fig.~\ref{fig:sim_vs_exp}(a)), la simulación completó la captura en \qty{1.48}{\second}, en comparación con el registro experimental de \qty{0.980}{\second}. En la prueba de rechazo a perturbaciones inyectada en simulación en $t=\qty{8.0}{\second}$ mediante un impulso de velocidad angular de $+\qty{1.2}{\radian\per\second}$, la evolución del error vertical $\tilde{\alpha}(t)$ (Fig.~\ref{fig:sim_vs_exp}(b)) alcanzó un valor pico transitorio de $\qty{7.2}{\degree}$ y reingresó por debajo de la banda de $\pm\qty{3.0}{\degree}$ en un intervalo inferior a \qty{0.9}{\second}, acompañado del retorno progresivo de la posición del brazo $\theta(t)$ hacia $\qty{0}{\degree}$ (Fig.~\ref{fig:sim_vs_exp}(c)) y del esfuerzo de tensión aplicado $u(t)$ (Fig.~\ref{fig:sim_vs_exp}(d)). La Tabla~\ref{tab:metricas_simulacion_y_exp} sintetiza la totalidad de las métricas cuantitativas de simulación y validación experimental.
 
 \begin{table}[!t]
     \centering

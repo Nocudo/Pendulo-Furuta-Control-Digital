@@ -196,6 +196,6 @@
 \end{tikzpicture}%
 }%
 \endgroup
-\caption{Flujo interno de subfases del estado de auto-recuperación \texttt{RECOVER\_HOME} (\texttt{furuta\_control.c}). Tras una caída en equilibrio ($|\tilde{\alpha}|>\qty{32}{\degree}$), un \textit{timeout} de levantamiento o un inicio con $\theta\neq\qty{0}{\degree}$, el sistema aplica rueda libre (\qty{300}{\milli\second}), retorna el brazo a $\qty{0}{\degree}$ mediante \texttt{pid\_motor\_pos} con reinicio de Clegg (cota de seguridad \qty{3.5}{\second}) y sostiene el freno activo \texttt{L298N\_Brake} hasta confirmar reposo pendular ($|\alpha_{\text{abajo}}|<\qty{10}{\degree}$, $|\dot{\alpha}|<\qty{0.65}{\radian\per\second}$) por \qty{250}{\milli\second} (cota \qty{5.5}{\second}) antes de relanzar \texttt{SWING\_UP}.}
+\caption{Diagrama de flujo interno del estado de auto-recuperaci\'on \texttt{RECOVER\_HOME}.}
 \label{fig:detalle_recover_home}
 \end{figure}

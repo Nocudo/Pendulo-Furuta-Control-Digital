@@ -397,6 +397,6 @@
 
 \end{tikzpicture}%
 }%
-\caption{M\'aquina de estados finitos (FSM) completa con los diez modos operativos (\texttt{Furuta\_State\_t}) del firmware de control digital (\texttt{furuta\_control.c}, lazo is\'ocrono \texttt{TIM6} a \qty{1.0}{\kilo\hertz}). Integra el reposo inicial \texttt{IDLE}, la parada de seguridad \texttt{FAULT\_STOP}, los modos de servicio (\texttt{CALIBRATING}, \texttt{CHARACTERIZATION}), los lazos aislados de motor (\texttt{MOTOR\_PID\_VEL} y \texttt{MOTOR\_PID\_POS}, con conmutaci\'on directa \texttt{VEL=}/\texttt{POS=}), el ciclo aut\'onomo completo (\texttt{SWING\_UP}, \texttt{BALANCE\_PID} ---distinguiendo ca\'ida aut\'onoma frente a retorno manual--- y \texttt{RECOVER\_HOME}) y la parada ordenada \texttt{STOP\_HOME} accesible tanto desde el ciclo aut\'onomo como desde los modos de motor. La transici\'on global de emergencia \texttt{STOP / B1} fuerza el retorno inmediato a \texttt{IDLE} desde cualquier estado activo; cada estado de control en lazo cerrado cuenta con su diagrama de bloques at\'omico dedicado (Figs.~\ref{fig:diagrama_bloques_control}--\ref{fig:detalle_recover_home}).}
+\caption{M\'aquina de estados finitos (FSM) de los diez modos operativos del firmware.}
 \label{fig:fsm_firmware}
 \end{figure*}

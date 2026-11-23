@@ -459,6 +459,6 @@
 
 \end{tikzpicture}%
 }
-\caption{Arquitectura global de conmutaci\'on e interconexi\'on de los diagramas de bloques at\'omicos (Figs.~\ref{fig:diagrama_bloques_control}--\ref{fig:detalle_recover_home}) gobernados por el supervisor FSM a \qty{1.0}{\kilo\hertz}. El multiplexor \texttt{MUX FSM} selecciona sin saltos (\textit{bumpless}) qu\'e controlador comanda la cascada compartida de actuaci\'on L298N o el desv\'io directo \texttt{Freno / Libre}, mientras la realimentaci\'on mantiene estrictamente separadas las ramas del brazo ($\theta$, $\dot{\theta}_{f1}$, $\dot{\theta}_{f2}$) y del p\'endulo ($\alpha$, $\tilde{\alpha}$, $\dot{\alpha}_{f1}$, $\dot{\alpha}_{f2}$), diferenciando las se\~nales de posici\'on y velocidad y reservando la segunda etapa \texttt{LPF IIR 2} exclusivamente para \texttt{BALANCE\_PID}.}
+\caption{Arquitectura global de conmutaci\'on e interconexi\'on de los controladores.}
 \label{fig:conmutacion_bloques}
 \end{figure*}
