@@ -17,7 +17,7 @@ Sistema completo de péndulo invertido rotacional (Furuta) con diseño mecánico
 │   ├── plantilla.tex                 # Código fuente principal LaTeX (IEEEtran conference)
 │   ├── plantilla.bib                 # Base de datos bibliográfica BibTeX (18 referencias verificadas con DOI)
 │   ├── secciones/                    # Secciones modulares (01_introduccion a 06_conclusiones, matemática matricial)
-│   └── figuras/                      # 10 diagramas vectoriales TikZ + figuras experimentales y del simulador 3D
+│   └── figuras/                      # 11 diagramas vectoriales TikZ + 10 figuras CAD, experimentales y del simulador 3D
 │
 ├── simulacion cinematica/            # ★ Simulador interactivo 3D de cinemática matricial simbólica (HTML5 offline)
 │   └── index.html                    # Aplicación web autónoma (sin dependencias): modelo 3D + matrices Ecs. (1)–(19) + RK4
